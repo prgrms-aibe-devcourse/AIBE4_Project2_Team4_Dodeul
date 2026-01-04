@@ -1,0 +1,67 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.5.10-SNAPSHOT'
+    id 'io.spring.dependency-management' version '1.1.7'
+    id "com.diffplug.spotless" version "6.23.3"
+}
+
+group = 'org.aibe4'
+version = '0.0.1-SNAPSHOT'
+description = 'Dodeul'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+repositories {
+    mavenCentral()
+    maven { url = 'https://repo.spring.io/snapshot' }
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-client:3.5.9'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-websocket'
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+    implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.15'
+
+    runtimeOnly 'com.mysql:mysql-connector-j'
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.security:spring-security-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+spotless {
+    java {
+        target '**/*.java'
+        // 구글 스타일(AOSP) = 들여쓰기 4칸 적용
+        googleJavaFormat().aosp()
+
+        importOrder() // import 순서 정의
+        removeUnusedImports() // 안 쓰는 import 제거
+        trimTrailingWhitespace() // 끝 공백 제거
+        endWithNewline() // 파일 끝 빈 줄 추가
+    }
+}
+
+tasks.named('compileJava') {
+    dependsOn 'spotlessApply'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
