@@ -1,0 +1,217 @@
+<!--TODO: 공통 레이아웃 및 CSS 테스트를 위한 코드. 추후 삭제-->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/demo-layout}">
+
+<head>
+  <title>UI 컴포넌트 가이드</title>
+</head>
+
+<div layout:fragment="content">
+  <div class="mb-5">
+    <h1 class="fw-bold">🎨 UI Component Style Guide</h1>
+    <p class="text-small">프로젝트에서 사용되는 공통 컴포넌트 모음입니다.</p>
+  </div>
+
+  <hr class="my-5">
+
+  <section class="mb-5">
+    <h3 class="fw-bold mb-4">1. Buttons</h3>
+
+    <div class="row g-4 align-items-center">
+      <div class="col-md-12">
+        <h5 class="mb-3">👉 Basic Buttons</h5>
+        <button class="btn btn-primary-custom">메인 버튼</button>
+        <button class="btn btn-outline-custom ms-2">보조 버튼</button>
+        <button class="btn btn-primary-custom ms-2" disabled>비활성 버튼</button>
+      </div>
+
+      <section class="mb-5">
+        <h5 class="mb-3 mt-3">👉 Tag & Filter Buttons </h5>
+        <div class="card-custom py-3 px-4 mb-4">
+          <strong>💡 하나의 클래스(.btn-tag)로 통합 </strong><br>
+          - <code>&lt;span&gt;</code> 태그 사용 시: <strong>조회용 배지</strong> (클릭 불가, 커서 기본)<br>
+          - <code>&lt;button&gt;</code> 태그 사용 시: <strong>선택용 버튼</strong> (클릭 가능, 커서 손가락)<br>
+          - <code>.active</code> 클래스 추가 시: <strong>선택된 상태</strong> (진한 배경)
+        </div>
+
+        <div class="row g-4">
+          <div class="col-md-6">
+            <div class="card-custom h-100">
+              <h6 class="fw-bold mb-3 border-bottom pb-2">A. 조회용 (Read-only)</h6>
+              <p class="text-small">멘토 카드, 프로필 요약 등 정보를 보여줄 때 사용 (span 태그)</p>
+
+              <div class="mt-3">
+                <span class="btn-tag">Java</span>
+                <span class="btn-tag">Spring Boot</span>
+                <span class="btn-tag">React</span>
+                <span class="btn-tag">AWS</span>
+                <span class="btn-tag">Docker</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <div class="card-custom h-100">
+              <h6 class="fw-bold mb-3 border-bottom pb-2">B. 선택용 (Selectable)</h6>
+              <p class="text-small">직무&스킬 선택, 검색 필터 등에서 사용 (button 태그)</p>
+
+              <div class="mt-3">
+                <button type="button" class="btn-tag">전체</button>
+                <button type="button" class="btn-tag">서버/백엔드</button>
+
+                <button type="button" class="btn-tag active">프론트엔드</button>
+
+                <button type="button" class="btn-tag">안드로이드</button>
+                <button type="button" class="btn-tag active">iOS</button>
+                <button type="button" class="btn-tag">DevOps</button>
+                <button type="button" class="btn-tag">AI/ML</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="col-md-12">
+        <h5 class="mb-3 mt-3">👉 Status Badges</h5>
+        <span class="status-badge status-pending">대기중</span>
+        <span class="status-badge status-approved">승인됨</span>
+        <span class="status-badge status-rejected">거절됨</span>
+        <span class="status-badge status-canceled">취소함</span>
+        <span class="status-badge status-timeout">자동 취소</span>
+        <span class="status-badge status-review">리뷰 대기</span>
+        <span class="status-badge status-completed">완료</span>
+      </div>
+    </div>
+  </section>
+
+  <hr class="my-5">
+
+  <section class="mb-5">
+    <h3 class="fw-bold mb-4">2. Cards </h3>
+    <div class="row g-4">
+
+      <div class="col-md-6 col-lg-3">
+        <p class="fw-bold mb-2">Type A: 멘토 프로필</p>
+        <div class="card-custom h-80">
+
+          <div class="d-flex align-items-center mb-3">
+            <div class="position-relative me-3">
+              <img src="https://ui-avatars.com/api/?name=Kang+Mentor&background=6c757d&color=fff"
+                   alt="Profile">
+            </div>
+            <div>
+              <h5 class="fw-bold mb-0">강멘토</h5>
+              <p class="text-small mb-0">풀스택 개발자</p>
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <span class="btn-tag">Node.js</span>
+            <span class="btn-tag">React</span>
+            <span class="btn-tag">MongoDB</span>
+          </div>
+
+          <div class="d-flex justify-content-between text-small mb-4 px-1">
+            <span><i class="bi bi-hand-thumbs-up me-1"></i>150</span>
+            <span><i class="bi bi-chat-square-text me-1"></i>35회</span>
+            <span><i class="bi bi-lightning-charge me-1"></i>90%</span>
+          </div>
+
+          <div class="row g-2">
+            <div class="col-6">
+              <button class="btn btn-outline-custom w-100 btn-sm">프로필</button>
+            </div>
+            <div class="col-6">
+              <button class="btn btn-primary-custom w-100 btn-sm">신청하기</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-5">
+        <p class="fw-bold mb-2">Type B: 대시보드 아이템</p>
+
+        <div class="card-custom d-flex align-items-center justify-content-between py-3 px-4 mb-3">
+          <div class="fw-medium">김민준 멘티</div>
+          <div><span class="status-badge status-pending">대기 중</span></div>
+          <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-outline-custom"><span class="me-1">✔</span> 수락</button>
+            <button class="btn btn-sm btn-outline-custom"><span class="me-1">✕</span> 거절</button>
+          </div>
+        </div>
+
+        <div class="card-custom d-flex align-items-center justify-content-between py-3 px-4">
+          <div class="fw-medium">이영희 멘티</div>
+          <div><span class="status-badge status-approved">승인됨</span></div>
+          <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-primary-custom"><span class="me-1">▷</span> 입실하기</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-4">
+        <p class="fw-bold mb-2">Type C: 기본 카드</p>
+        <div class="card-custom h-100 text-center d-flex flex-column justify-content-center">
+          <div class="fs-1 mb-3">🚀</div>
+          <h5 class="fw-bold">빠른 성장</h5>
+          <p class="text-small mb-0">
+            현직 멘토의 노하우를 통해<br>
+            시행착오를 줄이고 빠르게 성장하세요.
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <hr class="my-5">
+
+  <section class="mb-5">
+    <h3 class="fw-bold mb-4">3. Modals</h3>
+    <p class="mb-3">버튼을 클릭하여 모달 작동을 확인하세요.</p>
+
+    <button type="button" class="btn btn-primary-custom" data-bs-toggle="modal" data-bs-target="#exampleModal">
+      후기 작성 모달 열기
+    </button>
+
+    <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered"> <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold" id="exampleModalLabel">멘토링 후기 작성</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p class="text-small mb-2">멘토링은 만족스러우셨나요?</p>
+          <textarea class="modal-textarea" placeholder="솔직한 후기를 남겨주세요. (최소 10자 이상)"></textarea>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-custom" data-bs-dismiss="modal">취소</button>
+          <button type="button" class="btn btn-primary-custom">작성 완료</button>
+        </div>
+      </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<th:block layout:fragment="script">
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // 1. 모든 'button' 태그이면서 '.btn-tag' 클래스를 가진 요소를 찾습니다.
+      const filterButtons = document.querySelectorAll('button.btn-tag');
+
+      // 2. 각 버튼에 클릭 이벤트를 붙입니다.
+      filterButtons.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          // 3. 클릭할 때마다 'active' 클래스를 토글합니다.
+          this.classList.toggle('active');
+        });
+      });
+    });
+  </script>
+</th:block>
+
+</html>
