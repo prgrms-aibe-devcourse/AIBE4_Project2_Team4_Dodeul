@@ -8,6 +8,7 @@ import org.aibe4.dodeul.domain.common.model.entity.JobTag;
 import org.aibe4.dodeul.domain.common.model.entity.SkillTag;
 import org.aibe4.dodeul.domain.common.repository.JobTagRepository;
 import org.aibe4.dodeul.domain.common.repository.SkillTagRepository;
+import org.aibe4.dodeul.global.util.EntityMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,13 +22,13 @@ public class CommonService {
 
     public JobTagListResponse getJobTags() {
         List<String> jobTagNames =
-                jobTagRepository.findAll().stream().map(JobTag::getName).toList();
+                EntityMapper.toNameList(jobTagRepository.findAll(), JobTag::getName);
         return JobTagListResponse.from(jobTagNames);
     }
 
     public SkillTagListResponse getSkillTags() {
         List<String> skillTagNames =
-                skillTagRepository.findAll().stream().map(SkillTag::getName).toList();
+                EntityMapper.toNameList(skillTagRepository.findAll(), SkillTag::getName);
         return SkillTagListResponse.from(skillTagNames);
     }
 }
