@@ -2,11 +2,13 @@ package org.aibe4.dodeul.domain.matching.model.entity;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.aibe4.dodeul.domain.common.model.entity.BaseEntity;
 import org.aibe4.dodeul.domain.consulting.model.entity.ConsultingApplication;
 import org.aibe4.dodeul.domain.matching.model.enums.MatchingStatus;
+import org.aibe4.dodeul.domain.member.model.entity.Member;
 
 @Entity
 @Getter
@@ -14,15 +16,13 @@ import org.aibe4.dodeul.domain.matching.model.enums.MatchingStatus;
 @Table(name = "matchings")
 public class Matching extends BaseEntity {
 
-    // TODO: [godqhrenf] Member Entity 완성 후 주석 해제
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "mentee_id", nullable = false)
+    private Member mentee;
 
-    //    @ManyToOne(fetch = FetchType.LAZY)
-    //    @JoinColumn(name = "mentee_id", nullable = false)
-    //    private Member mentee;
-
-    //    @ManyToOne(fetch = FetchType.LAZY)
-    //    @JoinColumn(name = "mentor_id", nullable = false)
-    //    private Member mentor;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "mentor_id", nullable = false)
+    private Member mentor;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "application_id", nullable = false, unique = true)
@@ -32,15 +32,13 @@ public class Matching extends BaseEntity {
     @Column(name = "status", nullable = false)
     private MatchingStatus status;
 
-    // TODO: [godqhrenf] Member Entity 완성 후 주석 해제
-
-    //    @Builder
-    //    public Matching(Member mentee, Member mentor, ConsultingApplication application) {
-    //        this.mentee = mentee;
-    //        this.mentor = mentor;
-    //        this.application = application;
-    //        this.status = MatchingStatus.WAITING;
-    //    }
+    @Builder
+    public Matching(Member mentee, Member mentor, ConsultingApplication application) {
+        this.mentee = mentee;
+        this.mentor = mentor;
+        this.application = application;
+        this.status = MatchingStatus.WAITING;
+    }
 
     public void accept() {
         if (this.status != MatchingStatus.WAITING) {
