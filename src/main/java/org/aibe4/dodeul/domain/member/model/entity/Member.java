@@ -5,8 +5,10 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.aibe4.dodeul.domain.common.model.entity.BaseEntity;
+import org.aibe4.dodeul.domain.member.model.enums.Provider;
+import org.aibe4.dodeul.domain.member.model.enums.Role;
 
-import java.time.LocalDateTime;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -18,16 +20,11 @@ import java.time.LocalDateTime;
         @Index(name = "idx_members_nickname", columnList = "nickname")
     }
 )
-public class Member {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+public class Member extends BaseEntity {
 
     @Column(nullable = false, length = 255, unique = true)
     private String email;
 
-    // (LOCAL 로그인만 사용, 소셜은 null 가능)
     @Column(name = "password", length = 255)
     private String passwordHash;
 
@@ -45,27 +42,6 @@ public class Member {
     @Column(nullable = false, length = 20, unique = true)
     private String nickname;
 
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
-    @Column(name = "last_login_at")
-    private LocalDateTime lastLoginAt;
-
-    @PrePersist
-    private void prePersist() {
-        LocalDateTime now = LocalDateTime.now();
-        this.createdAt = now;
-        this.updatedAt = now;
-    }
-
-    @PreUpdate
-    private void preUpdate() {
-        this.updatedAt = LocalDateTime.now();
-    }
-
     @Builder
     private Member(
         String email,
@@ -81,10 +57,6 @@ public class Member {
         this.providerId = providerId;
         this.role = role;
         this.nickname = nickname;
-    }
-
-    public void updateLastLoginAt() {
-        this.lastLoginAt = LocalDateTime.now();
     }
 
     public void updateNickname(String nickname) {

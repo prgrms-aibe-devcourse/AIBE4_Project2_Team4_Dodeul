@@ -1,4 +1,4 @@
-package org.aibe4.dodeul.domain.member.repository;
+package org.aibe4.dodeul.domain.member.model.repository;
 
 import org.aibe4.dodeul.domain.member.model.entity.Member;
 import org.springframework.data.jpa.repository.JpaRepository;
