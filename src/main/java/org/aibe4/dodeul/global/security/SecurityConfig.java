@@ -1,4 +1,4 @@
-package org.aibe4.dodeul.global.config;
+package org.aibe4.dodeul.global.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -37,6 +37,11 @@ public class SecurityConfig {
                                 "/css/**", "/js/**", "/images/**", "/favicon.ico",
                                 "/auth/**",
                                 "/api/auth/**",
+
+                                "/swagger-ui.html",
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**",
+
                                 "/oauth2/**",
                                 "/login/oauth2/**",
                                 "/login",
