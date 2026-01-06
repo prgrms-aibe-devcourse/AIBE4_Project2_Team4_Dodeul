@@ -9,27 +9,25 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true) // 1. 클래스 레벨: 기본적으로 '읽기 전용' 모드로 설정
 public class ConsultingApplicationService {
 
     private final ConsultingApplicationRepository consultingApplicationRepository;
 
-    @Transactional
+    @Transactional // 2. 메서드 레벨: 여기는 저장을 해야 하므로 '쓰기 허용' (기본값)으로 덮어씀
     public Long saveApplication(ConsultingApplicationRequest request) {
 
-        // 1. DTO 데이터를 Entity(실제 DB 저장 객체)로 변환
         ConsultingApplication application =
                 ConsultingApplication.builder()
-                        .menteeId(request.getMenteeId()) // 아까 지켜낸 menteeId 사용!
+                        .menteeId(request.getMenteeId())
                         .title(request.getTitle())
                         .content(request.getContent())
                         .consultingTag(request.getConsultingTag())
                         .fileUrl(request.getFileUrl())
                         .build();
 
-        // 2. Repository에게 "저장해!" 라고 시킴
         ConsultingApplication savedApplication = consultingApplicationRepository.save(application);
 
-        // 3. 저장된 번호(ID)를 반환
         return savedApplication.getId();
     }
 }
