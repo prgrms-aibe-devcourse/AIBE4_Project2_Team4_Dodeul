@@ -1,12 +1,15 @@
 package org.aibe4.dodeul.domain.consultation.model.entity;
 
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.aibe4.dodeul.domain.common.model.entity.BaseEntity;
 import org.aibe4.dodeul.domain.consultation.model.enums.ConsultationRoomStatus;
+import org.aibe4.dodeul.domain.matching.model.entity.Matching;
+
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "consultation_rooms")
@@ -21,14 +24,14 @@ public class ConsultationRoom extends BaseEntity {
     @Column(name = "closed_at")
     private LocalDateTime closedAt;
 
-    //    @OneToOne(fetch = FetchType.LAZY)
-    //    @JoinColumn(name = "matching_id", nullable = false, unique = true)
-    //    private Matching matching;
-    //
-    //    @Builder
-    //    public ConsultationRoom(Matching matching) {
-    //        this.matching = matching;
-    //    }
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "matching_id", nullable = false, unique = true)
+    private Matching matching;
+
+    @Builder
+    public ConsultationRoom(Matching matching) {
+        this.matching = matching;
+    }
 
     public void close() {
         if (this.status == ConsultationRoomStatus.CLOSED) {
