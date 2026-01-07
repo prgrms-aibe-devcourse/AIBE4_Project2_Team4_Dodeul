@@ -1,4 +1,4 @@
-package org.aibe4.dodeul.domain.consultation.Controller;
+package org.aibe4.dodeul.domain.consultation.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.aibe4.dodeul.domain.consultation.model.dto.ConsultationRoomDto;
@@ -20,8 +20,8 @@ public class ConsultationRoomController {
     public String enterRoom(@PathVariable Long roomId, Model model) {
 
         ConsultationRoomDto consultationRoomDto =
-                consultationService.getRoomWithApplication(
-                        roomId, 1L); // 현재 회원이 누군지.. security 적용되면 변경 필요
+            consultationService.getRoomWithApplication(
+                roomId, 1L); // 현재 회원이 누군지.. security 적용되면 변경 필요
 
         model.addAttribute("consultationRoomDto", consultationRoomDto);
 
