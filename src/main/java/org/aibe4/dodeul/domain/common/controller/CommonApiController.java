@@ -1,8 +1,8 @@
 package org.aibe4.dodeul.domain.common.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.aibe4.dodeul.domain.common.dto.JobTagListResponse;
-import org.aibe4.dodeul.domain.common.dto.SkillTagListResponse;
+import org.aibe4.dodeul.domain.common.model.dto.JobTagListResponse;
+import org.aibe4.dodeul.domain.common.model.dto.SkillTagListResponse;
 import org.aibe4.dodeul.domain.common.service.CommonService;
 import org.aibe4.dodeul.global.dto.ApiResponse;
 import org.aibe4.dodeul.global.dto.enums.SuccessCode;
