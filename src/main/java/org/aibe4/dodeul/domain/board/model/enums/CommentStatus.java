@@ -1,4 +1,4 @@
-package org.aibe4.dodeul.domain.board.model.entity;
+package org.aibe4.dodeul.domain.board.model.enums;
 
 public enum CommentStatus {
     PUBLISHED,

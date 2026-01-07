@@ -1,3 +1,4 @@
+// src/main/java/org/aibe4/dodeul/domain/board/model/entity/BoardPost.java
 package org.aibe4.dodeul.domain.board.model.entity;
 
 import jakarta.persistence.*;
@@ -6,7 +7,9 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.aibe4.dodeul.domain.board.model.enums.PostStatus;
 import org.aibe4.dodeul.domain.common.model.entity.BaseEntity;
+import org.aibe4.dodeul.domain.consulting.model.enums.ConsultingTag;
 
 // import org.aibe4.dodeul.domain.member.model.entity.Member;
 
@@ -34,8 +37,9 @@ public class BoardPost extends BaseEntity {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "board_consulting", nullable = false, length = 30)
-    private String boardConsulting;
+    private ConsultingTag boardConsulting;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "post_status", nullable = false, length = 20)
@@ -57,7 +61,7 @@ public class BoardPost extends BaseEntity {
     private LocalDateTime deletedAt;
 
     @Builder
-    public BoardPost(Long memberId, String title, String content, String boardConsulting) {
+    public BoardPost(Long memberId, String title, String content, ConsultingTag boardConsulting) {
         this.memberId = memberId;
         this.title = title;
         this.content = content;
@@ -68,7 +72,7 @@ public class BoardPost extends BaseEntity {
         this.commentCount = 0;
     }
 
-    public void update(String title, String content, String boardConsulting) {
+    public void update(String title, String content, ConsultingTag boardConsulting) {
         validateNotDeleted();
         this.title = title;
         this.content = content;
