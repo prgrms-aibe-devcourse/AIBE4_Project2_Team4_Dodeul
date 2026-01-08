@@ -23,65 +23,66 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            // CORS
-            .cors(Customizer.withDefaults())
+                // CORS
+                .cors(Customizer.withDefaults())
 
-            // CSRF: UI는 보호, API는 제외(개발 편의)
-            .csrf(
-                csrf ->
-                    csrf.ignoringRequestMatchers("/api/**")
-                        .ignoringRequestMatchers("consultations/**"))
+                // CSRF: UI는 보호, API는 제외(개발 편의)
+                .csrf(
+                        csrf ->
+                                csrf.ignoringRequestMatchers("/api/**")
+                                        .ignoringRequestMatchers("/consultations/**")
+                                        .ignoringRequestMatchers("/ws/**")) // 웹소켓 엔드포인트 CSRF 제외
 
-            // URL 권한
-            .authorizeHttpRequests(
-                auth ->
-                    auth.requestMatchers(
-                            "/",
-                            "/error",
-                            "/css/**",
-                            "/js/**",
-                            "/images/**",
-                            "/favicon.ico",
-                            "/auth/**",
-                            "/api/auth/**",
-                            "/swagger-ui.html",
-                            "/swagger-ui/**",
-                            "/v3/api-docs/**",
-                            "/oauth2/**",
-                            "/login/oauth2/**",
-                            "/login",
-                            "/h2-console/**",
-                            "/demo/**",
-                            "/api/board/posts",
-                            "/api/board/posts/**",
-                            "/consultations/**"
-                        )
-                        .permitAll()
-                        .requestMatchers("/mypage/**", "/api/**")
-                        .authenticated()
-                        .anyRequest()
-                        .authenticated())
+                // URL 권한
+                .authorizeHttpRequests(
+                        auth ->
+                                auth.requestMatchers(
+                                                "/",
+                                                "/error",
+                                                "/css/**",
+                                                "/js/**",
+                                                "/images/**",
+                                                "/favicon.ico",
+                                                "/auth/**",
+                                                "/api/auth/**",
+                                                "/swagger-ui.html",
+                                                "/swagger-ui/**",
+                                                "/v3/api-docs/**",
+                                                "/oauth2/**",
+                                                "/login/oauth2/**",
+                                                "/login",
+                                                "/h2-console/**",
+                                                "/demo/**",
+                                                "/api/board/posts",
+                                                "/api/board/posts/**",
+                                                "/consultations/**",
+                                                "/ws/**") // 웹소켓 엔드포인트 허용
+                                        .permitAll()
+                                        .requestMatchers("/mypage/**", "/api/**")
+                                        .authenticated()
+                                        .anyRequest()
+                                        .authenticated())
 
-            // 세션 관리
-            .sessionManagement(
-                session ->
-                    session.sessionFixation(
-                            sessionFixation -> sessionFixation.migrateSession())
-                        .invalidSessionUrl("/auth/login?expired"))
+                // 세션 관리
+                .sessionManagement(
+                        session ->
+                                session.sessionFixation(
+                                                sessionFixation -> sessionFixation.migrateSession())
+                                        .invalidSessionUrl("/auth/login?expired"))
 
-            // 로그인/로그아웃
-            .formLogin(
-                form ->
-                    form.loginPage("/auth/login")
-                        .loginProcessingUrl("/login")
-                        .defaultSuccessUrl("/mypage/dashboard", true)
-                        .permitAll())
-            .logout(
-                logout ->
-                    logout.logoutUrl("/logout")
-                        .invalidateHttpSession(true)
-                        .deleteCookies("JSESSIONID")
-                        .logoutSuccessUrl("/auth/login"));
+                // 로그인/로그아웃
+                .formLogin(
+                        form ->
+                                form.loginPage("/auth/login")
+                                        .loginProcessingUrl("/login")
+                                        .defaultSuccessUrl("/mypage/dashboard", true)
+                                        .permitAll())
+                .logout(
+                        logout ->
+                                logout.logoutUrl("/logout")
+                                        .invalidateHttpSession(true)
+                                        .deleteCookies("JSESSIONID")
+                                        .logoutSuccessUrl("/auth/login"));
         // H2 console iframe 차단 방지
         http.headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()));
 
