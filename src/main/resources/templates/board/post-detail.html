@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <title th:text="${post.title}">게시글 상세</title>
+</head>
+<body>
+<div class="container">
+  <h1 th:text="${post.title}">제목</h1>
+
+  <p class="meta">
+    작성자:
+    <span th:text="${post.author.displayName}">작성자</span>
+    |
+    상담분야:
+    <span
+      th:text="${post.consultingTagSummary.name != null ? post.consultingTagSummary.name : post.consultingTagSummary.code}">
+          RESUME
+        </span>
+    |
+    상태:
+    <span th:text="${post.postStatus}">OPEN</span>
+  </p>
+
+  <p class="meta">
+    조회수: <span th:text="${post.viewCount}">0</span>
+    |
+    스크랩: <span th:text="${post.scrapCount}">0</span>
+    |
+    댓글: <span th:text="${post.commentCount}">0</span>
+  </p>
+
+  <p class="meta">
+    작성일:
+    <span th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-01-01 10:00</span>
+    <span th:if="${post.updatedAt != null}">
+          | 수정일:
+          <span th:text="${#temporals.format(post.updatedAt, 'yyyy-MM-dd HH:mm')}">2026-01-01 11:00</span>
+        </span>
+  </p>
+
+  <hr/>
+
+  <div class="content" th:text="${post.content}">내용</div>
+
+  <hr/>
+
+  <div class="actions">
+    <a href="/board/posts">목록으로</a>
+  </div>
+</div>
+</body>
+</html>

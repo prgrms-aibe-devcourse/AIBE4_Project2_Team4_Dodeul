@@ -1,13 +1,12 @@
-// src/main/java/org/aibe4/dodeul/domain/board/repository/BoardPostRepositoryImpl.java
-package org.aibe4.dodeul.domain.board.repository;
+package org.aibe4.dodeul.domain.board.model.repository;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.*;
 import java.util.*;
 import java.util.stream.Collectors;
-import org.aibe4.dodeul.domain.board.model.dto.BoardPostListRequest;
-import org.aibe4.dodeul.domain.board.model.dto.BoardPostListResponse;
+import org.aibe4.dodeul.domain.board.model.dto.request.BoardPostListRequest;
+import org.aibe4.dodeul.domain.board.model.dto.response.BoardPostListResponse;
 import org.aibe4.dodeul.domain.board.model.entity.BoardPost;
 import org.aibe4.dodeul.domain.board.model.entity.BoardPostTagRelation;
 import org.aibe4.dodeul.domain.board.model.enums.PostStatus;
@@ -98,7 +97,7 @@ public class BoardPostRepositoryImpl implements BoardPostRepositoryCustom {
         if (!postIds.isEmpty()) {
             TypedQuery<Object[]> relQ =
                     em.createQuery(
-                            "select r.boardPost.id, r.skillTagEntity.name "
+                            "select r.boardPost.id, r.skillTag.name "
                                     + "from BoardPostTagRelation r "
                                     + "where r.boardPost.id in :postIds",
                             Object[].class);
@@ -183,7 +182,7 @@ public class BoardPostRepositoryImpl implements BoardPostRepositoryCustom {
             Root<BoardPostTagRelation> rel = sub.from(BoardPostTagRelation.class);
 
             Predicate p1 = cb.equal(rel.get("boardPost").get("id"), root.get("id"));
-            Predicate p2 = rel.get("skillTagEntity").get("id").in(request.getSkillTagIds());
+            Predicate p2 = rel.get("skillTag").get("id").in(request.getSkillTagIds());
 
             sub.select(cb.literal(1));
             sub.where(cb.and(p1, p2));

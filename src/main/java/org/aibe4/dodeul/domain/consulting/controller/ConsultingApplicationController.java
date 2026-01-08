@@ -3,7 +3,7 @@ package org.aibe4.dodeul.domain.consulting.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.aibe4.dodeul.domain.consulting.dto.ConsultingApplicationRequest;
+import org.aibe4.dodeul.domain.consulting.model.dto.ConsultingApplicationRequest;
 import org.aibe4.dodeul.domain.consulting.service.ConsultingApplicationService;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -23,10 +23,10 @@ public class ConsultingApplicationController {
     public String registerApplication(@ModelAttribute ConsultingApplicationRequest request) {
 
         // 1. 서비스 호출 (저장)
-        consultingApplicationService.saveApplication(request);
+        Long savedApplicationId = consultingApplicationService.saveApplication(request);
 
         // 2. 리다이렉션 (작업 완료 후 목록 페이지나 메인으로 이동)
         // "redirect:/" 뒤에는 이동하고 싶은 URL 경로를 적습니다.
-        return "redirect:/consulting-applications";
+        return "redirect:/matching/recommend?applicationId=" + savedApplicationId;
     }
 }
