@@ -3,15 +3,15 @@ package org.aibe4.dodeul.domain.board.model.entity;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.List;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.aibe4.dodeul.domain.board.model.enums.PostStatus;
 import org.aibe4.dodeul.domain.common.model.entity.BaseEntity;
+import org.aibe4.dodeul.domain.common.model.entity.SkillTag;
 import org.aibe4.dodeul.domain.consulting.model.enums.ConsultingTag;
-
-// import org.aibe4.dodeul.domain.member.model.entity.Member;
 
 @Entity
 @Table(name = "board_posts")
@@ -19,17 +19,15 @@ import org.aibe4.dodeul.domain.consulting.model.enums.ConsultingTag;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class BoardPost extends BaseEntity {
 
-    // TODO: Member Entity 완성 후 @ManyToOne 관계로 변경
-    // @ManyToOne(fetch = FetchType.LAZY)
-    // @JoinColumn(name = "member_id", nullable = false)
-    // private Member member;
-
     @Column(name = "member_id", nullable = false)
     private Long memberId; // 임시 사용
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "accepted_comment_id")
     private BoardComment acceptedComment;
+
+    @OneToMany(mappedBy = "boardPost", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<BoardPostTagRelation> boardPostTagRelations = new java.util.ArrayList<>();
 
     @Column(nullable = false, length = 255)
     private String title;
@@ -126,6 +124,13 @@ public class BoardPost extends BaseEntity {
         if (this.commentCount > 0) {
             this.commentCount--;
         }
+    }
+
+    public List<SkillTag> getSkillTags() {
+        return boardPostTagRelations.stream()
+                .map(BoardPostTagRelation::getSkillTag)
+                .filter(java.util.Objects::nonNull)
+                .toList();
     }
 
     private void validateNotDeleted() {
