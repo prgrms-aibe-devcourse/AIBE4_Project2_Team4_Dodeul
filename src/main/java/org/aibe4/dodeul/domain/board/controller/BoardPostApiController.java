@@ -8,11 +8,11 @@ import org.aibe4.dodeul.domain.board.model.dto.BoardPostListResponse;
 import org.aibe4.dodeul.domain.board.service.BoardPostService;
 import org.aibe4.dodeul.domain.consulting.model.enums.ConsultingTag;
 import org.aibe4.dodeul.global.response.ApiResponse;
+import org.aibe4.dodeul.global.response.enums.SuccessCode;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -31,7 +31,7 @@ public class BoardPostApiController {
      * <p>임시 규칙: Authorization 헤더가 "Bearer {memberId}" 형태면 memberId로 간주한다.
      */
     @GetMapping
-    public ResponseEntity<ApiResponse<BoardPostListPageResponse>> listPosts(
+    public ApiResponse<BoardPostListPageResponse> listPosts(
             @RequestHeader(value = "Authorization", required = false) String authorization,
             @RequestParam(value = "consultingTag", required = false) ConsultingTag consultingTag,
             @RequestParam(value = "tagIds", required = false) List<Long> tagIds,
@@ -56,7 +56,7 @@ public class BoardPostApiController {
         Page<BoardPostListResponse> result = boardPostService.getPosts(request, memberId, pageable);
 
         BoardPostListPageResponse data = BoardPostListPageResponse.from(result);
-        return ResponseEntity.ok(ApiResponse.success("게시글 목록 조회 성공", data));
+        return ApiResponse.success(SuccessCode.SUCCESS, data, "게시글 목록 조회 성공");
     }
 
     private Sort toSpringSort(String sort) {
