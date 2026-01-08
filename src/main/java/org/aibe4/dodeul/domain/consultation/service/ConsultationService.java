@@ -35,7 +35,7 @@ public class ConsultationService {
 
     private List<MessageDto> getMessageDtoList(Long roomId, Long currentMemberId) {
         return messageRepository.findByConsultationRoomIdOrderByCreatedAtAsc(roomId).stream()
-                .map(message -> MessageDto.of(message, currentMemberId))
+                .map(MessageDto::of)
                 .toList();
     }
 }
