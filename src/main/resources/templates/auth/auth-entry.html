@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="utf-8"/>
+  <title>회원가입/로그인</title>
+</head>
+<body>
+<h1>회원가입/로그인</h1>
+
+<p>
+  선택한 역할:
+  <b th:text="${role}">ROLE</b>
+</p>
+
+<div style="margin-top: 16px;">
+  <!-- Google은 나중에 연결 -->
+  <a href="/oauth2/authorization/google">Google로 계속하기</a>
+</div>
+
+<div style="margin-top: 16px;">
+  <!-- 다음 단계에서 구현 -->
+  <a href="/auth/signup">이메일로 가입하기</a>
+  <br/>
+  <a href="/auth/login">이메일로 로그인</a>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="utf-8"/>
+  <title>데모 로그인</title>
+</head>
+<body>
+<h1>데모 로그인</h1>
+
+<form method="post" action="/login">
+  <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+  <div>
+    <label>Email</label>
+    <input type="text" name="username" autocomplete="username"/>
+  </div>
+
+  <div>
+    <label>Password</label>
+    <input type="password" name="password" autocomplete="current-password"/>
+  </div>
+
+  <button type="submit">Login</button>
+</form>
+
+</body>
+</html>

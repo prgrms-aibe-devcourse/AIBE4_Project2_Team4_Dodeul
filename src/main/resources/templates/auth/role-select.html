@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="utf-8"/>
+  <title>역할 선택</title>
+</head>
+<body>
+<h1>멘토링 서비스 시작하기</h1>
+
+<p th:if="${errorMessage}"
+   th:text="${errorMessage}"
+   style="color: red; margin-bottom: 12px;">
+</p>
+
+<form method="post" action="/onboarding/role">
+  <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+  <button type="submit" name="role" value="MENTOR">멘토로 시작하기</button>
+  <button type="submit" name="role" value="MENTEE">멘티로 시작하기</button>
+</form>
+
+</body>
+</html>

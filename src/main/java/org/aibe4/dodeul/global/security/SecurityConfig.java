@@ -22,17 +22,20 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
-                // CORS
-                .cors(Customizer.withDefaults())
-
-                // CSRF: UI는 보호, API는 제외(개발 편의)
-                .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**"))
-
-                // URL 권한
+        http.cors(Customizer.withDefaults())
+                .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**", "/h2-console/**"))
                 .authorizeHttpRequests(
                         auth ->
-                                auth.requestMatchers(
+                                auth
+
+                                        // demo role 테스트 보호 (ApiController 기준)
+                                        .requestMatchers("/api/demo/role/mentor")
+                                        .hasRole("MENTOR")
+                                        .requestMatchers("/api/demo/role/mentee")
+                                        .hasRole("MENTEE")
+
+                                        // 공개 허용
+                                        .requestMatchers(
                                                 "/",
                                                 "/error",
                                                 "/css/**",
@@ -40,36 +43,46 @@ public class SecurityConfig {
                                                 "/images/**",
                                                 "/favicon.ico",
                                                 "/auth/**",
+                                                "/onboarding/**",
                                                 "/api/auth/**",
+                                                "/api/onboarding/**",
                                                 "/swagger-ui.html",
                                                 "/swagger-ui/**",
                                                 "/v3/api-docs/**",
                                                 "/oauth2/**",
                                                 "/login/oauth2/**",
-                                                "/login",
                                                 "/h2-console/**",
                                                 "/demo/**")
                                                 "/api/board/posts",
-                                                "/api/board/posts/**")
+                                                "/api/board/posts/**",
+                                                "/demo/**")
                                         .permitAll()
+
+                                        // 역할 기반 (mypage)
+                                        .requestMatchers("/mypage/mentor/**")
+                                        .hasRole("MENTOR")
+                                        .requestMatchers("/mypage/mentee/**")
+                                        .hasRole("MENTEE")
+
+                                        // API 역할 분리
+                                        .requestMatchers("/api/mentor/**")
+                                        .hasRole("MENTOR")
+                                        .requestMatchers("/api/mentee/**")
+                                        .hasRole("MENTEE")
                                         .requestMatchers("/mypage/**", "/api/**")
                                         .authenticated()
                                         .anyRequest()
                                         .authenticated())
-
-                // 세션 관리
                 .sessionManagement(
                         session ->
                                 session.sessionFixation(
                                                 sessionFixation -> sessionFixation.migrateSession())
                                         .invalidSessionUrl("/auth/login?expired"))
-
-                // 로그인/로그아웃
                 .formLogin(
                         form ->
                                 form.loginPage("/auth/login")
                                         .loginProcessingUrl("/login")
-                                        .defaultSuccessUrl("/mypage/dashboard", true)
+                                        .defaultSuccessUrl("/home", true)
                                         .permitAll())
                 .logout(
                         logout ->
@@ -77,18 +90,16 @@ public class SecurityConfig {
                                         .invalidateHttpSession(true)
                                         .deleteCookies("JSESSIONID")
                                         .logoutSuccessUrl("/auth/login"));
-        // H2 console iframe 차단 방지
-        http.headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()));
 
+        http.headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()));
         return http.build();
     }
 
-    // 개발용 CORS (배포 전 도메인 제한)
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
-        config.setAllowedOriginPatterns(List.of("*")); // TODO: 배포 시 도메인 제한
+        config.setAllowedOriginPatterns(List.of("*"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
 
