@@ -14,4 +14,22 @@ public class DemoController {
     public String demo() {
         return "demo/demo";
     }
+
+    /** 공용(base) 레이아웃 데모 */
+    @GetMapping("/public")
+    public String publicDemo() {
+        return "demo/public-demo";
+    }
+
+    /** 멘티 레이아웃 데모 */
+    @GetMapping("/mentee")
+    public String menteeDemo() {
+        return "demo/mentee-demo";
+    }
+
+    /** 멘토 레이아웃 데모 */
+    @GetMapping("/mentor")
+    public String mentorDemo() {
+        return "demo/mentor-demo";
+    }
 }

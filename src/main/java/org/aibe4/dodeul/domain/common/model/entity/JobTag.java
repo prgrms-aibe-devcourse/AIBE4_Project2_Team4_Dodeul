@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @Table(name = "job_tags")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class JobTag extends BaseEntity {
+public class JobTag {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

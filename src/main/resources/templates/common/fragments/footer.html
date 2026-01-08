@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<footer th:fragment="footerFull()">
+  <div class="container footer-grid">
+
+    <!-- 왼쪽 브랜드 영역 -->
+    <div class="footer-left">
+      <div class="footer-logo">DODEUL</div>
+      <p class="footer-desc">
+        두들온 멘토링 플랫폼은<br/>
+        멘토와 멘티의 성장을 돕는 플랫폼입니다.
+      </p>
+
+      <div class="footer-sns">
+        <a href="#"><img th:src="@{/icons/github.svg}" alt="github"></a>
+        <a href="#"><img th:src="@{/icons/x.svg}" alt="x"></a>
+        <a href="#"><img th:src="@{/icons/instagram.svg}" alt="instagram"></a>
+      </div>
+    </div>
+
+    <!-- 가운데 링크 -->
+    <div class="footer-links">
+      <a th:href="@{/about}">서비스 소개</a>
+      <a th:href="@{/terms}">이용약관</a>
+      <a th:href="@{/privacy}">개인정보처리방침</a>
+    </div>
+
+    <!-- 오른쪽 카피라이트 -->
+    <div class="footer-meta">
+      © DODEUL. All rights reserved.
+    </div>
+  </div>
+</footer>
+
+
+<footer th:fragment="footerSimple()">
+  <div class="container" style="text-align:center;">
+    <span class="footer-meta">© DODEUL. All rights reserved.</span>
+  </div>
+</footer>
+
+</body>
+</html>

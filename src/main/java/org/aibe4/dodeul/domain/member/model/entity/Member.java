@@ -12,7 +12,6 @@ import org.aibe4.dodeul.domain.member.model.enums.Role;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity(name = "members")
-
 public class Member extends BaseEntity {
 
     @Column(nullable = false, length = 255, unique = true)

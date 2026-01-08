@@ -6,6 +6,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.aibe4.dodeul.domain.board.model.enums.CommentStatus;
 import org.aibe4.dodeul.domain.common.model.entity.BaseEntity;
 
 // import org.aibe4.dodeul.domain.member.model.entity.Member;

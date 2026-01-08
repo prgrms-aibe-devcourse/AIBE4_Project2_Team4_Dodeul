@@ -133,6 +133,30 @@ main.main {
   margin-left: 8px;
 }
 
+/* ===== Header Profile Avatar (추가) ===== */
+.header-actions.header-auth {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 1px solid #e9ecef;
+  background: #f1f3f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.avatar img {
+  width: 18px;
+  height: 18px;
+  display: block;
+  opacity: 0.9;
+}
+
 /* Sidebar */
 .sidebar {
   width: 260px;
@@ -210,6 +234,34 @@ main.main {
   width: 20px;
   height: 20px;
   display: block;
+}
+
+/* =========================================
+   Sticky Footer (추가)
+   - footer를 하단에 고정시키기 위한 레이아웃
+   ========================================= */
+html, body {
+  height: 100%;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* base.html에서 <main class="main">을 사용하므로
+   main 영역이 남은 공간을 채우게 해서 footer를 아래로 밀어줌 */
+main.main {
+  flex: 1;
+}
+
+/* footer가 남은 공간 아래로 내려가도록 */
+footer {
+  margin-top: auto;
+  border-top: 1px solid #eee;
+  padding: 20px 0;
+  background: var(--color-bg-surface);
 }
 
 /* =========================================

@@ -2,8 +2,8 @@ package org.aibe4.dodeul.domain.common.service;
 
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import org.aibe4.dodeul.domain.common.dto.JobTagListResponse;
-import org.aibe4.dodeul.domain.common.dto.SkillTagListResponse;
+import org.aibe4.dodeul.domain.common.model.dto.JobTagListResponse;
+import org.aibe4.dodeul.domain.common.model.dto.SkillTagListResponse;
 import org.aibe4.dodeul.domain.common.model.entity.JobTag;
 import org.aibe4.dodeul.domain.common.model.entity.SkillTag;
 import org.aibe4.dodeul.domain.common.repository.JobTagRepository;

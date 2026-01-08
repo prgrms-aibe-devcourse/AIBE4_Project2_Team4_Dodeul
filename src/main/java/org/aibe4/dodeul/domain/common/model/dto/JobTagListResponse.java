@@ -1,4 +1,4 @@
-package org.aibe4.dodeul.domain.common.dto;
+package org.aibe4.dodeul.domain.common.model.dto;
 
 import java.util.List;
 import lombok.AllArgsConstructor;

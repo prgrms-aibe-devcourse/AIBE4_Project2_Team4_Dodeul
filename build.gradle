@@ -51,6 +51,17 @@ dependencies {
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
 
+    // QueryDSL
+    // QueryDSL 라이브러리 (쿼리를 작성할 수 있게 해줌)
+    implementation 'com.querydsl:querydsl-jpa:5.1.0:jakarta'
+
+    // Q클래스 생성 기능 (컴파일 시점에 Entity를 보고 Q클래스를 만들어줌)
+    annotationProcessor "com.querydsl:querydsl-apt:5.1.0:jakarta"
+
+    // java.lang.NoClassDefFoundError 방지 (Spring Boot 3.x 필수)
+    annotationProcessor "jakarta.annotation:jakarta.annotation-api"
+    annotationProcessor "jakarta.persistence:jakarta.persistence-api"
+
     // test
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
