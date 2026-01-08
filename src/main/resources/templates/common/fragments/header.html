@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<header th:fragment="header(activeMenu)">
+  <div class="container header-inner">
+    <a class="brand" th:href="@{/}">DODEUL</a>
+
+    <nav class="nav">
+      <a th:href="@{/}" th:classappend="${activeMenu=='home'} ? 'active' : ''">홈</a>
+      <a th:href="@{/mentors}" th:classappend="${activeMenu=='mentors'} ? 'active' : ''">멘토찾기</a>
+      <a th:href="@{/board}" th:classappend="${activeMenu=='board'} ? 'active' : ''">공개 게시판</a>
+      <a th:href="@{/mypage}" th:classappend="${activeMenu=='mypage'} ? 'active' : ''">마이페이지</a>
+    </nav>
+
+    <div class="header-actions">
+      <a class="btn-outline-custom" th:href="@{/auth/login}">로그인</a>
+      <a class="btn-primary-custom" th:href="@{/auth/signup}">회원가입</a>
+    </div>
+  </div>
+</header>
+
+</body>
+</html>
