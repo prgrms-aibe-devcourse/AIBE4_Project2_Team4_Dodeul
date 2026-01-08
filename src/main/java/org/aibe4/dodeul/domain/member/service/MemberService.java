@@ -25,17 +25,17 @@ public class MemberService {
         String passwordHash = passwordEncoder.encode(rawPassword);
 
         String tempNickname =
-                "user_" + java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 12);
+            "user_" + java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 12);
 
         Member member =
-                Member.builder()
-                        .email(email)
-                        .passwordHash(passwordHash)
-                        .provider(Provider.LOCAL)
-                        .providerId(null)
-                        .role(role)
-                        .nickname(tempNickname) // ⭐ NOT NULL 충족
-                        .build();
+            Member.builder()
+                .email(email)
+                .passwordHash(passwordHash)
+                .provider(Provider.LOCAL)
+                .providerId(null)
+                .role(role)
+                .nickname(tempNickname)
+                .build();
 
         return memberRepository.save(member).getId();
     }

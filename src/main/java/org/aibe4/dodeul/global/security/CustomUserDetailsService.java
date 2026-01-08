@@ -1,28 +1,69 @@
 package org.aibe4.dodeul.global.security;
 
-import lombok.RequiredArgsConstructor;
-import org.aibe4.dodeul.domain.member.model.entity.Member;
-import org.aibe4.dodeul.domain.member.model.repository.MemberRepository;
+import lombok.Getter;
+import org.aibe4.dodeul.domain.member.model.enums.Role;
+import org.springframework.security.core.CredentialsContainer;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.stereotype.Service;
 
-@Service
-@RequiredArgsConstructor
-public class CustomUserDetailsService implements UserDetailsService {
+import java.util.Collection;
+import java.util.List;
 
-    private final MemberRepository memberRepository;
+@Getter
+public class CustomUserDetails implements UserDetails, CredentialsContainer {
+
+    private final Long memberId;
+    private final String email;
+    private String passwordHash;
+    private final Role role;
+    private final Collection<? extends GrantedAuthority> authorities;
+
+    public CustomUserDetails(Long memberId, String email, String passwordHash, Role role) {
+        this.memberId = memberId;
+        this.email = email;
+        this.passwordHash = passwordHash;
+        this.role = role;
+        this.authorities = List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
+    }
 
     @Override
-    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        Member member =
-            memberRepository
-                .findByEmail(email)
-                .orElseThrow(
-                    () -> new UsernameNotFoundException("Member not found: " + email));
+    public void eraseCredentials() {
+        this.passwordHash = null;
+    }
 
-        return new CustomUserDetails(
-            member.getId(), member.getEmail(), member.getPasswordHash(), member.getRole());
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return this.authorities;
+    }
+
+    @Override
+    public String getPassword() {
+        return this.passwordHash;
+    }
+
+    @Override
+    public String getUsername() {
+        return this.email;
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return true;
     }
 }
