@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @Table(name = "skill_tags")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class SkillTag extends BaseEntity {
+public class SkillTag {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
