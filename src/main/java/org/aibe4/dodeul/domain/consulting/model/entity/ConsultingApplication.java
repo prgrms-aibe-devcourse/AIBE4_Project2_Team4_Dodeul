@@ -1,15 +1,14 @@
 package org.aibe4.dodeul.domain.consulting.model.entity;
 
 import jakarta.persistence.*;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.aibe4.dodeul.domain.common.model.entity.BaseEntity;
 import org.aibe4.dodeul.domain.consulting.model.enums.ConsultingTag;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
 @Getter
@@ -40,11 +39,11 @@ public class ConsultingApplication extends BaseEntity {
 
     @Builder
     public ConsultingApplication(
-        Long menteeId,
-        String title,
-        String content,
-        ConsultingTag consultingTag,
-        String fileUrl) { // 빌더에서 리스트는 뺐습니다 (생성 시점엔 보통 비어있으므로)
+            Long menteeId,
+            String title,
+            String content,
+            ConsultingTag consultingTag,
+            String fileUrl) { // 빌더에서 리스트는 뺐습니다 (생성 시점엔 보통 비어있으므로)
         this.menteeId = menteeId;
         this.title = title;
         this.content = content;
@@ -55,6 +54,6 @@ public class ConsultingApplication extends BaseEntity {
     // 스킬 태그를 추가하는 비즈니스 메서드 (Service에서 사용)
     public void addSkillTag(ApplicationSkillTag applicationSkillTag) {
         this.applicationSkillTags.add(applicationSkillTag);
-//        applicationSkillTag.setConsultingApplication(this); // 양방향 연결
+        //        applicationSkillTag.setConsultingApplication(this); // 양방향 연결
     }
 }
