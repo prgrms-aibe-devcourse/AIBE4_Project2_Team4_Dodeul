@@ -2,9 +2,9 @@
 package org.aibe4.dodeul.domain.board.service;
 
 import lombok.RequiredArgsConstructor;
-import org.aibe4.dodeul.domain.board.model.dto.BoardPostListRequest;
-import org.aibe4.dodeul.domain.board.model.dto.BoardPostListResponse;
-import org.aibe4.dodeul.domain.board.repository.BoardPostRepository;
+import org.aibe4.dodeul.domain.board.model.dto.request.BoardPostListRequest;
+import org.aibe4.dodeul.domain.board.model.dto.response.BoardPostListResponse;
+import org.aibe4.dodeul.domain.board.model.repository.BoardPostRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;

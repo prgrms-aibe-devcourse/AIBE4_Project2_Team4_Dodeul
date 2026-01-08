@@ -4,6 +4,7 @@ import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import org.aibe4.dodeul.domain.board.model.dto.response.BoardPostListResponse;
 import org.springframework.data.domain.Page;
 
 @Getter
