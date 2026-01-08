@@ -16,10 +16,9 @@ public class RoleSelectController {
 
     @GetMapping
     public String page(
-            @AuthenticationPrincipal org.aibe4.dodeul.global.security.CustomUserDetails user) {
-        // 로그인 상태면 (CustomUserDetails가 주입됨) 라우터로 보내기
+        @AuthenticationPrincipal org.aibe4.dodeul.global.security.CustomUserDetails user) {
         if (user != null) {
-            return "redirect:/home"; // dashboard 말고 home 라우터 추천
+            return "redirect:/home";
         }
         return "auth/role-select";
     }

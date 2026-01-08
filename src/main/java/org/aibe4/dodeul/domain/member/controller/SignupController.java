@@ -29,13 +29,12 @@ public class SignupController {
 
     @PostMapping("/signup")
     public String signup(
-            @RequestParam String email, @RequestParam String password, HttpSession session) {
+        @RequestParam String email, @RequestParam String password, HttpSession session) {
         Role role = (Role) session.getAttribute(AuthSessionKeys.SELECTED_ROLE);
         if (role == null) return "redirect:/onboarding/role";
 
         memberService.registerLocal(email, password, role);
 
-        // 일단은 로그인 페이지로 (자동 로그인/닉네임 온보딩은 다음 단계에서)
         return "redirect:/auth/login";
     }
 }
