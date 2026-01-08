@@ -1,5 +1,5 @@
 // src/main/java/org/aibe4/dodeul/domain/board/model/dto/BoardPostListRequest.java
-package org.aibe4.dodeul.domain.board.model.dto;
+package org.aibe4.dodeul.domain.board.model.dto.request;
 
 import java.util.List;
 import lombok.AllArgsConstructor;
