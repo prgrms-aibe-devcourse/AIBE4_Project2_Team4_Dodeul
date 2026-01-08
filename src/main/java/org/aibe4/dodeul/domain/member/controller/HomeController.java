@@ -21,7 +21,7 @@ public class HomeController {
                 .findById(user.getMemberId())
                 .orElseThrow(() -> new IllegalStateException("Logged-in member not found"));
 
-        // TODO: nickname 컬럼을 nullable로 바꾼 뒤 아래 분기를 활성화하세요.
+        // TODO: nickname 컬럼을 nullable로 바꾼 뒤 아래 분기를 활성화
         // if (member.getNickname() == null || member.getNickname().isBlank()) {
         //     return "redirect:/onboarding/nickname";
         // }
