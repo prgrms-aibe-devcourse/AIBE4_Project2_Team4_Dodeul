@@ -1,4 +1,4 @@
-package org.aibe4.dodeul.domain.common.repository;
+package org.aibe4.dodeul.domain.common.model.repository;
 
 import org.aibe4.dodeul.domain.common.model.entity.SkillTag;
 import org.springframework.data.jpa.repository.JpaRepository;

@@ -2,8 +2,29 @@ spring:
   profiles:
     active: dev
 
+  # [팀 규칙 패턴 A] Thymeleaf 설정 (화면 렌더링용)
   thymeleaf:
     prefix: classpath:/templates/
     suffix: .html
     mode: HTML
     cache: false
+
+  # 파일 업로드 용량 제한
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+# Swagger(SpringDoc) 설정 - [노션 가이드 5.4 준수]
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha       # 태그 알파벳순 정렬
+    operations-sorter: method # HTTP 메서드순 정렬
+
+  api-docs:
+    path: /api-docs
+
+  # 기본 미디어 타입 설정 (JSON)
+  default-consumes-media-type: application/json
+  default-produces-media-type: application/json
