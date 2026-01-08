@@ -20,12 +20,12 @@ public class CommonApiController {
     @GetMapping("/job-tags")
     public ApiResponse<JobTagListResponse> getJobTags() {
         JobTagListResponse response = commonService.getJobTags();
-        return ApiResponse.success(SuccessCode.SELECT_SUCCESS, response, "태그 리스트 조회 성공");
+        return ApiResponse.success(SuccessCode.SELECT_SUCCESS, response, "직무 리스트 조회 성공");
     }
 
     @GetMapping("/skill-tags")
     public ApiResponse<SkillTagListResponse> getSkillTags() {
         SkillTagListResponse response = commonService.getSkillTags();
-        return ApiResponse.success(SuccessCode.SELECT_SUCCESS, response);
+        return ApiResponse.success(SuccessCode.SELECT_SUCCESS, response, "스킬 목록 조회 성공");
     }
 }
