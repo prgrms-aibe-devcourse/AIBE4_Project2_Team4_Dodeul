@@ -19,7 +19,7 @@ public class ApplicationSkillTag {
 
     // N:1 관계 설정 (이 중간 테이블 입장에서 신청서는 하나)
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ticket_id", nullable = false) // ERD의 FK 컬럼명
+    @JoinColumn(name = "application_id", nullable = false) // ERD의 FK 컬럼명
     private ConsultingApplication consultingApplication;
 
     // N:1 관계 설정 (이 중간 테이블 입장에서 스킬태그는 하나)
