@@ -1,6 +1,5 @@
 package org.aibe4.dodeul.global.security;
 
-import java.util.List;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
@@ -11,6 +10,8 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.List;
 
 @Configuration
 public class SecurityConfig {
@@ -23,73 +24,73 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.cors(Customizer.withDefaults())
-                .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**", "/h2-console/**"))
-                .authorizeHttpRequests(
-                        auth ->
-                                auth
+            .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**", "/h2-console/**"))
+            .authorizeHttpRequests(
+                auth ->
+                    auth
 
-                                        // demo role 테스트 보호 (ApiController 기준)
-                                        .requestMatchers("/api/demo/role/mentor")
-                                        .hasRole("MENTOR")
-                                        .requestMatchers("/api/demo/role/mentee")
-                                        .hasRole("MENTEE")
+                        // demo role 테스트 보호 (ApiController 기준)
+                        .requestMatchers("/api/demo/role/mentor")
+                        .hasRole("MENTOR")
+                        .requestMatchers("/api/demo/role/mentee")
+                        .hasRole("MENTEE")
 
-                                        // 공개 허용
-                                        .requestMatchers(
-                                                "/",
-                                                "/error",
-                                                "/css/**",
-                                                "/js/**",
-                                                "/images/**",
-                                                "/favicon.ico",
-                                                "/auth/**",
-                                                "/onboarding/**",
-                                                "/api/auth/**",
-                                                "/api/onboarding/**",
-                                                "/swagger-ui.html",
-                                                "/swagger-ui/**",
-                                                "/v3/api-docs/**",
-                                                "/oauth2/**",
-                                                "/login/oauth2/**",
-                                                "/h2-console/**",
-                                                "/demo/**")
-                                                "/api/board/posts",
-                                                "/api/board/posts/**",
-                                                "/demo/**")
-                                        .permitAll()
+                        // 공개 허용
+                        .requestMatchers(
+                            "/",
+                            "/error",
+                            "/css/**",
+                            "/js/**",
+                            "/images/**",
+                            "/icons/**",
+                            "/favicon.ico",
+                            "/auth/**",
+                            "/onboarding/**",
+                            "/api/auth/**",
+                            "/api/onboarding/**",
+                            "/swagger-ui.html",
+                            "/swagger-ui/**",
+                            "/v3/api-docs/**",
+                            "/oauth2/**",
+                            "/login/oauth2/**",
+                            "/h2-console/**",
+                            "/api/board/posts",
+                            "/api/board/posts/**",
+                            "/demo/**")
+                        .permitAll()
 
-                                        // 역할 기반 (mypage)
-                                        .requestMatchers("/mypage/mentor/**")
-                                        .hasRole("MENTOR")
-                                        .requestMatchers("/mypage/mentee/**")
-                                        .hasRole("MENTEE")
+                        // 역할 기반 (mypage)
+                        .requestMatchers("/mypage/mentor/**")
+                        .hasRole("MENTOR")
+                        .requestMatchers("/mypage/mentee/**")
+                        .hasRole("MENTEE")
 
-                                        // API 역할 분리
-                                        .requestMatchers("/api/mentor/**")
-                                        .hasRole("MENTOR")
-                                        .requestMatchers("/api/mentee/**")
-                                        .hasRole("MENTEE")
-                                        .requestMatchers("/mypage/**", "/api/**")
-                                        .authenticated()
-                                        .anyRequest()
-                                        .authenticated())
-                .sessionManagement(
-                        session ->
-                                session.sessionFixation(
-                                                sessionFixation -> sessionFixation.migrateSession())
-                                        .invalidSessionUrl("/auth/login?expired"))
-                .formLogin(
-                        form ->
-                                form.loginPage("/auth/login")
-                                        .loginProcessingUrl("/login")
-                                        .defaultSuccessUrl("/home", true)
-                                        .permitAll())
-                .logout(
-                        logout ->
-                                logout.logoutUrl("/logout")
-                                        .invalidateHttpSession(true)
-                                        .deleteCookies("JSESSIONID")
-                                        .logoutSuccessUrl("/auth/login"));
+                        // API 역할 분리
+                        .requestMatchers("/api/mentor/**")
+                        .hasRole("MENTOR")
+                        .requestMatchers("/api/mentee/**")
+                        .hasRole("MENTEE")
+                        .requestMatchers("/mypage/**", "/api/**")
+                        .authenticated()
+                        .anyRequest()
+                        .authenticated())
+            .sessionManagement(
+                session ->
+                    session.sessionFixation(
+                            sessionFixation -> sessionFixation.migrateSession())
+                        .invalidSessionUrl("/auth/login?expired"))
+            .formLogin(
+                form ->
+                    form.loginPage("/auth/login")
+                        .loginProcessingUrl("/login")
+                        .defaultSuccessUrl("/home", true)
+                        .permitAll())
+            .logout(
+                logout ->
+                    logout.logoutUrl("/logout")
+                        .invalidateHttpSession(true)
+                        .deleteCookies("JSESSIONID")
+                        .logoutSuccessUrl("/auth/login"));
 
         http.headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()));
         return http.build();
