@@ -1,8 +1,10 @@
 package org.aibe4.dodeul.domain.member.controller;
 
 import jakarta.servlet.http.HttpSession;
-import org.aibe4.dodeul.domain.member.dto.AuthSessionKeys;
+import lombok.RequiredArgsConstructor;
+import org.aibe4.dodeul.domain.member.model.dto.AuthSessionKeys;
 import org.aibe4.dodeul.domain.member.model.enums.Role;
+import org.aibe4.dodeul.global.security.CustomUserDetails;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -12,11 +14,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
 @RequestMapping("/onboarding/role")
-public class RoleSelectController {
+@RequiredArgsConstructor
+public class RoleSelectViewController {
 
     @GetMapping
-    public String page(
-        @AuthenticationPrincipal org.aibe4.dodeul.global.security.CustomUserDetails user) {
+    public String page(@AuthenticationPrincipal CustomUserDetails user) {
         if (user != null) {
             return "redirect:/home";
         }

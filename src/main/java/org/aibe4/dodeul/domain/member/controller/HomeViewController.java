@@ -1,8 +1,7 @@
 package org.aibe4.dodeul.domain.member.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.aibe4.dodeul.domain.member.model.entity.Member;
-import org.aibe4.dodeul.domain.member.model.repository.MemberRepository;
+import org.aibe4.dodeul.domain.member.service.MemberService;
 import org.aibe4.dodeul.global.security.CustomUserDetails;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
@@ -10,18 +9,16 @@ import org.springframework.web.bind.annotation.GetMapping;
 
 @Controller
 @RequiredArgsConstructor
-public class HomeController {
+public class HomeViewController {
 
-    private final MemberRepository memberRepository;
+    private final MemberService memberService;
 
     @GetMapping("/home")
     public String home(@AuthenticationPrincipal CustomUserDetails user) {
-        Member member =
-            memberRepository
-                .findById(user.getMemberId())
-                .orElseThrow(() -> new IllegalStateException("Logged-in member not found"));
+        memberService.getMemberOrThrow(user.getMemberId());
 
-        // TODO: nickname 컬럼을 nullable로 바꾼 뒤 아래 분기를 활성화
+        // TODO: nickname nullable 처리 후 아래 분기 적용
+        // Member member = memberService.getMemberOrThrow(user.getMemberId());
         // if (member.getNickname() == null || member.getNickname().isBlank()) {
         //     return "redirect:/onboarding/nickname";
         // }

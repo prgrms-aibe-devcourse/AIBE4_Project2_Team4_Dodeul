@@ -2,17 +2,19 @@
 package org.aibe4.dodeul.domain.demo.controller;
 
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-public class RoleTestController {
+@RequestMapping("/api/demo/role")
+public class RoleTestApiController {
 
-    @GetMapping("/mypage/mentor/test")
+    @GetMapping("/mentor")
     public String mentorOnly() {
         return "mentor only endpoint";
     }
 
-    @GetMapping("/mypage/mentee/test")
+    @GetMapping("/mentee")
     public String menteeOnly() {
         return "mentee only endpoint";
     }
