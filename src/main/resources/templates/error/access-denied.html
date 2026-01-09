@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<script th:inline="javascript">
+  /*<![CDATA[*/
+  var message = [[${errorMessage}]];
+  var nextUrl = [[${nextUrl}]];
+
+  alert(message);
+
+  if (nextUrl) {
+    location.href = nextUrl;
+  } else {
+    history.back(); // url이 없으면 뒤로가기
+  }
+  /*]]>*/
+</script>
+</html>
