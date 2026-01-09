@@ -46,6 +46,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/demo/role/mentee")
                         .hasRole("MENTEE")
 
+                        .requestMatchers("/onboarding/nickname/**").authenticated()
+
                         // 공개 허용
                         // 공개 허용
                         .requestMatchers(
@@ -81,13 +83,13 @@ public class SecurityConfig {
                         .requestMatchers("/mypage/mentee/**")
                         .hasRole("MENTEE")
 
-                // API 역할 분리
-                .requestMatchers("/api/mentor/**").hasRole("MENTOR")
-                .requestMatchers("/api/mentee/**").hasRole("MENTEE")
+                        // API 역할 분리
+                        .requestMatchers("/api/mentor/**").hasRole("MENTOR")
+                        .requestMatchers("/api/mentee/**").hasRole("MENTEE")
 
-                // 나머지 마이페이지/API는 로그인 필요
-                .requestMatchers("/mypage/**", "/api/**").authenticated()
-                .anyRequest().authenticated()
+                        // 나머지 마이페이지/API는 로그인 필요
+                        .requestMatchers("/mypage/**", "/api/**").authenticated()
+                        .anyRequest().authenticated()
             )
             .sessionManagement(session ->
                 session.sessionFixation(sessionFixation -> sessionFixation.migrateSession())

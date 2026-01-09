@@ -22,8 +22,8 @@ public class NicknameApiController {
     @PutMapping("/nickname")
     public CommonResponse<Void> updateNickname(
         @AuthenticationPrincipal CustomUserDetails user,
-        @RequestBody NicknameUpdateRequest request) {
-
+        @RequestBody NicknameUpdateRequest request
+    ) {
         memberService.updateNickname(user.getMemberId(), request.nickname());
         return CommonResponse.success(SuccessCode.UPDATE_SUCCESS, null);
     }
