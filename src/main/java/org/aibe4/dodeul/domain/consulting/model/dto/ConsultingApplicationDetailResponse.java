@@ -15,16 +15,19 @@ public class ConsultingApplicationDetailResponse {
     private String menteeName;
     private String title;
     private String content;
+    private String category;
     private List<String> skillTags;
     private String fileUrl;
 
     public static ConsultingApplicationDetailResponse from(ConsultingApplication entity) {
         return ConsultingApplicationDetailResponse.builder()
             .id(entity.getId())
-            .menteeName("멘티 ID: " + entity.getMenteeId()) // 멘티 이름 대신 임시로 ID 표시
+            .menteeName("멘티 ID: " + entity.getMenteeId())
             .title(entity.getTitle())
             .content(entity.getContent())
             .fileUrl(entity.getFileUrl())
+            // [추가] 엔티티에 저장된 Enum에서 한글 설명(Description)을 가져옵니다.
+            .category(entity.getConsultingTag() != null ? entity.getConsultingTag().getDescription() : null)
             // 신청서에 연결된 스킬 태그 이름들을 리스트로 변환
             .skillTags(entity.getApplicationSkillTags().stream()
                 .map(mapping -> mapping.getSkillTag().getName())
