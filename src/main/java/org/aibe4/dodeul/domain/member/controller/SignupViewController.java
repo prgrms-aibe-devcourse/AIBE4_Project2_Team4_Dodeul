@@ -29,11 +29,18 @@ public class SignupViewController {
 
     @PostMapping("/signup")
     public String signup(
-            @RequestParam String email, @RequestParam String password, HttpSession session) {
+        @RequestParam String email,
+        @RequestParam String password,
+        HttpSession session
+    ) {
         Role role = (Role) session.getAttribute(AuthSessionKeys.SELECTED_ROLE);
-        if (role == null) return "redirect:/onboarding/role";
+        if (role == null) {
+            return "redirect:/onboarding/role";
+        }
 
         memberService.registerLocal(email, password, role);
+
+        session.removeAttribute(AuthSessionKeys.SELECTED_ROLE);
 
         return "redirect:/auth/login";
     }
