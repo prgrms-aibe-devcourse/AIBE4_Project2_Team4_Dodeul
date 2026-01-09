@@ -72,38 +72,38 @@ public class SecurityConfig {
                                                 "/ws/**") // 웹소켓 엔드포인트 허용
                                         .permitAll()
 
-                                        // 역할 기반 (mypage)
-                                        .requestMatchers("/mypage/mentor/**")
-                                        .hasRole("MENTOR")
-                                        .requestMatchers("/mypage/mentee/**")
-                                        .hasRole("MENTEE")
+                        // 역할 기반 (mypage)
+                        .requestMatchers("/mypage/mentor/**")
+                        .hasRole("MENTOR")
+                        .requestMatchers("/mypage/mentee/**")
+                        .hasRole("MENTEE")
 
-                                        // API 역할 분리
-                                        .requestMatchers("/api/mentor/**")
-                                        .hasRole("MENTOR")
-                                        .requestMatchers("/api/mentee/**")
-                                        .hasRole("MENTEE")
-                                        .requestMatchers("/mypage/**", "/api/**")
-                                        .authenticated()
-                                        .anyRequest()
-                                        .authenticated())
-                .sessionManagement(
-                        session ->
-                                session.sessionFixation(
-                                                sessionFixation -> sessionFixation.migrateSession())
-                                        .invalidSessionUrl("/auth/login?expired"))
-                .formLogin(
-                        form ->
-                                form.loginPage("/auth/login")
-                                        .loginProcessingUrl("/login")
-                                        .defaultSuccessUrl("/home", true)
-                                        .permitAll())
-                .logout(
-                        logout ->
-                                logout.logoutUrl("/logout")
-                                        .invalidateHttpSession(true)
-                                        .deleteCookies("JSESSIONID")
-                                        .logoutSuccessUrl("/auth/login"));
+                        // API 역할 분리
+                        .requestMatchers("/api/mentor/**")
+                        .hasRole("MENTOR")
+                        .requestMatchers("/api/mentee/**")
+                        .hasRole("MENTEE")
+                        .requestMatchers("/mypage/**", "/api/**")
+                        .authenticated()
+                        .anyRequest()
+                        .authenticated())
+            .sessionManagement(
+                session ->
+                    session.sessionFixation(
+                            sessionFixation -> sessionFixation.migrateSession())
+                        .invalidSessionUrl("/auth/login?expired"))
+            .formLogin(
+                form ->
+                    form.loginPage("/auth/login")
+                        .loginProcessingUrl("/login")
+                        .defaultSuccessUrl("/home", true)
+                        .permitAll())
+            .logout(
+                logout ->
+                    logout.logoutUrl("/logout")
+                        .invalidateHttpSession(true)
+                        .deleteCookies("JSESSIONID")
+                        .logoutSuccessUrl("/auth/login"));
 
         http.headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()));
         return http.build();
