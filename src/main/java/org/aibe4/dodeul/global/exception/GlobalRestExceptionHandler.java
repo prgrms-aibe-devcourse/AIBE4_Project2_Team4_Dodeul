@@ -4,7 +4,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.aibe4.dodeul.global.response.CommonResponse;
 import org.aibe4.dodeul.global.response.enums.ErrorCode;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.BindException;
@@ -42,13 +41,15 @@ public class GlobalRestExceptionHandler {
      * CommonResponse 형식으로 통일된 에러 응답을 반환
      */
     @ExceptionHandler(CustomException.class)
-    public ResponseEntity<CommonResponse<Void>> handleCustomException(CustomException e) {
+    public CommonResponse<Void> handleCustomException(
+        CustomException e,
+        jakarta.servlet.http.HttpServletResponse response
+    ) {
         ErrorCode errorCode = e.getErrorCode();
         log.warn("CustomException: {} ({})", e.getDetailMessage(), errorCode.name());
 
-        return ResponseEntity
-            .status(errorCode.getHttpStatus())
-            .body(CommonResponse.fail(errorCode, e.getDetailMessage()));
+        response.setStatus(errorCode.getHttpStatus().value());
+        return CommonResponse.fail(errorCode, e.getDetailMessage());
     }
 
     /**

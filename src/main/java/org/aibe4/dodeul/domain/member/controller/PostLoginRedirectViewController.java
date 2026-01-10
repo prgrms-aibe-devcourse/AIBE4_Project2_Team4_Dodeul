@@ -27,10 +27,6 @@ public class PostLoginRedirectViewController {
         HttpServletResponse response,
         @AuthenticationPrincipal CustomUserDetails user
     ) {
-        if (user == null) {
-            return "redirect:/auth/login";
-        }
-
         Member member = memberService.getMemberOrThrow(user.getMemberId());
 
         // 1) 임시 닉네임이면 온보딩 (SavedRequest보다 우선)
