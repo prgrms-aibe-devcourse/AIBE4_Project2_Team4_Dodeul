@@ -1,13 +1,14 @@
 package org.aibe4.dodeul.domain.common.model.entity;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED) // 기본 생성자
-@AllArgsConstructor // ★ 빌더 쓰려면 이거 필수
-@Builder            // ★ 이거 없어서 빨간 줄 났던 것!
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class SkillTag {
 
     @Id
@@ -18,6 +19,10 @@ public class SkillTag {
     @Column(nullable = false, unique = true)
     private String name;
 
-    // 혹시 생성자가 따로 있다면 지우거나 두셔도 됩니다.
-    // 롬복(@Builder)을 쓰면 코드가 훨씬 깔끔해집니다.
+    // ▼▼▼ [변경] 빌더를 생성자 위에 붙입니다 ▼▼▼
+    @Builder
+    public SkillTag(String name) {
+        this.name = name;
+
+    }
 }
