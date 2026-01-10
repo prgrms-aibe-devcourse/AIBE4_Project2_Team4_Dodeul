@@ -74,9 +74,24 @@
     </div>
 
     <div class="d-flex justify-content-end gap-2 mt-4">
-      <button type="button" class="btn btn-outline-secondary px-4">수정하기</button>
-      <button type="button" class="btn btn-outline-secondary px-4">취소하기</button>
+
+      <a th:href="@{/consulting-applications/{id}/edit(id=${application.id})}"
+         class="btn btn-outline-secondary px-4">
+        수정하기
+      </a>
+
+      <form th:action="@{/consulting-applications/{id}/delete(id=${application.id})}"
+            method="post"
+            style="display:inline;">
+        <button type="submit"
+                class="btn btn-outline-secondary px-4"
+                onclick="return confirm('정말로 상담 신청을 취소하시겠습니까? 삭제된 내용은 복구할 수 없습니다.');">
+          취소하기
+        </button>
+      </form>
+
       <a href="/consulting-applications" class="btn btn-outline-dark px-4">목록으로</a>
+
     </div>
 
   </div>
