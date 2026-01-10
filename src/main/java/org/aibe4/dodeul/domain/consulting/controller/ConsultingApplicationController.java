@@ -1,7 +1,5 @@
 package org.aibe4.dodeul.domain.consulting.controller;
 
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.aibe4.dodeul.domain.consulting.model.dto.ConsultingApplicationDetailResponse;
@@ -16,16 +14,14 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
-@Tag(name = "Consulting Application", description = "상담 신청 관련 컨트롤러")
 @Controller
 @RequestMapping("/consulting-applications")
 @RequiredArgsConstructor
-@PreAuthorize("isAuthenticated()") // [추가] 로그인한 사람만 이 컨트롤러 기능 사용 가능
+@PreAuthorize("isAuthenticated()")
 public class ConsultingApplicationController {
 
     private final ConsultingApplicationService consultingApplicationService;
 
-    @Operation(summary = "상담 신청 폼 이동", description = "상담 신청서 작성 화면을 보여줍니다.")
     @GetMapping("/form")
     public String applicationForm(Model model) {
         model.addAttribute("request", new ConsultingApplicationRequest());
@@ -33,11 +29,10 @@ public class ConsultingApplicationController {
         return "consulting/application-form";
     }
 
-    @Operation(summary = "상담 신청 등록", description = "멘티가 상담 신청서를 작성하여 등록합니다.")
     @PostMapping
     public String registerApplication(
-        @Valid @ModelAttribute("request") ConsultingApplicationRequest request, // [수정] @Valid 추가
-        BindingResult bindingResult, // [수정] 에러를 잡아내는 객체 추가
+        @Valid @ModelAttribute("request") ConsultingApplicationRequest request,
+        BindingResult bindingResult,
         Model model,
         @AuthenticationPrincipal CustomUserDetails user
     ) {
@@ -60,11 +55,10 @@ public class ConsultingApplicationController {
         return "redirect:/matchings/new?applicationId=" + savedApplicationId;
     }
 
-    @Operation(summary = "상담 신청 상세 조회", description = "상담 신청서의 상세 내용을 조회합니다.")
     @GetMapping("/{applicationId}")
     public String getApplicationDetail(@PathVariable Long applicationId, Model model) {
 
-        // 1. 서비스에서 상세 내용 가져오기 (팀원이 만든 DTO 반환)
+        // 1. 서비스에서 상세 내용 가져오기
         ConsultingApplicationDetailResponse response =
             consultingApplicationService.getApplicationDetail(applicationId);
 
