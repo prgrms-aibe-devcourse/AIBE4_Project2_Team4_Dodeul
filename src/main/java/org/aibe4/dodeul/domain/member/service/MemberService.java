@@ -24,23 +24,9 @@ public class MemberService {
     private final PasswordEncoder passwordEncoder;
 
     public Member getMemberOrThrow(Long memberId) {
-        return memberRepository
-                .findById(memberId)
-                .orElseThrow(
-                        () ->
-                                new BusinessException(
-                                        ErrorCode.UNAUTHORIZED_ACCESS, "인증 정보가 유효하지 않습니다."));
-    }
-
-    /** 임시 닉네임(user_*) 여부 판단 - 최초 가입 직후 닉네임 온보딩 판단용 */
-    public boolean hasTemporaryNickname(Member member) {
-        String nickname = member.getNickname();
-        return nickname == null || nickname.isBlank() || nickname.startsWith("user_");
-            .findById(memberId)
-            .orElseThrow(
-                () ->
-                    new BusinessException(
-                        ErrorCode.UNAUTHORIZED_ACCESS, "인증 정보가 유효하지 않습니다."));
+        return memberRepository.findById(memberId)
+            .orElseThrow(() ->
+                new BusinessException(ErrorCode.UNAUTHORIZED_ACCESS, "인증 정보가 유효하지 않습니다."));
     }
 
     /**
@@ -67,7 +53,8 @@ public class MemberService {
             member.getNickname(),
             profile.getIntro(),
             profile.getProfileUrl(),
-            profile.getJob());
+            profile.getJob()
+        );
     }
 
     @Transactional
@@ -77,27 +64,26 @@ public class MemberService {
         }
 
         String passwordHash = passwordEncoder.encode(rawPassword);
+        String tempNickname = "user_" + UUID.randomUUID().toString().replace("-", "").substring(0, 12);
 
-        String tempNickname =
-            "user_" + UUID.randomUUID().toString().replace("-", "").substring(0, 12);
-
-        Member member =
-            Member.builder()
-                .email(email)
-                .passwordHash(passwordHash)
-                .provider(Provider.LOCAL)
-                .providerId(null)
-                .role(role)
-                .nickname(tempNickname)
-                .build();
+        Member member = Member.builder()
+            .email(email)
+            .passwordHash(passwordHash)
+            .provider(Provider.LOCAL)
+            .providerId(null)
+            .role(role)
+            .nickname(tempNickname)
+            .build();
 
         return memberRepository.save(member).getId();
     }
 
-
-    /** 닉네임 설정 / 변경 정책: - 2~10자 - 한글 / 영문 / 숫자만 허용 - 중복 불가 */
-
-
+    /**
+     * 닉네임 설정 / 변경 정책:
+     * - 2~10자
+     * - 한글 / 영문 / 숫자만 허용
+     * - 중복 불가
+     */
     @Transactional
     public void updateNickname(Long memberId, String nickname) {
         if (nickname == null || nickname.isBlank()) {
