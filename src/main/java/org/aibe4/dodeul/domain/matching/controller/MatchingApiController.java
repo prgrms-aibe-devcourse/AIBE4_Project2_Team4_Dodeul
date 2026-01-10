@@ -64,6 +64,7 @@ public class MatchingApiController {
 
     @Operation(summary = "상담 종료", description = "상담 참여자(멘토 또는 멘티)가 상담을 종료")
     @MatchingSwaggerDocs.FinishError
+    @PreAuthorize("hasAnyRole('MENTOR', 'MENTEE')")
     @PostMapping("/{matchingId}/finishing")
     public CommonResponse<MatchingStatusResponse> finishMatching(
         @PathVariable Long matchingId,
