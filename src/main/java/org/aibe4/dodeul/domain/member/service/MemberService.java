@@ -7,7 +7,7 @@ import org.aibe4.dodeul.domain.member.model.entity.Profile;
 import org.aibe4.dodeul.domain.member.model.enums.Provider;
 import org.aibe4.dodeul.domain.member.model.enums.Role;
 import org.aibe4.dodeul.domain.member.model.repository.MemberRepository;
-import org.aibe4.dodeul.global.exception.CustomException;
+import org.aibe4.dodeul.global.exception.BusinessException;
 import org.aibe4.dodeul.global.response.enums.ErrorCode;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -28,7 +28,7 @@ public class MemberService {
             .findById(memberId)
             .orElseThrow(
                 () ->
-                    new CustomException(
+                    new BusinessException(
                         ErrorCode.UNAUTHORIZED_ACCESS, "인증 정보가 유효하지 않습니다."));
     }
 
@@ -62,7 +62,7 @@ public class MemberService {
     @Transactional
     public Long registerLocal(String email, String rawPassword, Role role) {
         if (memberRepository.existsByEmail(email)) {
-            throw new CustomException(ErrorCode.ALREADY_EXISTS, "이미 가입된 이메일입니다.");
+            throw new BusinessException(ErrorCode.ALREADY_EXISTS, "이미 가입된 이메일입니다.");
         }
 
         String passwordHash = passwordEncoder.encode(rawPassword);
@@ -89,17 +89,17 @@ public class MemberService {
     @Transactional
     public void updateNickname(Long memberId, String nickname) {
         if (nickname == null || nickname.isBlank()) {
-            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "닉네임을 입력해주세요.");
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "닉네임을 입력해주세요.");
         }
 
         String trimmed = nickname.trim();
 
         if (trimmed.length() < 2 || trimmed.length() > 10) {
-            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "닉네임은 2~10자여야 합니다.");
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "닉네임은 2~10자여야 합니다.");
         }
 
         if (!trimmed.matches("^[a-zA-Z0-9가-힣]+$")) {
-            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "닉네임은 한글/영문/숫자만 가능합니다.");
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "닉네임은 한글/영문/숫자만 가능합니다.");
         }
 
         Member member = getMemberOrThrow(memberId);
@@ -109,9 +109,49 @@ public class MemberService {
         }
 
         if (memberRepository.existsByNickname(trimmed)) {
-            throw new CustomException(ErrorCode.ALREADY_EXISTS, "이미 사용 중인 닉네임입니다.");
+            throw new BusinessException(ErrorCode.ALREADY_EXISTS, "이미 사용 중인 닉네임입니다.");
         }
 
         member.updateNickname(trimmed);
     }
+
+    @Transactional
+    public Member findOrCreateGoogleMember(String email, String providerId, Role role) {
+        // 1) providerId(sub) 기준으로 기존 회원 조회
+        return memberRepository
+            .findByProviderAndProviderId(Provider.GOOGLE, providerId)
+            .orElseGet(() -> createGoogleMember(email, providerId, role));
+    }
+
+    private Member createGoogleMember(String email, String providerId, Role role) {
+        if (role == null) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "역할 선택이 필요합니다.");
+        }
+
+        if (email == null || email.isBlank()) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "이메일 정보를 불러올 수 없습니다.");
+        }
+
+        if (memberRepository.existsByEmail(email)) {
+            throw new BusinessException(
+                ErrorCode.ALREADY_EXISTS,
+                "이미 가입된 이메일입니다. 로컬 로그인 또는 계정 연동 정책 확인이 필요합니다.");
+        }
+
+        String tempNickname =
+            "user_" + UUID.randomUUID().toString().replace("-", "").substring(0, 12);
+
+        Member member =
+            Member.builder()
+                .email(email)
+                .passwordHash(null)
+                .provider(Provider.GOOGLE)
+                .providerId(providerId)
+                .role(role)
+                .nickname(tempNickname)
+                .build();
+
+        return memberRepository.save(member);
+    }
+
 }
