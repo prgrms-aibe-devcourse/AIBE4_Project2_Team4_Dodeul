@@ -24,12 +24,9 @@ public class MemberService {
     private final PasswordEncoder passwordEncoder;
 
     public Member getMemberOrThrow(Long memberId) {
-        return memberRepository
-            .findById(memberId)
-            .orElseThrow(
-                () ->
-                    new BusinessException(
-                        ErrorCode.UNAUTHORIZED_ACCESS, "인증 정보가 유효하지 않습니다."));
+        return memberRepository.findById(memberId)
+            .orElseThrow(() ->
+                new BusinessException(ErrorCode.UNAUTHORIZED_ACCESS, "인증 정보가 유효하지 않습니다."));
     }
 
     /**
@@ -56,7 +53,8 @@ public class MemberService {
             member.getNickname(),
             profile.getIntro(),
             profile.getProfileUrl(),
-            profile.getJob());
+            profile.getJob()
+        );
     }
 
     @Transactional
@@ -66,25 +64,25 @@ public class MemberService {
         }
 
         String passwordHash = passwordEncoder.encode(rawPassword);
+        String tempNickname = "user_" + UUID.randomUUID().toString().replace("-", "").substring(0, 12);
 
-        String tempNickname =
-            "user_" + UUID.randomUUID().toString().replace("-", "").substring(0, 12);
-
-        Member member =
-            Member.builder()
-                .email(email)
-                .passwordHash(passwordHash)
-                .provider(Provider.LOCAL)
-                .providerId(null)
-                .role(role)
-                .nickname(tempNickname)
-                .build();
+        Member member = Member.builder()
+            .email(email)
+            .passwordHash(passwordHash)
+            .provider(Provider.LOCAL)
+            .providerId(null)
+            .role(role)
+            .nickname(tempNickname)
+            .build();
 
         return memberRepository.save(member).getId();
     }
 
     /**
-     * 닉네임 설정 / 변경 정책: - 2~10자 - 한글 / 영문 / 숫자만 허용 - 중복 불가
+     * 닉네임 설정 / 변경 정책:
+     * - 2~10자
+     * - 한글 / 영문 / 숫자만 허용
+     * - 중복 불가
      */
     @Transactional
     public void updateNickname(Long memberId, String nickname) {
@@ -115,9 +113,11 @@ public class MemberService {
         member.updateNickname(trimmed);
     }
 
+    /**
+     * Google OAuth2 로그인 시 providerId(sub) 기준으로 회원을 찾거나 없으면 생성
+     */
     @Transactional
     public Member findOrCreateGoogleMember(String email, String providerId, Role role) {
-        // 1) providerId(sub) 기준으로 기존 회원 조회
         return memberRepository
             .findByProviderAndProviderId(Provider.GOOGLE, providerId)
             .orElseGet(() -> createGoogleMember(email, providerId, role));
@@ -135,23 +135,21 @@ public class MemberService {
         if (memberRepository.existsByEmail(email)) {
             throw new BusinessException(
                 ErrorCode.ALREADY_EXISTS,
-                "이미 가입된 이메일입니다. 로컬 로그인 또는 계정 연동 정책 확인이 필요합니다.");
+                "이미 가입된 이메일입니다. 로컬 로그인 또는 계정 연동 정책 확인이 필요합니다."
+            );
         }
 
-        String tempNickname =
-            "user_" + UUID.randomUUID().toString().replace("-", "").substring(0, 12);
+        String tempNickname = "user_" + UUID.randomUUID().toString().replace("-", "").substring(0, 12);
 
-        Member member =
-            Member.builder()
-                .email(email)
-                .passwordHash(null)
-                .provider(Provider.GOOGLE)
-                .providerId(providerId)
-                .role(role)
-                .nickname(tempNickname)
-                .build();
+        Member member = Member.builder()
+            .email(email)
+            .passwordHash(null)
+            .provider(Provider.GOOGLE)
+            .providerId(providerId)
+            .role(role)
+            .nickname(tempNickname)
+            .build();
 
         return memberRepository.save(member);
     }
-
 }

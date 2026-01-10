@@ -20,7 +20,8 @@ public class CustomUserDetails implements UserDetails, CredentialsContainer {
     private final String nickname;
     private final Collection<? extends GrantedAuthority> authorities;
 
-    public CustomUserDetails(Long memberId, String email, String passwordHash, Role role, String nickname) {
+    public CustomUserDetails(
+        Long memberId, String email, String passwordHash, Role role, String nickname) {
         this.memberId = memberId;
         this.email = email;
         this.passwordHash = passwordHash;

@@ -1,7 +1,9 @@
 package org.aibe4.dodeul.global.security;
 
+import java.util.List;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -75,6 +77,7 @@ public class SecurityConfig {
                     .logoutSuccessUrl("/auth/login")
             );
 
+        http.headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()));
         return http.build();
     }
 

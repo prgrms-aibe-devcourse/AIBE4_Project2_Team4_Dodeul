@@ -1,7 +1,6 @@
 package org.aibe4.dodeul.domain.consultation.model.entity;
 
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -10,6 +9,8 @@ import org.aibe4.dodeul.domain.common.model.entity.BaseEntity;
 import org.aibe4.dodeul.domain.consultation.model.enums.ConsultationRoomStatus;
 import org.aibe4.dodeul.domain.consulting.model.entity.ConsultingApplication;
 import org.aibe4.dodeul.domain.matching.model.entity.Matching;
+
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "consultation_rooms")
@@ -31,6 +32,12 @@ public class ConsultationRoom extends BaseEntity {
     @Builder
     public ConsultationRoom(Matching matching) {
         this.matching = matching;
+    }
+
+    public static ConsultationRoom createRoom(Matching matching) {
+        return ConsultationRoom.builder()
+            .matching(matching)
+            .build();
     }
 
     public void close() {

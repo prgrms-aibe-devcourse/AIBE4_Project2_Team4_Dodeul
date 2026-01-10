@@ -1,53 +1,262 @@
-<!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<!-- src/main/resources/templates/board/post-detail.html -->
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
 <head>
   <meta charset="UTF-8"/>
-  <title th:text="${post.title}">게시글 상세</title>
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, viewport-fit=cover"
+  />
+  <title>게시글 상세</title>
+  <link rel="stylesheet" href="/css/board/post-detail.css"/>
 </head>
 <body>
-<div class="container">
-  <h1 th:text="${post.title}">제목</h1>
+<main class="page">
+  <section class="shell">
+    <a class="back" href="/board/posts" aria-label="목록으로">
+      <span class="back__icon">←</span>
+      <span class="back__text">목록으로 돌아가기</span>
+    </a>
 
-  <p class="meta">
-    작성자:
-    <span th:text="${post.author.displayName}">작성자</span>
-    |
-    상담분야:
-    <span
-      th:text="${post.consultingTagSummary.name != null ? post.consultingTagSummary.name : post.consultingTagSummary.code}">
-          RESUME
-        </span>
-    |
-    상태:
-    <span th:text="${post.postStatus}">OPEN</span>
-  </p>
+    <article class="card">
+      <header class="card__header">
+        <div class="header__top">
+          <span id="statusBadge" class="badge badge--gray">-</span>
+          <div class="header__spacer"></div>
+          <div class="kpi">
+                <span class="kpi__item">
+                  <span class="kpi__icon">👁</span>
+                  <span id="viewCount">0</span>
+                </span>
+          </div>
+        </div>
 
-  <p class="meta">
-    조회수: <span th:text="${post.viewCount}">0</span>
-    |
-    스크랩: <span th:text="${post.scrapCount}">0</span>
-    |
-    댓글: <span th:text="${post.commentCount}">0</span>
-  </p>
+        <h1 id="title" class="title">로딩중...</h1>
 
-  <p class="meta">
-    작성일:
-    <span th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-01-01 10:00</span>
-    <span th:if="${post.updatedAt != null}">
-          | 수정일:
-          <span th:text="${#temporals.format(post.updatedAt, 'yyyy-MM-dd HH:mm')}">2026-01-01 11:00</span>
-        </span>
-  </p>
+        <div class="meta">
+              <span class="meta__pill" id="authorPill">
+                <span class="meta__label">작성자</span>
+                <span id="author" class="meta__value">-</span>
+              </span>
 
-  <hr/>
+          <span class="meta__pill" id="consultingPill">
+                <span class="meta__label">상담분야</span>
+                <span id="consulting" class="meta__value">-</span>
+              </span>
 
-  <div class="content" th:text="${post.content}">내용</div>
+          <span class="meta__date">
+                <span id="createdAt">-</span>
+                <span id="updatedAtWrap" class="meta__updated" style="display: none">
+                  · 수정 <span id="updatedAt">-</span>
+                </span>
+              </span>
+        </div>
 
-  <hr/>
+        <div class="tagrow">
+          <div id="tagContainer" class="tags"></div>
+          <div class="counts">
+                <span class="counts__item">
+                  <span class="counts__label">스크랩</span>
+                  <span id="scrapCount" class="counts__value">0</span>
+                </span>
+            <span class="counts__dot">·</span>
+            <span class="counts__item">
+                  <span class="counts__label">댓글</span>
+                  <span id="commentCount" class="counts__value">0</span>
+                </span>
+          </div>
+        </div>
+      </header>
 
-  <div class="actions">
-    <a href="/board/posts">목록으로</a>
-  </div>
-</div>
+      <hr class="divider"/>
+
+      <section class="content">
+        <div id="content" class="content__body">-</div>
+      </section>
+    </article>
+
+    <section class="card card--soft">
+      <header class="card__header card__header--compact">
+        <h2 class="subtitle">
+          <span class="subtitle__icon">💬</span>
+          <span>답변</span>
+          <span id="answerCount" class="subtitle__count">0</span>
+          <span class="subtitle__suffix">개</span>
+        </h2>
+      </header>
+
+      <div class="composer">
+            <textarea
+              class="composer__input"
+              placeholder="답변을 작성하세요... (댓글 API 연결 전 UI)"
+              disabled
+            ></textarea>
+        <div class="composer__actions">
+          <button class="btn btn--primary" type="button" disabled>답변 작성</button>
+        </div>
+      </div>
+
+      <div class="comment-placeholder">
+        댓글 API 연결 전까지는 상세 정보만 스타일 적용합니다.
+      </div>
+    </section>
+
+    <input type="hidden" id="postId" th:value="${postId}"/>
+  </section>
+</main>
+
+<script>
+  (function () {
+    const postIdEl = document.getElementById("postId");
+    const postId = postIdEl ? postIdEl.value : "";
+
+    function pick(obj, path, fallback) {
+      try {
+        const v = path
+          .split(".")
+          .reduce((acc, key) => (acc == null ? null : acc[key]), obj);
+        return v ?? fallback;
+      } catch (e) {
+        return fallback;
+      }
+    }
+
+    function formatDate(value) {
+      if (!value) return "-";
+      const d = new Date(value);
+      if (isNaN(d.getTime())) return String(value);
+      const pad = (n) => String(n).padStart(2, "0");
+      return (
+        d.getFullYear() +
+        "-" +
+        pad(d.getMonth() + 1) +
+        "-" +
+        pad(d.getDate()) +
+        " " +
+        pad(d.getHours()) +
+        ":" +
+        pad(d.getMinutes())
+      );
+    }
+
+    function setStatusBadge(status) {
+      const el = document.getElementById("statusBadge");
+      const s = String(status || "-").toUpperCase();
+
+      el.classList.remove("badge--green", "badge--gray", "badge--red", "badge--blue");
+
+      if (s === "OPEN") {
+        el.classList.add("badge--blue");
+        el.textContent = "OPEN";
+        return;
+      }
+      if (s === "CLOSED") {
+        el.classList.add("badge--gray");
+        el.textContent = "CLOSED";
+        return;
+      }
+      if (s === "DELETED") {
+        el.classList.add("badge--red");
+        el.textContent = "DELETED";
+        return;
+      }
+
+      el.classList.add("badge--gray");
+      el.textContent = s;
+    }
+
+    function renderTags(post) {
+      const container = document.getElementById("tagContainer");
+      container.innerHTML = "";
+
+      // 1) skillTags: [{id,name}, ...]
+      const list1 = pick(post, "skillTags", null);
+      if (Array.isArray(list1) && list1.length > 0) {
+        list1.forEach((t) => {
+          const name = t && typeof t === "object" ? t.name ?? t.tagName ?? "" : String(t);
+          if (!name) return;
+          const chip = document.createElement("span");
+          chip.className = "chip";
+          chip.textContent = name;
+          container.appendChild(chip);
+        });
+        return;
+      }
+
+      // 2) tags: ["Spring", "JWT"] or [{name}]
+      const list2 = pick(post, "tags", null);
+      if (Array.isArray(list2) && list2.length > 0) {
+        list2.forEach((t) => {
+          const name = t && typeof t === "object" ? t.name ?? "" : String(t);
+          if (!name) return;
+          const chip = document.createElement("span");
+          chip.className = "chip";
+          chip.textContent = name;
+          container.appendChild(chip);
+        });
+      }
+    }
+
+    if (!postId) {
+      document.getElementById("title").innerText = "게시글 ID가 없습니다.";
+      return;
+    }
+
+    fetch("/api/board/posts/" + postId, {headers: {Accept: "application/json"}})
+      .then((r) => (r.ok ? r.json() : Promise.reject(r)))
+      .then((res) => {
+        // CommonResponse 래핑(res.data) / 혹은 DTO 단독(res) 둘 다 대응
+        const dto = res && res.data != null ? res.data : res;
+        const post = dto && dto.data != null ? dto.data : dto;
+
+        if (!post) {
+          document.getElementById("title").innerText = "게시글을 찾을 수 없습니다.";
+          return;
+        }
+
+        document.getElementById("title").innerText = pick(post, "title", "-");
+        document.getElementById("content").innerText = pick(post, "content", "-");
+
+        const authorName =
+          pick(post, "author.displayName", null) ??
+          pick(post, "author.nickname", null) ??
+          pick(post, "authorName", null) ??
+          "작성자";
+        document.getElementById("author").innerText = authorName;
+
+        const consultingObj =
+          pick(post, "consultingTagSummary", null) ?? pick(post, "consultingTag", null);
+        const consultingName =
+          (consultingObj &&
+            typeof consultingObj === "object" &&
+            (consultingObj.name ?? consultingObj.code)) ||
+          (typeof consultingObj === "string" ? consultingObj : "-");
+        document.getElementById("consulting").innerText = consultingName;
+
+        const status = pick(post, "postStatus", null) ?? pick(post, "status", "-");
+        setStatusBadge(status);
+
+        document.getElementById("viewCount").innerText = pick(post, "viewCount", 0);
+        document.getElementById("scrapCount").innerText = pick(post, "scrapCount", 0);
+        const commentCount = pick(post, "commentCount", 0);
+        document.getElementById("commentCount").innerText = commentCount;
+        document.getElementById("answerCount").innerText = commentCount;
+
+        const createdAt = pick(post, "createdAt", null);
+        document.getElementById("createdAt").innerText = formatDate(createdAt);
+
+        const updatedAt = pick(post, "updatedAt", null);
+        if (updatedAt) {
+          document.getElementById("updatedAtWrap").style.display = "inline";
+          document.getElementById("updatedAt").innerText = formatDate(updatedAt);
+        }
+
+        renderTags(post);
+      })
+      .catch(() => {
+        document.getElementById("title").innerText = "상세 조회 중 오류가 발생했습니다.";
+      });
+  })();
+</script>
 </body>
 </html>

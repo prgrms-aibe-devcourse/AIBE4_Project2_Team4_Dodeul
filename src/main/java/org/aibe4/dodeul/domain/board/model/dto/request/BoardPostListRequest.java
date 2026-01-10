@@ -1,12 +1,12 @@
-// src/main/java/org/aibe4/dodeul/domain/board/model/dto/BoardPostListRequest.java
 package org.aibe4.dodeul.domain.board.model.dto.request;
 
-import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.aibe4.dodeul.domain.consulting.model.enums.ConsultingTag;
+
+import java.util.List;
 
 @Getter
 @NoArgsConstructor
@@ -24,4 +24,6 @@ public class BoardPostListRequest {
 
     // LATEST / VIEWS / ACTIVE
     private String sort;
+
+    private List<Long> tagIds;
 }

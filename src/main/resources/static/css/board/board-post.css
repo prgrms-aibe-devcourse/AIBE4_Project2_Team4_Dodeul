@@ -1,0 +1,98 @@
+.board-post-form-wrap {
+  max-width: 920px;
+  margin: 32px auto 80px;
+}
+
+.board-post-form-card {
+  padding: 28px 28px 24px;
+}
+
+.board-post-form-header {
+  margin-bottom: 20px;
+}
+
+.board-post-form-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.board-post-form-subtitle {
+  margin: 8px 0 0;
+  font-size: 13px;
+  opacity: 0.75;
+}
+
+.board-post-label {
+  font-weight: 700;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.board-post-hint {
+  margin-top: 8px;
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.board-post-error {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #dc3545;
+}
+
+.board-post-input,
+.board-post-select,
+.board-post-textarea {
+  border-radius: 8px;
+}
+
+.board-post-textarea {
+  resize: vertical;
+  min-height: 220px;
+}
+
+.board-post-tag-box {
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.board-post-tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-height: 140px;
+  overflow: auto;
+  padding-right: 6px;
+}
+
+.board-post-tag-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  cursor: pointer;
+  user-select: none;
+  font-size: 13px;
+}
+
+.board-post-tag-checkbox {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+
+.board-post-tag-name {
+  line-height: 1;
+}
+
+.board-post-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}

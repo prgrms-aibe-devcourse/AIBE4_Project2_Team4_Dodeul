@@ -23,7 +23,10 @@ public class CustomUserDetailsService implements UserDetailsService {
                     () -> new UsernameNotFoundException("Member not found: " + email));
 
         return new CustomUserDetails(
-            member.getId(), member.getEmail(), member.getPasswordHash(), member.getRole(), member.getNickname()
-        );
+                member.getId(),
+                member.getEmail(),
+                member.getPasswordHash(),
+                member.getRole(),
+                member.getNickname());
     }
 }
