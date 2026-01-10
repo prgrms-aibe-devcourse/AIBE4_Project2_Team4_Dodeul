@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "mentor_profiles")
 @EntityListeners(AuditingEntityListener.class)
-public class MentorProfile {
+public class MentorProfile implements Profile {
 
     @Id
     @Column(name = "mentor_id")

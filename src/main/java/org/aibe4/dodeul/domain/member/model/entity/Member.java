@@ -14,6 +14,12 @@ import org.aibe4.dodeul.domain.member.model.enums.Role;
 @Entity(name = "members")
 public class Member extends BaseEntity {
 
+    @OneToOne(mappedBy = "member", fetch = FetchType.LAZY)
+    private MentorProfile mentorProfile;
+
+    @OneToOne(mappedBy = "member", fetch = FetchType.LAZY)
+    private MenteeProfile menteeProfile;
+
     @Column(nullable = false, length = 255, unique = true)
     private String email;
 
@@ -36,12 +42,13 @@ public class Member extends BaseEntity {
 
     @Builder
     private Member(
-            String email,
-            String passwordHash,
-            Provider provider,
-            String providerId,
-            Role role,
-            String nickname) {
+        String email,
+        String passwordHash,
+        Provider provider,
+        String providerId,
+        Role role,
+        String nickname
+    ) {
         this.email = email;
         this.passwordHash = passwordHash;
         this.provider = provider;
@@ -52,5 +59,12 @@ public class Member extends BaseEntity {
 
     public void updateNickname(String nickname) {
         this.nickname = nickname;
+    }
+
+    public Profile getProfile() {
+        if (this.role == Role.MENTOR) {
+            return this.mentorProfile;
+        }
+        return this.menteeProfile;
     }
 }
