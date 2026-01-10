@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{common/layout/base}">
+<head>
+  <title>상담 신청 상세</title>
+</head>
+
+<body>
+<section layout:fragment="content">
+  <div class="container py-5" style="max-width: 900px;">
+
+    <div class="mb-4 border-bottom pb-2">
+      <h4 class="fw-bold">◇ 상담 신청 상세</h4>
+    </div>
+
+    <div class="card shadow-sm mb-5">
+      <div class="card-body p-4 d-flex align-items-center">
+        <div class="rounded-circle bg-secondary d-flex justify-content-center align-items-center text-white me-3"
+             style="width: 60px; height: 60px; font-size: 1.5rem;">
+          <i class="bi bi-person"></i> 👤
+        </div>
+        <div>
+          <h5 class="mb-1 fw-bold" th:text="${application.menteeName}">멘티 ID</h5>
+          <small class="text-muted">상담 신청자</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="text-center mb-4">
+      <span class="fw-bold text-dark">답변 대기중</span>
+    </div>
+
+    <div class="card shadow-sm border-0 bg-light bg-opacity-10">
+      <div class="card-body p-5 border">
+
+        <h3 class="fw-bold mb-4" th:text="${application.title}">
+          제목 예시
+        </h3>
+
+        <div class="mb-5 text-dark" style="white-space: pre-wrap; line-height: 1.8;"
+             th:text="${application.content}">
+          내용 예시
+        </div>
+
+        <div class="mb-5">
+            <span th:each="tag : ${application.skillTags}"
+                  class="badge rounded-pill text-bg-secondary me-2 px-3 py-2 fw-normal"
+                  style="background-color: #6c757d !important;"
+                  th:text="${tag}">
+                Java
+            </span>
+        </div>
+
+        <hr class="text-secondary opacity-25">
+
+        <div class="mt-4">
+          <span class="me-2">📎</span>
+
+          <a th:if="${application.fileUrl != null}"
+             th:href="${application.fileUrl}"
+             class="text-decoration-none text-dark fw-bold"
+             download>
+            <span th:text="${application.fileUrl}">첨부파일_링크</span>
+          </a>
+
+          <span th:unless="${application.fileUrl != null}" class="text-muted small">
+             첨부된 파일이 없습니다.
+          </span>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="d-flex justify-content-end gap-2 mt-4">
+      <button type="button" class="btn btn-outline-secondary px-4">수정하기</button>
+      <button type="button" class="btn btn-outline-secondary px-4">취소하기</button>
+      <a href="/consulting-applications" class="btn btn-outline-dark px-4">목록으로</a>
+    </div>
+
+  </div>
+</section>
+</body>
+</html>

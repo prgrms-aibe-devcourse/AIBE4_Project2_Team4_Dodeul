@@ -42,6 +42,9 @@ public enum ErrorCode implements BaseCode {
     // 인증은 되었으나 해당 리소스에 접근 권한이 없는 경우 (예: 멘티가 멘토 기능 사용 시도)
     ACCESS_DENIED(HttpStatus.FORBIDDEN, "접근 권한이 없습니다."),
 
+    // 상담방 참여자가 아닌 경우
+    CONSULTATION_ROOM_ACCESS_DENIED(HttpStatus.FORBIDDEN, "해당 상담방의 참여자가 아닙니다."),
+
     // ====================================================
     // 404 Not Found (찾을 수 없음)
     // ====================================================

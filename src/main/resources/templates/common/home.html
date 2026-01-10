@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{common/layout/base}">
+
+<head>
+  <title>DODEUL | 홈</title>
+</head>
+
+<body>
+<section layout:fragment="content">
+  <div class="container" style="padding: 48px 0;">
+    <h1 style="font-size: 2rem; font-weight: 800; margin-bottom: 12px;">
+      성장으로 이끄는 최고의 멘토를 만나보세요.
+    </h1>
+
+    <p style="color: #666; line-height: 1.6; margin-bottom: 20px;">
+      닉네임 온보딩 완료 후 이 페이지로 이동합니다. (임시 홈)
+    </p>
+
+    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+      <a class="btn-primary-custom" th:href="@{/onboarding/role}">상담 신청하기</a>
+    </div>
+
+  </div>
+</section>
+</body>
+</html>

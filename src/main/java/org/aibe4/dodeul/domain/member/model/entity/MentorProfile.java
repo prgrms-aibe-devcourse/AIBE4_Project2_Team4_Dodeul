@@ -1,14 +1,13 @@
 package org.aibe4.dodeul.domain.member.model.entity;
 
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
-import java.time.LocalDateTime;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -57,12 +56,11 @@ public class MentorProfile {
     }
 
     public void updateProfile(
-        String profileUrl,
-        String intro,
-        String job,
-        Integer careerYears,
-        boolean consultationEnabled
-    ) {
+            String profileUrl,
+            String intro,
+            String job,
+            Integer careerYears,
+            boolean consultationEnabled) {
         this.profileUrl = profileUrl;
         this.intro = intro;
         this.job = job;
