@@ -1,56 +1,40 @@
 package org.aibe4.dodeul.domain.consultation.model.dto;
 
-import java.util.List;
 import lombok.Builder;
 import lombok.Getter;
 import org.aibe4.dodeul.domain.consultation.model.entity.ConsultationRoom;
 import org.aibe4.dodeul.domain.consulting.model.entity.ConsultingApplication;
 import org.aibe4.dodeul.domain.matching.model.entity.Matching;
-import org.aibe4.dodeul.domain.member.model.entity.Member;
-import org.aibe4.dodeul.domain.member.model.enums.Role;
+
+import java.util.List;
+import java.util.stream.Stream;
 
 @Getter
 @Builder
 public class ConsultationRoomDto {
 
     private Long consultationRoomId;
-    private String myRole; // 현재 나의 역할 (MENTOR or MENTEE) - 프론트 처리용
+    private Long currentMemberId;
 
-    private MemberDto memberDto;
+    private List<MemberDto> participants;
     private ConsultingApplicationDto consultingApplicationDto;
     private List<MessageDto> messageDtoList;
 
-    public static ConsultationRoomDto of(
-            ConsultationRoom room, List<MessageDto> messageDtoList, Long currentMemberId) {
+    public static ConsultationRoomDto of(ConsultationRoom room, List<MessageDto> messageDtoList, Long currentMemberId) {
 
-        // 엔티티 조회
         Matching matching = room.getValidatedMatching();
         ConsultingApplication application = room.getValidatedApplication();
 
-        // 상대방 정보 조회 및 내 역할 설정
-        Member opponentMember = resolveOpponent(matching, currentMemberId);
-        String myRole = resolveMyRole(matching, currentMemberId);
+        List<MemberDto> participants = Stream.of(matching.getMentor(), matching.getMentee())
+            .map(MemberDto::of)
+            .toList();
 
         return ConsultationRoomDto.builder()
-                .consultationRoomId(room.getId())
-                .myRole(myRole)
-                .memberDto(MemberDto.of(opponentMember))
-                .consultingApplicationDto(ConsultingApplicationDto.of(application))
-                .messageDtoList(messageDtoList)
-                .build();
-    }
-
-    private static Member resolveOpponent(Matching matching, Long currentMemberId) {
-        if (matching.getMentor().getId().equals(currentMemberId)) {
-            return matching.getMentee();
-        }
-        return matching.getMentor();
-    }
-
-    private static String resolveMyRole(Matching matching, Long currentMemberId) {
-        if (matching.getMentor().getId().equals(currentMemberId)) {
-            return Role.MENTOR.name();
-        }
-        return Role.MENTEE.name();
+            .consultationRoomId(room.getId())
+            .currentMemberId(currentMemberId)
+            .participants(participants)
+            .consultingApplicationDto(ConsultingApplicationDto.of(application))
+            .messageDtoList(messageDtoList)
+            .build();
     }
 }
