@@ -7,6 +7,8 @@ import org.aibe4.dodeul.domain.consultation.model.dto.MessageDto;
 import org.aibe4.dodeul.domain.consultation.model.entity.ConsultationRoom;
 import org.aibe4.dodeul.domain.consultation.model.repository.ConsultationRoomRepository;
 import org.aibe4.dodeul.domain.consultation.model.repository.MessageRepository;
+import org.aibe4.dodeul.domain.matching.model.entity.Matching;
+import org.aibe4.dodeul.domain.matching.model.repository.MatchingRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +19,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ConsultationRoomService {
 
+    private final MatchingRepository matchingRepository;
     private final ConsultationRoomRepository consultationRoomRepository;
     private final MessageRepository messageRepository;
 
@@ -38,5 +41,19 @@ public class ConsultationRoomService {
         return messageRepository.findByConsultationRoomIdOrderByCreatedAtAsc(roomId).stream()
             .map(MessageDto::of)
             .toList();
+    }
+
+    @Transactional
+    public Long getOrCreateRoom(Long matchingId) {
+        Matching matching = matchingRepository.findById(matchingId).orElseThrow(() -> new IllegalArgumentException("존재하지 않는 매칭입니다."));
+
+        return consultationRoomRepository.findByMatching(matching)
+            .map(ConsultationRoom::getId)
+            .orElseGet(() -> createAndSaveRoom(matching));
+    }
+
+    private Long createAndSaveRoom(Matching matching) {
+        ConsultationRoom newRoom = ConsultationRoom.createRoom(matching);
+        return consultationRoomRepository.save(newRoom).getId();
     }
 }

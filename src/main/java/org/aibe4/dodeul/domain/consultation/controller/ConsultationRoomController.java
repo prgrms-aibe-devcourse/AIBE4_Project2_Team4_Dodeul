@@ -29,4 +29,11 @@ public class ConsultationRoomController {
 
         return "consultation/consultation-room";
     }
+
+    @GetMapping("/matching/{matchingId}")
+    public String enterOrCreateRoom(@PathVariable Long matchingId, @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Long roomId = consultationRoomService.getOrCreateRoom(matchingId);
+
+        return "redirect:/consultations/room/" + roomId;
+    }
 }
