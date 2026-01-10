@@ -33,8 +33,8 @@ public class ApplicationSkillTag {
         this.skillTag = skillTag;
     }
 
-//    // 연관관계 편의 메서드 (선택 사항이지만 추천)
-//    public void setConsultingApplication(ConsultingApplication consultingApplication) {
-//        this.consultingApplication = consultingApplication;
-//    }
+    //    // 연관관계 편의 메서드 (선택 사항이지만 추천)
+    //    public void setConsultingApplication(ConsultingApplication consultingApplication) {
+    //        this.consultingApplication = consultingApplication;
+    //    }
 }

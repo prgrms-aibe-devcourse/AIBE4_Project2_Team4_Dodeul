@@ -18,10 +18,19 @@ import org.springframework.web.bind.annotation.RequestParam;
 public class RoleSelectViewController {
 
     @GetMapping
-    public String page(@AuthenticationPrincipal CustomUserDetails user) {
+    public String page(
+        @AuthenticationPrincipal CustomUserDetails user,
+        HttpSession session
+    ) {
         if (user != null) {
-            return "redirect:/home";
+            return "redirect:/post-login"; // 로그인 상태면 post-login으로
         }
+
+        Role selectedRole = (Role) session.getAttribute(AuthSessionKeys.SELECTED_ROLE);
+        if (selectedRole != null) {
+            return "redirect:/auth"; // 이미 role 선택했으면 다음 단계로
+        }
+
         return "auth/role-select";
     }
 
