@@ -1,5 +1,6 @@
 package org.aibe4.dodeul.global.exception;
 
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.aibe4.dodeul.global.response.CommonResponse;
 import org.aibe4.dodeul.global.response.enums.ErrorCode;
@@ -40,14 +41,12 @@ public class GlobalRestExceptionHandler {
      * ErrorCode에 정의된 HTTP 상태 코드와 메시지를 그대로 응답에 반영
      * CommonResponse 형식으로 통일된 에러 응답을 반환
      */
-    @ExceptionHandler(CustomException.class)
-    public CommonResponse<Void> handleCustomException(
-        CustomException e,
-        jakarta.servlet.http.HttpServletResponse response
+    @ExceptionHandler(BusinessException.class)
+    public CommonResponse<Void> handleBusinessException(
+        BusinessException e,
+        HttpServletResponse response
     ) {
         ErrorCode errorCode = e.getErrorCode();
-        log.warn("CustomException: {} ({})", e.getDetailMessage(), errorCode.name());
-
         response.setStatus(errorCode.getHttpStatus().value());
         return CommonResponse.fail(errorCode, e.getDetailMessage());
     }

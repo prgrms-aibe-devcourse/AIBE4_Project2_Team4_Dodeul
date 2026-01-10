@@ -47,8 +47,7 @@ public class SecurityConfig {
                         .hasRole("MENTEE")
 
                         .requestMatchers("/onboarding/nickname/**").authenticated()
-
-                        // 공개 허용
+                        .requestMatchers("/post-login").authenticated()
                         // 공개 허용
                         .requestMatchers(
                             "/",
@@ -68,8 +67,6 @@ public class SecurityConfig {
                             "/oauth2/**",
                             "/login/oauth2/**",
                             "/h2-console/**",
-                            "/demo/**",
-                            "/api/board/posts",
                             "/demo/**",
                             "/api/board/posts",
                             "/api/board/posts/**",
