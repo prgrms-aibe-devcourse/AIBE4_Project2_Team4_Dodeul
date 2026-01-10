@@ -8,10 +8,10 @@
 
 <h1>로그인</h1>
 
-<form th:action="@{/login}" method="post">
+<form th:action="@{/auth/login}" method="post">
   <div>
     <label>이메일</label>
-    <input type="email" name="username" required/>
+    <input type="email" name="email" required/>
   </div>
 
   <div>
