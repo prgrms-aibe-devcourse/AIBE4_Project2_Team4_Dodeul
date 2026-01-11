@@ -64,14 +64,15 @@ public class SecurityConfig {
                     "/ws/**"
                 ).permitAll()
 
-                // 게시판(API): 비로그인 목록만 허용(상세 포함 나머지는 로그인 필요)
+                // 게시판(API): 비로그인 목록(기본)만 허용, 상세/필터/검색/댓글은 로그인 필요
                 .requestMatchers(HttpMethod.GET, "/api/board/posts").permitAll()
-                .requestMatchers("/api/board/posts/**").authenticated()
+                .requestMatchers("/api/board/**").authenticated()
 
-                // 게시판(View): 비로그인 목록만 허용(상세/작성/등록은 로그인 필요)
+                // 게시판(View): 비로그인 목록만 허용, 상세/작성/등록은 로그인 필요
                 .requestMatchers(HttpMethod.GET, "/board/posts").permitAll()
                 .requestMatchers(HttpMethod.POST, "/board/posts").authenticated()
                 .requestMatchers("/board/posts/**").authenticated()
+
 
                 .requestMatchers("/mypage/mentor/**").hasRole("MENTOR")
                 .requestMatchers("/mypage/mentee/**", "/matchings/**").hasRole("MENTEE")

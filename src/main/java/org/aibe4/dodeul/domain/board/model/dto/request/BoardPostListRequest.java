@@ -21,7 +21,9 @@ public class BoardPostListRequest {
     @Schema(description = "스킬 태그 ID 목록")
     private List<Long> tagIds;
 
-    @Schema(description = "게시글 상태(없거나 잘못되면 OPEN으로 처리)", example = "OPEN")
+    @Schema(
+        description = "게시글 상태(ALL/OPEN/CLOSED) (없거나 잘못되면 OPEN으로 처리)",
+        example = "ALL")
     private String status;
 
     @Schema(description = "검색 키워드", example = "JPA N+1")

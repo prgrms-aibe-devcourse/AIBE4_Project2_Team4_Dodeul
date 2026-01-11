@@ -7,6 +7,7 @@ import org.aibe4.dodeul.domain.board.model.dto.request.BoardPostListRequest;
 import org.aibe4.dodeul.domain.board.model.dto.response.BoardPostListResponse;
 import org.aibe4.dodeul.domain.board.model.entity.BoardPost;
 import org.aibe4.dodeul.domain.board.model.entity.BoardPostTagRelation;
+import org.aibe4.dodeul.domain.board.model.enums.CommentStatus;
 import org.aibe4.dodeul.domain.board.model.enums.PostStatus;
 import org.aibe4.dodeul.domain.consulting.model.enums.ConsultingTag;
 import org.springframework.data.domain.Page;
@@ -24,9 +25,11 @@ import java.util.stream.Collectors;
 public class BoardPostRepositoryImpl implements BoardPostRepositoryCustom {
 
     private final EntityManager em;
+    private final BoardCommentRepository boardCommentRepository;
 
-    public BoardPostRepositoryImpl(EntityManager em) {
+    public BoardPostRepositoryImpl(EntityManager em, BoardCommentRepository boardCommentRepository) {
         this.em = em;
+        this.boardCommentRepository = boardCommentRepository;
     }
 
     @Override
@@ -114,6 +117,16 @@ public class BoardPostRepositoryImpl implements BoardPostRepositoryCustom {
             }
         }
 
+        // ✅ 댓글 수는 캐시 필드(commentCount) 대신 실제 댓글 테이블 집계로 맞춘다.
+        Map<Long, Long> commentCountMap = new HashMap<>();
+        if (!postIds.isEmpty()) {
+            List<BoardCommentRepository.PostCommentCountRow> rows =
+                boardCommentRepository.findCommentCountsByPostIds(postIds, CommentStatus.DELETED);
+            for (BoardCommentRepository.PostCommentCountRow r : rows) {
+                commentCountMap.put(r.getPostId(), r.getCnt());
+            }
+        }
+
         List<BoardPostListResponse> dtos =
             posts.stream()
                 .map(
@@ -125,7 +138,8 @@ public class BoardPostRepositoryImpl implements BoardPostRepositoryCustom {
                             .postStatus(p.getPostStatus() != null ? p.getPostStatus().name() : null)
                             .viewCount(p.getViewCount() != null ? p.getViewCount() : 0)
                             .scrapCount(p.getScrapCount() != null ? p.getScrapCount() : 0)
-                            .commentCount(p.getCommentCount() != null ? p.getCommentCount() : 0)
+                            .commentCount(
+                                commentCountMap.getOrDefault(p.getId(), 0L).intValue())
                             .lastCommentedAt(p.getLastCommentedAt())
                             .createdAt(p.getCreatedAt())
                             .scrappedByMe(scrappedPostIds.contains(p.getId()))
@@ -141,27 +155,39 @@ public class BoardPostRepositoryImpl implements BoardPostRepositoryCustom {
 
         List<Predicate> predicates = new ArrayList<>();
 
-        PostStatus status = PostStatus.OPEN;
-        if (request.getStatus() != null && !request.getStatus().isBlank()) {
+        // ✅ 기본은 "전체(OPEN + CLOSED)"로 보여야 하므로
+        // - status 미지정: DELETED만 제외
+        // - status 지정(OPEN/CLOSED): 해당 값만
+        // - status 잘못됨: OPEN
+        predicates.add(cb.notEqual(root.get("postStatus"), PostStatus.DELETED));
+
+        if (request != null && request.getStatus() != null && !request.getStatus().isBlank()) {
+            PostStatus status = null;
             try {
                 status = PostStatus.valueOf(request.getStatus().trim().toUpperCase());
             } catch (IllegalArgumentException e) {
-                // 잘못된 상태 값이 들어온 경우 기본 OPEN 유지
+                status = PostStatus.OPEN; // 정책: 잘못되면 OPEN
+            }
+
+            if (status == PostStatus.OPEN || status == PostStatus.CLOSED) {
+                predicates.add(cb.equal(root.get("postStatus"), status));
+            } else if (status == PostStatus.DELETED) {
+                // DELETED는 목록에서 제외 정책 유지
+                predicates.add(cb.equal(root.get("postStatus"), PostStatus.OPEN)); // 안전 처리
             }
         }
-        predicates.add(cb.equal(root.get("postStatus"), status));
 
-        ConsultingTag consultingTag = request.getConsultingTag();
+        ConsultingTag consultingTag = request != null ? request.getConsultingTag() : null;
         if (consultingTag != null) {
             predicates.add(cb.equal(root.get("boardConsulting"), consultingTag));
         }
 
-        if (request.getKeyword() != null && !request.getKeyword().isBlank()) {
+        if (request != null && request.getKeyword() != null && !request.getKeyword().isBlank()) {
             String kw = "%" + request.getKeyword().trim() + "%";
             predicates.add(cb.or(cb.like(root.get("title"), kw), cb.like(root.get("content"), kw)));
         }
 
-        if (request.getTagIds() != null && !request.getTagIds().isEmpty()) {
+        if (request != null && request.getTagIds() != null && !request.getTagIds().isEmpty()) {
             Subquery<Integer> sub = query.subquery(Integer.class);
             Root<BoardPostTagRelation> rel = sub.from(BoardPostTagRelation.class);
 
