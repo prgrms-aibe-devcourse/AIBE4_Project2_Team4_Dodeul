@@ -62,7 +62,7 @@ public class ConsultingApplicationController {
     public String getApplicationDetail(@PathVariable Long applicationId, Model model) {
         ConsultingApplicationDetailResponse response =
             consultingApplicationService.getApplicationDetail(applicationId);
-        model.addAttribute("application", response);
+        model.addAttribute("appDetail", response);
         return "consulting/application-detail";
     }
 
@@ -70,29 +70,37 @@ public class ConsultingApplicationController {
     @GetMapping("/{applicationId}/edit")
     public String editForm(
         @PathVariable Long applicationId,
-        Model model,
-        @AuthenticationPrincipal CustomUserDetails user
+        Model model
     ) {
+        // 1. 엔티티 조회
         ConsultingApplication application = consultingApplicationService.findApplicationEntity(applicationId);
 
-        // (필요 시) 본인 확인 로직 추가 가능
-        // if (!application.getMenteeId().equals(user.getMemberId())) { ... }
-
+        // 2. DTO 생성 및 값 복사 (Null 방지)
         ConsultingApplicationRequest form = new ConsultingApplicationRequest();
-        form.setTitle(application.getTitle());
-        form.setContent(application.getContent());
+        form.setTitle(application.getTitle() != null ? application.getTitle() : "");
+        form.setContent(application.getContent() != null ? application.getContent() : "");
         form.setConsultingTag(application.getConsultingTag());
         form.setFileUrl(application.getFileUrl());
 
-        // Entity -> DTO 매핑 (SkillTag)
-        String tags = application.getApplicationSkillTags().stream()
-            .map(tag -> tag.getSkillTag().getName())
-            .collect(Collectors.joining(", "));
+        // 3. 스킬 태그 문자열 변환 (가장 안전한 방식)
+        String tags = "";
+        try {
+            if (application.getApplicationSkillTags() != null) {
+                tags = application.getApplicationSkillTags().stream()
+                    .filter(m -> m.getSkillTag() != null)
+                    .map(m -> m.getSkillTag().getName())
+                    .collect(Collectors.joining(", "));
+            }
+        } catch (Exception e) {
+            tags = ""; // 에러 나면 그냥 빈 문자열 처리
+        }
         form.setTechTags(tags);
 
+        // 4. 모델 담기 (이름이 HTML의 th:object="${request}"와 정확히 맞아야 함)
         model.addAttribute("request", form);
         model.addAttribute("consultingTags", ConsultingTag.values());
         model.addAttribute("formActionUrl", "/consulting-applications/" + applicationId + "/edit");
+
         return "consulting/application-form";
     }
 
