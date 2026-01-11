@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{common/layout/base}"
+      th:with="title='접근 권한 없음 | DODEUL'">
+<head>
+    <title>접근 권한 없음 | DODEUL</title>
+</head>
+<body>
+<section layout:fragment="content">
+    <div class="container text-center mt-5">
+        <h1 class="display-1">403</h1>
+        <p class="lead">접근 권한이 없습니다.</p>
+        <p>해당 페이지를 볼 수 있는 권한이 없습니다.</p>
+        <a th:href="@{/}" class="btn-primary-custom mt-3">메인으로 돌아가기</a>
+    </div>
+</section>
+</body>
+</html>

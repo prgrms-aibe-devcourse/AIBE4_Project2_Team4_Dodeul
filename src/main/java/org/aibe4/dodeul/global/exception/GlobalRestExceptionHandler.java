@@ -4,6 +4,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.aibe4.dodeul.global.response.CommonResponse;
 import org.aibe4.dodeul.global.response.enums.ErrorCode;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
@@ -22,6 +24,7 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 import java.util.NoSuchElementException;
 
 @Slf4j
+@Order(Ordered.HIGHEST_PRECEDENCE)
 @RestControllerAdvice(annotations = RestController.class)
 public class GlobalRestExceptionHandler {
 
