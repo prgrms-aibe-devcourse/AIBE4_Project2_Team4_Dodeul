@@ -35,7 +35,100 @@ public interface MatchingSwaggerDocs {
                 )
             ))
     })
-    @interface CommonErrors {}
+    @interface CommonErrors {
+    }
+
+    @Target({ElementType.METHOD, ElementType.TYPE, ElementType.ANNOTATION_TYPE})
+    @Retention(RetentionPolicy.RUNTIME)
+    @ApiResponse(responseCode = "409", description = "매칭 불가",
+        content = @Content(
+            schema = @Schema(implementation = CommonResponse.class),
+            examples = {
+                @ExampleObject(name = "MenteeLimitExceeded", summary = "멘티 한도 초과",
+                    value = "{\"code\": 409, \"message\": \"동시에 진행 가능한 상담 수는 최대 3개입니다. 기존의 상담을 먼저 끝내주세요.\", \"data\": null}"),
+                @ExampleObject(name = "MentorDisabled", summary = "멘토 상담 불가",
+                    value = "{\"code\": 409, \"message\": \"멘토가 상담을 비활성화하였습니다.\", \"data\": null}"),
+                @ExampleObject(name = "MentorLimitExceeded", summary = "멘토 한도 초과",
+                    value = "{\"code\": 409, \"message\": \"해당 멘토의 상담이 마감되었습니다. 다른 멘토를 선택해주세요.\", \"data\": null}")
+            }
+        ))
+    @interface MatchingError {
+    }
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @MatchingError
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "매칭 가능",
+            content = @Content(
+                schema = @Schema(implementation = CommonResponse.class),
+                examples = @ExampleObject(
+                    value = "{\"code\": 200, \"message\": \"매칭이 가능합니다.\", \"data\": null}"
+                )
+            )),
+        @ApiResponse(responseCode = "404", description = "존재하지 않는 멘토",
+            content = @Content(
+                schema = @Schema(implementation = CommonResponse.class),
+                examples = @ExampleObject(
+                    name = "MentorNotFound",
+                    summary = "존재하지 않는 멘토",
+                    value = "{\"code\": 404, \"message\": \"존재하지 않는 멘토입니다.\", \"data\": null}"
+                )
+            ))
+    })
+    @interface CheckAvailability {
+    }
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @MatchingError
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "매칭 신청 성공",
+            content = @Content(
+                schema = @Schema(implementation = CommonResponse.class),
+                examples = @ExampleObject(value = """
+                    {
+                        "code": 200,
+                        "message": "매칭 신청을 성공했습니다.",
+                        "data": {
+                            "matchingId": 1,
+                            "status": "WAITING"
+                        }
+                    }
+                    """)
+            )),
+        @ApiResponse(responseCode = "400", description = "잘못된 요청 (검증 실패)",
+            content = @Content(
+                schema = @Schema(implementation = CommonResponse.class),
+                examples = {
+                    @ExampleObject(name = "NotOwner", summary = "본인 신청서 아님",
+                        value = "{\"code\": 400, \"message\": \"본인의 신청서로만 매칭을 신청할 수 있습니다.\", \"data\": null}"),
+                    @ExampleObject(name = "InvalidRole", summary = "역할(멘토/멘티) 불일치",
+                        value = "{\"code\": 400, \"message\": \"멘토와 멘티의 역할이 올바르지 않습니다.\", \"data\": null}")
+                }
+            )),
+        @ApiResponse(responseCode = "401", description = "인증 실패",
+            content = @Content(
+                schema = @Schema(implementation = CommonResponse.class),
+                examples = @ExampleObject(
+                    name = "Unauthorized",
+                    summary = "인증 정보 무효",
+                    value = "{\"code\": 401, \"message\": \"인증 정보가 유효하지 않습니다.\", \"data\": null}"
+                )
+            )),
+        @ApiResponse(responseCode = "404", description = "리소스 찾을 수 없음",
+            content = @Content(
+                schema = @Schema(implementation = CommonResponse.class),
+                examples = {
+                    @ExampleObject(name = "ApplicationNotFound", summary = "신청서 없음",
+                        value = "{\"code\": 404, \"message\": \"해당 신청서를 찾을 수 없습니다: 1\", \"data\": null}"),
+                    @ExampleObject(name = "MentorNotFound", summary = "멘토 없음",
+                        value = "{\"code\": 404, \"message\": \"존재하지 않는 멘토입니다.\", \"data\": null}")
+                }
+            ))
+    })
+    @interface CreateMatching {
+    }
 
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.RUNTIME)
@@ -45,15 +138,15 @@ public interface MatchingSwaggerDocs {
             content = @Content(
                 schema = @Schema(implementation = CommonResponse.class),
                 examples = @ExampleObject(value = """
-                {
-                    "code": 200,
-                    "message": "매칭 수락을 성공했습니다.",
-                    "data": {
-                        "matchingId": 1,
-                        "status": "MATCHED"
+                    {
+                        "code": 200,
+                        "message": "매칭 수락을 성공했습니다.",
+                        "data": {
+                            "matchingId": 1,
+                            "status": "MATCHED"
+                        }
                     }
-                }
-                """)
+                    """)
             )),
         @ApiResponse(responseCode = "409", description = "매칭 상태 충돌",
             content = @Content(
@@ -65,7 +158,8 @@ public interface MatchingSwaggerDocs {
                 )
             ))
     })
-    @interface AcceptError {}
+    @interface AcceptError {
+    }
 
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.RUNTIME)
@@ -75,15 +169,15 @@ public interface MatchingSwaggerDocs {
             content = @Content(
                 schema = @Schema(implementation = CommonResponse.class),
                 examples = @ExampleObject(value = """
-                {
-                    "code": 200,
-                    "message": "매칭 거절을 성공했습니다.",
-                    "data": {
-                        "matchingId": 1,
-                        "status": "REJECTED"
+                    {
+                        "code": 200,
+                        "message": "매칭 거절을 성공했습니다.",
+                        "data": {
+                            "matchingId": 1,
+                            "status": "REJECTED"
+                        }
                     }
-                }
-                """)
+                    """)
             )),
         @ApiResponse(responseCode = "409", description = "매칭 상태 충돌",
             content = @Content(
@@ -95,7 +189,8 @@ public interface MatchingSwaggerDocs {
                 )
             ))
     })
-    @interface RejectError {}
+    @interface RejectError {
+    }
 
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.RUNTIME)
@@ -105,15 +200,15 @@ public interface MatchingSwaggerDocs {
             content = @Content(
                 schema = @Schema(implementation = CommonResponse.class),
                 examples = @ExampleObject(value = """
-                {
-                    "code": 200,
-                    "message": "매칭 취소를 성공했습니다.",
-                    "data": {
-                        "matchingId": 1,
-                        "status": "CANCELED"
+                    {
+                        "code": 200,
+                        "message": "매칭 취소를 성공했습니다.",
+                        "data": {
+                            "matchingId": 1,
+                            "status": "CANCELED"
+                        }
                     }
-                }
-                """)
+                    """)
             )),
         @ApiResponse(responseCode = "409", description = "매칭 상태 충돌",
             content = @Content(
@@ -125,7 +220,8 @@ public interface MatchingSwaggerDocs {
                 )
             ))
     })
-    @interface CancelError {}
+    @interface CancelError {
+    }
 
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.RUNTIME)
@@ -135,15 +231,15 @@ public interface MatchingSwaggerDocs {
             content = @Content(
                 schema = @Schema(implementation = CommonResponse.class),
                 examples = @ExampleObject(value = """
-                {
-                    "code": 200,
-                    "message": "상담 종료를 성공했습니다.",
-                    "data": {
-                        "matchingId": 1,
-                        "status": "INREVIEW"
+                    {
+                        "code": 200,
+                        "message": "상담 종료를 성공했습니다.",
+                        "data": {
+                            "matchingId": 1,
+                            "status": "INREVIEW"
+                        }
                     }
-                }
-                """)
+                    """)
             )),
         @ApiResponse(responseCode = "409", description = "매칭 상태 충돌",
             content = @Content(
@@ -155,7 +251,8 @@ public interface MatchingSwaggerDocs {
                 )
             ))
     })
-    @interface FinishError {}
+    @interface FinishError {
+    }
 
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.RUNTIME)
@@ -165,15 +262,15 @@ public interface MatchingSwaggerDocs {
             content = @Content(
                 schema = @Schema(implementation = CommonResponse.class),
                 examples = @ExampleObject(value = """
-                {
-                    "code": 200,
-                    "message": "매칭 최종 완료를 성공했습니다.",
-                    "data": {
-                        "matchingId": 1,
-                        "status": "COMPLETED"
+                    {
+                        "code": 200,
+                        "message": "매칭 최종 완료를 성공했습니다.",
+                        "data": {
+                            "matchingId": 1,
+                            "status": "COMPLETED"
+                        }
                     }
-                }
-                """)
+                    """)
             )),
         @ApiResponse(responseCode = "409", description = "매칭 상태 충돌",
             content = @Content(
@@ -185,5 +282,6 @@ public interface MatchingSwaggerDocs {
                 )
             ))
     })
-    @interface CompleteError {}
+    @interface CompleteError {
+    }
 }

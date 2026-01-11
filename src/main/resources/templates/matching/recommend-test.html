@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{common/layout/base}"
+      th:with="title='멘토 추천 | DODEUL'">
+<head>
+  <title>멘토 추천 | DODEUL</title>
+</head>
+<body>
+
+<section layout:fragment="content">
+  <h1 class="mb-4">테스트용 멘토 목록 (DataInitializer 기반)</h1>
+
+  <div th:if="${applicationId == null}" class="alert alert-danger">
+    <strong>주의!</strong> URL 파라미터나 모델에 <code>applicationId</code>가 필요합니다.
+    <br>(예: 멘티1로 로그인 후, DB에서 생성된 "매칭 없는 신청서" ID를 확인하여 접속하세요)
+  </div>
+
+  <p th:if="${applicationId}" th:text="|현재 상담 신청서 ID: ${applicationId}|" class="text-primary fw-bold mb-4"></p>
+
+  <input type="hidden" id="globalApplicationId" th:value="${applicationId}">
+
+  <div class="d-flex flex-wrap gap-4">
+
+    <div class="card-custom text-center p-4 border" style="width: 280px;">
+      <span class="badge bg-success mb-2">Case 1</span>
+      <h3 class="fw-bold mb-1">MentorClean</h3>
+      <p class="text-muted small">Mentor ID: 2</p>
+      <p class="text-muted small">Application ID: 10</p>
+      <p class="text-muted small">Mentee: mentee1@test.com</p>
+      <p class="text-secondary mb-4">
+        ✅ <strong>성공 예상</strong><br>
+        (가장 평범한 멘토)
+      </p>
+      <button type="button" onclick="requestMatching(2)" class="btn btn-primary w-100">
+        상담 신청
+      </button>
+    </div>
+
+    <div class="card-custom text-center p-4 border" style="width: 280px;">
+      <span class="badge bg-success mb-2">Case 2</span>
+      <h3 class="fw-bold mb-1">MentorHistory</h3>
+      <p class="text-muted small">Mentor ID: 4</p>
+      <p class="text-muted small">Application ID: 11</p>
+      <p class="text-muted small">Mentee: mentee1@test.com</p>
+      <p class="text-secondary mb-4">
+        ✅ <strong>성공 예상</strong><br>
+        (취소/완료 이력 많음)
+      </p>
+      <button type="button" onclick="requestMatching(4)" class="btn btn-primary w-100">
+        상담 신청
+      </button>
+    </div>
+
+    <div class="card-custom text-center p-4 border" style="width: 280px;">
+      <span class="badge bg-warning text-dark mb-2">Case 3</span>
+      <h3 class="fw-bold mb-1">MentorClean</h3>
+      <p class="text-muted small">Mentor ID: 2</p>
+      <p class="text-muted small">Application ID: 12</p>
+      <p class="text-muted small">Mentee: mentee3@test.com</p>
+      <p class="text-secondary mb-4">
+        🧪 <strong>멘티 테스트용</strong><br>
+        'MenteeBusy' 로그인 시<br>
+        ❌ <strong>실패해야 함</strong>
+      </p>
+      <button type="button" onclick="requestMatching(6)" class="btn btn-primary w-100">
+        상담 신청
+      </button>
+    </div>
+
+    <div class="card-custom text-center p-4 border" style="width: 280px;">
+      <span class="badge bg-danger mb-2">Case 4</span>
+      <h3 class="fw-bold mb-1">MentorDisabled</h3>
+      <p class="text-muted small">Mentor ID: 8</p>
+      <p class="text-muted small">Application ID: 13</p>
+      <p class="text-muted small">Mentee: mentee5@test.com</p>
+      <p class="text-secondary mb-4">
+        ❌ <strong>실패 예상</strong><br>
+        (상담 불가 상태)
+      </p>
+      <button type="button" onclick="requestMatching(8)" class="btn btn-primary w-100">
+        상담 신청
+      </button>
+    </div>
+
+    <div class="card-custom text-center p-4 border" style="width: 280px;">
+      <span class="badge bg-danger mb-2">Case 5</span>
+      <h3 class="fw-bold mb-1">MentorBusy</h3>
+      <p class="text-muted small">Mentor ID: 10</p>
+      <p class="text-muted small">Application ID: 14</p>
+      <p class="text-muted small">Mentee: mentee5@test.com</p>
+      <p class="text-secondary mb-4">
+        ❌ <strong>실패 예상</strong><br>
+        (멘토 한도 초과)
+      </p>
+      <button type="button" onclick="requestMatching(10)" class="btn btn-primary w-100">
+        상담 신청
+      </button>
+    </div>
+
+  </div>
+</section>
+
+<section layout:fragment="script">
+  <script th:inline="javascript">
+    /**
+     * 매칭 신청 API 호출 함수
+     * @param {number} mentorId - 신청할 멘토의 ID
+     */
+    async function requestMatching(mentorId) {
+      const applicationId = document.getElementById('globalApplicationId').value;
+
+      if (!applicationId) {
+        showErrorModal('상담 신청서 ID가 없습니다. 잘못된 접근입니다.');
+        return;
+      }
+
+      const requestData = {
+        applicationId: applicationId,
+        mentorId: mentorId
+      };
+
+      try {
+        const response = await fetch('/api/matchings', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestData)
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          // ✅ 성공 시: 알림 없이 즉시 대기 목록 페이지로 이동
+          window.location.href = '/matchings/waiting';
+        } else {
+          // ❌ 실패 시: 에러 메시지 모달 출력
+          showErrorModal(result.message || '매칭 신청에 실패했습니다.');
+        }
+
+      } catch (error) {
+        console.error('Network Error:', error);
+        showErrorModal('서버와 통신 중 오류가 발생했습니다.');
+      }
+    }
+
+    function showErrorModal(message) {
+      // 실패했을 때만 이 메시지가 뜹니다.
+      alert("⚠️ 신청 실패\n\n" + message);
+    }
+  </script>
+</section>
+
+</body>
+</html>
