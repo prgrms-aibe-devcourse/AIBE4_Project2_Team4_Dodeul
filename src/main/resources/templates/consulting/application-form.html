@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{common/layout/base}">
+
+<head>
+  <title>상담 신청서 작성</title>
+  <style>
+    .step-circle {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 14px;
+    }
+
+    .step-active {
+      background-color: #6c757d;
+      color: white;
+    }
+
+    .step-inactive {
+      background-color: #f8f9fa;
+      color: #adb5bd;
+      border: 1px solid #dee2e6;
+    }
+
+    .btn-check:checked + .btn-outline-secondary {
+      background-color: #6c757d;
+      color: white;
+      border-color: #6c757d;
+    }
+  </style>
+</head>
+
+<body>
+<section layout:fragment="content">
+  <div class="container py-5" style="max-width: 800px;">
+
+    <div class="d-flex justify-content-between mb-5 px-5">
+      <div class="text-center">
+        <div class="step-circle step-active mx-auto mb-2">1</div>
+        <small class="fw-bold">신청서 작성</small>
+      </div>
+      <div class="text-center opacity-50">
+        <div class="step-circle step-inactive mx-auto mb-2">2</div>
+        <small>방식 선택</small>
+      </div>
+      <div class="text-center opacity-50">
+        <div class="step-circle step-inactive mx-auto mb-2">3</div>
+        <small>멘토&시간 예약</small>
+      </div>
+      <div class="text-center opacity-50">
+        <div class="step-circle step-inactive mx-auto mb-2">4</div>
+        <small>상태 확인</small>
+      </div>
+    </div>
+
+    <form th:action="${formActionUrl}" th:object="${request}" method="post">
+      <div class="mb-5">
+        <h4 class="fw-bold mb-2">카테고리 선택</h4>
+        <p class="text-muted small mb-3">관심 있는 멘토링 분야를 1개 선택해주세요.</p>
+        <div class="d-flex flex-wrap gap-2">
+          <th:block th:each="tag : ${consultingTags}">
+            <input type="radio" class="btn-check"
+                   th:field="*{consultingTag}"
+                   th:value="${tag}"
+                   th:id="${'tag-' + tag.name()}" autocomplete="off" required>
+            <label class="btn btn-outline-secondary"
+                   th:for="${'tag-' + tag.name()}"
+                   th:text="${tag.description}">카테고리명</label>
+          </th:block>
+        </div>
+      </div>
+
+      <div class="card bg-light border-0 mb-4">
+        <div class="card-body p-4">
+          <h5 class="fw-bold">AI 비서와 함께 작성하기</h5>
+          <p class="text-muted small">AI가 상담 내용을 미리 작성하는 데 도움을 드립니다.</p>
+          <div class="input-group mb-2">
+            <span class="input-group-text bg-white border-end-0">🔍</span>
+            <input type="text" class="form-control border-start-0" placeholder="고민되는 키워드를 입력하세요">
+          </div>
+          <div class="text-center mt-2">
+            <button type="button" class="btn btn-sm btn-light text-secondary">✨ AI로 내용 자동 완성</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <label class="fw-bold mb-2">상담 제목</label>
+        <input type="text" class="form-control p-3" th:field="*{title}"
+               placeholder="멘토링 상담 제목을 입력하세요" required>
+      </div>
+
+      <div class="mb-4">
+        <label class="fw-bold mb-2">상담 내용</label>
+        <textarea class="form-control p-3" th:field="*{content}" rows="6"
+                  placeholder="상담 받고 싶은 내용과 목표를 상세하게 작성해주세요."
+                  required oninput="updateCharCount(this)"></textarea>
+        <div id="charCount" class="text-end text-muted small mt-1">0/1000</div>
+      </div>
+
+      <div class="mb-4">
+        <label class="fw-bold mb-2">스킬 태그</label>
+        <input type="text" class="form-control p-3" th:field="*{techTags}"
+               placeholder="예: Java, React, PM (쉼표로 구분)">
+      </div>
+
+      <div class="mb-5">
+        <label class="fw-bold mb-2">첨부파일</label>
+        <input type="text" class="form-control" th:field="*{fileUrl}"
+               placeholder="파일 URL을 입력하세요">
+      </div>
+
+      <hr class="my-5">
+
+      <div class="d-flex justify-content-between">
+        <button type="button" class="btn btn-outline-secondary px-4 py-2" onclick="history.back()">
+          < 이전 단계
+        </button>
+        <button type="submit" class="btn btn-dark px-4 py-2">
+          다음 단계 >
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    function updateCharCount(textarea) {
+      const currentLength = textarea.value.length;
+      document.getElementById('charCount').textContent = currentLength + '/1000';
+    }
+  </script>
+</section>
+</body>
+</html>

@@ -1,0 +1,443 @@
+/* =========================================
+   1. Fonts (MaruBuri)
+   ========================================= */
+@font-face {
+  font-family: 'MaruBuri';
+  src: url(https://hangeul.pstatic.net/hangeul_static/webfont/MaruBuri/MaruBuri-ExtraLight.woff2) format('woff2');
+  font-weight: 200;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'MaruBuri';
+  src: url(https://hangeul.pstatic.net/hangeul_static/webfont/MaruBuri/MaruBuri-Light.woff2) format('woff2');
+  font-weight: 300;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'MaruBuri';
+  src: url(https://hangeul.pstatic.net/hangeul_static/webfont/MaruBuri/MaruBuri-Regular.woff2) format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'MaruBuri';
+  src: url(https://hangeul.pstatic.net/hangeul_static/webfont/MaruBuri/MaruBuri-SemiBold.woff2) format('woff2');
+  font-weight: 600;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'MaruBuri';
+  src: url(https://hangeul.pstatic.net/hangeul_static/webfont/MaruBuri/MaruBuri-Bold.woff2) format('woff2');
+  font-weight: 700;
+  font-display: swap;
+}
+
+/* =========================================
+   2. Variables & Base
+   ========================================= */
+:root {
+  --color-text-primary: #212529;
+  --color-text-secondary: #6c757d;
+  --color-text-inverse: #FFFFFF;
+
+  --color-brand-primary: #212529;
+  --color-brand-secondary: #d0d4d9;
+  --color-brand-hover: #000000;
+
+  --color-bg-page: #F8F9FA;
+  --color-bg-surface: #FFFFFF;
+  --color-bg-neutral: #e9ecef;
+
+  --color-border: #dee2e6;
+  --color-border-hover: #ced4da;
+
+  --color-status-success: #198754;
+  --color-status-warning: #ffc107;
+  --color-status-danger: #dc3545;
+  --color-status-info: #0dcaf0;
+
+  --border-radius-sm: 8px;
+  --border-radius-md: 12px;
+  --border-radius-lg: 20px;
+
+  --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+body {
+  font-family: 'MaruBuri', serif;
+  background-color: var(--color-bg-page);
+  color: var(--color-text-primary);
+  line-height: 1.6;
+}
+
+/* Links (Base) */
+a {
+  color: inherit;
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+/* Utilities */
+.text-small { font-size: 0.875rem; color: var(--color-text-secondary); }
+.fw-bold { font-weight: 700 !important; }
+.fw-medium { font-weight: 600 !important; }
+
+/* =========================================
+   3. Layout & Structure
+   ========================================= */
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+main.main {
+  padding: 32px 0;
+}
+
+.layout {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+/* Header */
+.header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 16px 0;
+}
+.brand {
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+.nav {
+  display: flex;
+  gap: 16px;
+}
+.nav a {
+  padding: 8px 4px;
+}
+.nav a.active {
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 6px;
+}
+.header-actions .btn-outline-custom,
+.header-actions .btn-primary-custom {
+  margin-left: 8px;
+}
+
+/* ===== Header Profile Avatar (추가) ===== */
+.header-actions.header-auth {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 1px solid #e9ecef;
+  background: #f1f3f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.avatar img {
+  width: 18px;
+  height: 18px;
+  display: block;
+  opacity: 0.9;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 260px;
+  flex: 0 0 260px;
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--shadow-sm);
+  padding: 16px;
+}
+.sidebar-title {
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+.sidebar a {
+  display: block;
+  padding: 10px 12px;
+  border-radius: 10px;
+  margin-bottom: 6px;
+}
+.sidebar a:hover {
+  background: var(--color-bg-neutral);
+  text-decoration: none;
+}
+.sidebar a.active {
+  background: var(--color-brand-secondary);
+  font-weight: 700;
+}
+
+/* Content Area */
+.content {
+  flex: 1;
+  min-width: 0;
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--shadow-sm);
+  padding: 24px;
+}
+
+/* Footer */
+.footer-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 1fr;
+  gap: 24px;
+  align-items: start;
+  padding: 24px 0;
+}
+.footer-left .footer-logo {
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.footer-desc {
+  margin: 0 0 12px 0;
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+.footer-links {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.footer-meta {
+  text-align: right;
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+}
+.footer-sns {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.footer-sns img {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+
+/* =========================================
+   Sticky Footer (추가)
+   - footer를 하단에 고정시키기 위한 레이아웃
+   ========================================= */
+html, body {
+  height: 100%;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* base.html에서 <main class="main">을 사용하므로
+   main 영역이 남은 공간을 채우게 해서 footer를 아래로 밀어줌 */
+main.main {
+  flex: 1;
+}
+
+/* footer가 남은 공간 아래로 내려가도록 */
+footer {
+  margin-top: auto;
+  border-top: 1px solid #eee;
+  padding: 20px 0;
+  background: var(--color-bg-surface);
+}
+
+/* =========================================
+   4. Components
+   ========================================= */
+
+/* Basic Buttons */
+.btn-primary-custom {
+  background-color: var(--color-brand-primary);
+  color: var(--color-text-inverse);
+  border: 1px solid var(--color-brand-primary);
+  border-radius: var(--border-radius-sm);
+  padding: 0.6rem 1.2rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+.btn-primary-custom:hover {
+  background-color: var(--color-brand-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+  color: var(--color-text-inverse);
+}
+.btn-outline-custom {
+  background-color: transparent;
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-sm);
+  padding: 0.6rem 1.2rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+.btn-outline-custom:hover {
+  background-color: var(--color-bg-neutral);
+  border-color: var(--color-border-hover);
+  color: var(--color-text-primary);
+}
+
+/* Tag & Filter Buttons */
+
+/* 1. Base Style */
+.tag {
+  display: inline-block;
+  background-color: var(--color-brand-secondary);
+  color: var(--color-text-primary);
+  padding: 0.4rem 1.0rem;
+  border-radius: 32px;
+  border: 1px solid transparent;
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-decoration: none;
+  text-align: center;
+  margin-right: 0.5rem;
+  margin-bottom: 0.5rem;
+  vertical-align: middle;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+/* 2. Modifier: Read-only (조회용) */
+.tag--read-only {
+  cursor: default;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* 3. Modifier: Selectable (선택용) */
+.tag--selectable {
+  cursor: pointer;
+}
+
+.tag--selectable:hover {
+  background-color: var(--color-bg-neutral);
+  color: var(--color-text-primary);
+}
+
+/* 4. State: Active (선택된 상태) */
+.tag--selectable.tag--active {
+  background-color: var(--color-brand-primary);
+  color: var(--color-text-inverse);
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.tag--selectable.tag--active:hover {
+  background-color: var(--color-brand-hover);
+  color: var(--color-text-inverse);
+  border-color: transparent;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+}
+
+/* 선택된 태그 뒤에 'X' 표시*/
+.tag--selectable.tag--active::after {
+  content: "\00d7";
+  padding-left: 0.5rem;
+  font-weight: bold;
+  font-size: 1.1em;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+  vertical-align: bottom;
+}
+
+.tag--selectable.tag--active:hover::after {
+  opacity: 1.0;
+}
+
+/* Forms */
+.form-control-custom {
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-sm);
+  padding: 0.75rem 1rem;
+  font-size: 0.95rem;
+  font-family: inherit;
+}
+.form-control-custom:focus {
+  border-color: var(--color-text-primary);
+  box-shadow: 0 0 0 3px rgba(33, 37, 41, 0.1);
+  outline: none;
+}
+
+/* Cards */
+.card-custom {
+  background-color: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--shadow-sm);
+  padding: 1.5rem;
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+  margin-bottom: 1.5rem;
+}
+
+/* Modals */
+.modal-content {
+  border: none;
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-md);
+}
+.modal-header {
+  border-bottom: 1px solid var(--color-border);
+  padding: 1.5rem 1.5rem 1rem;
+}
+.modal-body {
+  padding: 1.5rem;
+}
+.modal-footer {
+  border-top: none;
+  padding: 0 1.5rem 1.5rem;
+}
+.modal-textarea {
+  background-color: var(--color-bg-neutral);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-sm);
+  padding: 1rem;
+  width: 100%;
+  resize: none;
+  min-height: 150px;
+  font-family: inherit;
+}
+.modal-textarea:focus {
+  background-color: var(--color-bg-surface);
+  outline: 2px solid var(--color-text-primary);
+  border-color: transparent;
+}
+
+/* Status Badges */
+.status-badge {
+  padding: 0.35em 0.65em;
+  font-size: 0.75em;
+  font-weight: 700;
+  border-radius: 0.25rem;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+.status-pending { background-color: #fff3cd; color: #856404; }
+.status-approved { background-color: #cfe2ff; color: #084298; }
+.status-rejected { background-color: #f8d7da; color: #842029; }
+.status-canceled { background-color: #f8f9fa; color: #6c757d; border: 1px solid #dee2e6; }
+.status-timeout { background-color: #e9ecef; color: #495057; }
+.status-review { background-color: #e0cffc; color: #59359a; }
+.status-completed { background-color: #d1e7dd; color: #0f5132; }

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<body>
+
+<header th:fragment="header(activeMenu)">
+  <div class="container header-inner">
+    <a class="brand" th:href="@{/}">DODEUL</a>
+
+    <nav class="nav">
+      <a th:href="@{/}" th:classappend="${activeMenu=='home'} ? 'active' : ''">홈</a>
+      <a th:href="@{/mentors}" th:classappend="${activeMenu=='mentors'} ? 'active' : ''">멘토찾기</a>
+      <a th:href="@{/board}" th:classappend="${activeMenu=='board'} ? 'active' : ''">공개 게시판</a>
+      <a th:href="@{/mypage}" th:classappend="${activeMenu=='mypage'} ? 'active' : ''">마이페이지</a>
+    </nav>
+
+    <div class="header-actions">
+
+      <!-- 비로그인 -->
+      <div sec:authorize="isAnonymous()">
+        <a class="btn-outline-custom" th:href="@{/auth/login}">로그인</a>
+        <a class="btn-primary-custom" th:href="@{/onboarding/role}">회원가입</a>
+      </div>
+
+      <!-- 로그인 -->
+      <div sec:authorize="isAuthenticated()"
+           style="display:flex; align-items:center; gap:12px;">
+
+        <!-- 프로필 아이콘 -->
+        <img th:src="@{/css/icons/usericon.svg}"
+             alt="profile"
+             style="width:32px; height:32px; border-radius:50%; background:#f2f2f2; padding:4px;"/>
+
+        <!-- 유저 이름 (현재는 email) -->
+        <span style="font-weight:600;"
+              sec:authentication="principal.nickname">
+          user
+        </span>
+
+        <!-- 로그아웃 -->
+        <form th:action="@{/logout}" method="post" style="margin:0;">
+          <input type="hidden"
+                 th:name="${_csrf.parameterName}"
+                 th:value="${_csrf.token}"/>
+          <button type="submit" class="btn-outline-custom">
+            로그아웃
+          </button>
+        </form>
+      </div>
+
+    </div>
+  </div>
+</header>
+
+</body>
+</html>

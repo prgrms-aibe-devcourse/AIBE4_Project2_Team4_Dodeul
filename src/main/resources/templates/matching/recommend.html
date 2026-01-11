@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{common/layout/base}"
+      th:with="title='멘토 추천 | DODEUL'">
+<head>
+  <title>멘토 추천 | DODEUL</title>
+</head>
+<body>
+
+<section layout:fragment="content">
+  <h1 class="mb-4">당신에게 딱 맞는 멘토를 추천해드려요!</h1>
+  <p th:if="${applicationId}" th:text="|applicationId = ${applicationId}|" class="text-small mb-4"></p>
+
+  <div class="d-flex flex-wrap gap-4">
+
+    <div class="card-custom text-center" style="width: 250px;">
+      <h3 class="fw-bold mb-2">멘토 김철수</h3>
+      <p class="text-secondary mb-4">백엔드 전문가</p>
+      <form th:action="@{/matchings}" method="post">
+        <input type="hidden" name="applicationId" th:value="${applicationId}">
+        <input type="hidden" name="mentorId" value="1">
+        <button type="submit" class="btn-primary-custom w-100">상담 신청</button>
+      </form>
+    </div>
+
+    <div class="card-custom text-center" style="width: 250px;">
+      <h3 class="fw-bold mb-2">멘토 이영희</h3>
+      <p class="text-secondary mb-4">프론트엔드 장인</p>
+      <form th:action="@{/matchings}" method="post">
+        <input type="hidden" name="applicationId" th:value="${applicationId}">
+        <input type="hidden" name="mentorId" value="2">
+        <button type="submit" class="btn-primary-custom w-100">상담 신청</button>
+      </form>
+    </div>
+
+    <div class="card-custom text-center" style="width: 250px;">
+      <h3 class="fw-bold mb-2">멘토 박지성</h3>
+      <p class="text-secondary mb-4">풀스택 마스터</p>
+      <form th:action="@{/matchings}" method="post">
+        <input type="hidden" name="applicationId" th:value="${applicationId}">
+        <input type="hidden" name="mentorId" value="3">
+        <button type="submit" class="btn-primary-custom w-100">상담 신청</button>
+      </form>
+    </div>
+
+  </div>
+</section>
+
+</body>
+</html>

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<body>
+
+<aside th:fragment="sidebar(active)" class="sidebar">
+
+  <!-- 멘토 사이드바 -->
+  <div sec:authorize="hasRole('MENTOR')">
+    <div class="sidebar-title">멘토링 서비스</div>
+    <a th:href="@{/mentor/dashboard}"
+       th:classappend="${active=='dashboard'} ? 'active' : ''">대시보드</a>
+    <a th:href="@{/mentor/sessions}"
+       th:classappend="${active=='sessions'} ? 'active' : ''">상담 내역</a>
+    <a th:href="@{/mentor/schedule}"
+       th:classappend="${active=='schedule'} ? 'active' : ''">내 스케줄</a>
+  </div>
+
+  <!-- 멘티 사이드바 -->
+  <div sec:authorize="hasRole('MENTEE')">
+    <div class="sidebar-title">마이페이지</div>
+    <a th:href="@{/mentee/dashboard}"
+       th:classappend="${active=='dashboard'} ? 'active' : ''">대시보드</a>
+    <a th:href="@{/mentee/tickets}"
+       th:classappend="${active=='tickets'} ? 'active' : ''">내 상담 신청</a>
+    <a th:href="@{

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{common/layout/base}">
+<body>
+
+<main class="container layout" layout:fragment="content">
+
+  <!-- sidebar (나중에 실제 sidebar fragment로 교체) -->
+  <aside class="sidebar">
+    <div class="sidebar-title">마이페이지(임시)</div>
+    <a href="#" class="active">프로필</a>
+    <a href="#" class="active">대시보드</a>
+    <a href="#" class="active">상담내역</a>
+    <a href="#">후기관리</a>
+    <a href="#">나의 스크랩</a>
+  </aside>
+
+  <section class="content">
+    <div layout:fragment="page"></div>
+  </section>
+
+</main>
+
+<div layout:fragment="footer">
+  <div th:replace="common/fragments/footer :: footerSimple()"></div>
+</div>
+
+</body>
+</html>
