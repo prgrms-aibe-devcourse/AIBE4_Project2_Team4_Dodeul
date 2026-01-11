@@ -1,0 +1,38 @@
+spring:
+
+  # 데이터베이스 설정 (환경변수 사용)
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+  # JPA & Hibernate 운영 최적화
+  jpa:
+    open-in-view: false        # [중요] OSIV 끄기 (DB 커넥션 고갈 방지)
+    show-sql: false            # 운영 로그에 SQL 찍히면 디스크 낭비됨
+    hibernate:
+      ddl-auto: validate       # [중요] DB 구조 변경 방지 (none 또는 validate)
+    properties:
+      hibernate:
+        format_sql: false      # 로그 포맷팅 끄기
+
+  # Redis 설정
+  data:
+    redis:
+      url: ${REDIS_URL}
+
+  # 타임리프 캐싱 (성능 필수)
+  thymeleaf:
+    cache: true
+
+  h2:
+    console:
+      enabled: false  # H2 콘솔 접근 차단
+
+# 로깅 레벨 설정
+logging:
+  level:
+    root: INFO
+    org.hibernate.SQL: WARN  # SQL 로그 숨기기
+    org.aibe4.dodeul: INFO   # 내 프로젝트 로그 레벨
