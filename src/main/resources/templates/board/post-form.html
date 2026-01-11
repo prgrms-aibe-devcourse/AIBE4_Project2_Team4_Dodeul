@@ -1,19 +1,20 @@
 <!-- src/main/resources/templates/board/post-form.html -->
 <!DOCTYPE html>
-<html lang="ko"
-      xmlns:th="http://www.thymeleaf.org"
-      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
-      layout:decorate="~{common/layout/base}">
+<html
+  lang="ko"
+  xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+  xmlns:th="http://www.thymeleaf.org"
+  layout:decorate="~{common/layout/base}"
+>
 <head>
   <th:block layout:fragment="head">
-    <link rel="stylesheet" th:href="@{/css/board/board-post.css}">
+    <link rel="stylesheet" th:href="@{/css/board/board-post.css}"/>
   </th:block>
 </head>
 
 <body>
 <section layout:fragment="content">
   <div class="board-post-form-wrap">
-
     <div class="board-post-form-card card-custom">
       <div class="board-post-form-header">
         <h2 class="board-post-form-title">질문 작성하기</h2>
@@ -22,32 +23,53 @@
 
       <div th:if="${msg != null}" class="alert alert-info py-2" th:text="${msg}"></div>
 
-      <form th:action="@{/board/posts}" th:object="${form}" method="post" class="board-post-form">
+      <!-- 컨트롤러에서 reject("create.fail", ...) 한 글로벌 에러 표시 -->
+      <div
+        th:if="${#fields.hasGlobalErrors()}"
+        class="alert alert-danger py-2"
+        th:each="err : ${#fields.globalErrors()}"
+        th:text="${err}"
+      ></div>
+
+      <form
+        th:action="@{/board/posts}"
+        th:object="${form}"
+        method="post"
+        class="board-post-form"
+      >
         <div class="mb-4">
           <label class="form-label board-post-label" for="title">제목</label>
-          <input id="title"
-                 type="text"
-                 class="form-control board-post-input"
-                 th:field="*{title}"
-                 placeholder="제목을 입력하세요"
-                 maxlength="100">
-          <div class="board-post-error" th:if="${#fields.hasErrors('title')}" th:errors="*{title}"></div>
+          <input
+            id="title"
+            type="text"
+            class="form-control board-post-input"
+            th:field="*{title}"
+            placeholder="제목을 입력하세요"
+            maxlength="100"
+          />
+          <div
+            class="board-post-error"
+            th:if="${#fields.hasErrors('title')}"
+            th:errors="*{title}"
+          ></div>
         </div>
 
         <div class="mb-3">
           <label class="form-label board-post-label" for="consultingTag">분야</label>
-          <select id="consultingTag"
-                  class="form-select board-post-select"
-                  th:field="*{consultingTag}">
+          <select
+            id="consultingTag"
+            class="form-select board-post-select"
+            th:field="*{consultingTag}"
+          >
             <option value="" disabled selected>분야를 선택하세요</option>
-            <option th:each="tag : ${consultingTags}"
-                    th:value="${tag}"
-                    th:text="${tag}">
-            </option>
+            <option th:each="tag : ${consultingTags}" th:value="${tag}" th:text="${tag}"></option>
           </select>
           <div class="board-post-hint">예: 개발, 프론트엔드, 백엔드</div>
-          <div class="board-post-error" th:if="${#fields.hasErrors('consultingTag')}"
-               th:errors="*{consultingTag}"></div>
+          <div
+            class="board-post-error"
+            th:if="${#fields.hasErrors('consultingTag')}"
+            th:errors="*{consultingTag}"
+          ></div>
         </div>
 
         <div class="mb-4">
@@ -55,37 +77,50 @@
 
           <div class="board-post-tag-box">
             <div class="board-post-tag-list">
-              <label class="board-post-tag-item"
-                     th:each="tag : ${skillTags}">
-                <input class="board-post-tag-checkbox"
-                       type="checkbox"
-                       th:value="${tag.id}"
-                       th:field="*{skillTagIds}">
+              <label class="board-post-tag-item" th:each="tag : ${skillTags}">
+                <input
+                  class="board-post-tag-checkbox"
+                  type="checkbox"
+                  th:value="${tag.id}"
+                  th:field="*{skillTagIds}"
+                />
                 <span class="board-post-tag-name" th:text="${tag.name}">Tag</span>
               </label>
             </div>
           </div>
 
           <div class="mt-3">
-            <input type="text"
-                   class="form-control board-post-input"
-                   name="skillTagIdString"
-                   th:value="${skillTagIdString}"
-                   placeholder="태그 추가(쉼표로 구분)  예: 1,2,3">
+            <input
+              type="text"
+              class="form-control board-post-input"
+              name="skillTagIdString"
+              th:value="${skillTagIdString}"
+              placeholder="태그 추가(쉼표로 구분)  예: Java, Spring, Docker 또는 1,2,3"
+            />
             <div class="board-post-hint">예: Java, Spring, JPA (또는 태그 ID를 쉼표로 입력)</div>
           </div>
 
-          <div class="board-post-error" th:if="${#fields.hasErrors('skillTagIds')}" th:errors="*{skillTagIds}"></div>
+          <div
+            class="board-post-error"
+            th:if="${#fields.hasErrors('skillTagIds')}"
+            th:errors="*{skillTagIds}"
+          ></div>
         </div>
 
         <div class="mb-4">
           <label class="form-label board-post-label" for="content">본문</label>
-          <textarea id="content"
-                    class="form-control board-post-textarea"
-                    th:field="*{content}"
-                    rows="10"
-                    placeholder="질문 내용을 작성하세요 (코드, 이미지 첨부는 후순위)"></textarea>
-          <div class="board-post-error" th:if="${#fields.hasErrors('content')}" th:errors="*{content}"></div>
+          <textarea
+            id="content"
+            class="form-control board-post-textarea"
+            th:field="*{content}"
+            rows="10"
+            placeholder="질문 내용을 작성하세요 (코드, 이미지 첨부는 후순위)"
+          ></textarea>
+          <div
+            class="board-post-error"
+            th:if="${#fields.hasErrors('content')}"
+            th:errors="*{content}"
+          ></div>
         </div>
 
         <div class="board-post-actions">

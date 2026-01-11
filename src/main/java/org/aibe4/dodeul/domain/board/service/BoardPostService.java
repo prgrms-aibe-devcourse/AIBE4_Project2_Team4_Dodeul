@@ -1,3 +1,4 @@
+// src/main/java/org/aibe4/dodeul/domain/board/service/BoardPostService.java
 package org.aibe4.dodeul.domain.board.service;
 
 import lombok.RequiredArgsConstructor;
@@ -56,6 +57,7 @@ public class BoardPostService {
 
         BoardPost saved = boardPostRepository.save(post);
 
+        // 1) 체크박스/ID 기반 태그 연결
         List<Long> skillTagIds = request.getSkillTagIds();
         if (skillTagIds != null && !skillTagIds.isEmpty()) {
             Set<Long> distinct = new HashSet<>(skillTagIds);
@@ -69,7 +71,35 @@ public class BoardPostService {
             }
         }
 
+        // 2) 이름 기반 태그(없으면 생성 후 연결)
+        List<String> skillTagNames = request.getSkillTagNames();
+        if (skillTagNames != null && !skillTagNames.isEmpty()) {
+            Set<String> distinctNames = new HashSet<>();
+            for (String raw : skillTagNames) {
+                String name = normalizeName(raw);
+                if (name.isBlank()) {
+                    continue;
+                }
+                if (name.length() > 30) {
+                    throw new IllegalArgumentException("스킬태그는 30자를 초과할 수 없습니다.");
+                }
+                distinctNames.add(name);
+            }
+
+            for (String name : distinctNames) {
+                SkillTag tag =
+                    skillTagRepository
+                        .findByName(name)
+                        .orElseGet(() -> skillTagRepository.save(new SkillTag(name)));
+                boardPostTagRelationRepository.save(BoardPostTagRelation.of(saved, tag));
+            }
+        }
+
         return saved.getId();
+    }
+
+    private String normalizeName(String value) {
+        return value == null ? "" : value.trim();
     }
 
     private void validateListPolicy(Long memberId, BoardPostListRequest request) {
@@ -92,7 +122,6 @@ public class BoardPostService {
 
         boolean hasConsultingTag = request.getConsultingTag() != null;
         boolean hasTagIds = request.getTagIds() != null && !request.getTagIds().isEmpty();
-        boolean hasSkillTagIds = request.getSkillTagIds() != null && !request.getSkillTagIds().isEmpty();
 
         boolean hasStatus = request.getStatus() != null && !request.getStatus().isBlank();
         boolean hasKeyword = request.getKeyword() != null && !request.getKeyword().isBlank();
@@ -102,7 +131,7 @@ public class BoardPostService {
                 && !request.getSort().isBlank()
                 && !"LATEST".equalsIgnoreCase(request.getSort());
 
-        return !(hasConsultingTag || hasTagIds || hasSkillTagIds || hasStatus || hasKeyword || hasSort);
+        return !(hasConsultingTag || hasTagIds || hasStatus || hasKeyword || hasSort);
     }
 
     private void validateCreateRequest(BoardPostCreateRequest request) {

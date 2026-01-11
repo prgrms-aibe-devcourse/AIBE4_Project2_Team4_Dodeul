@@ -3,8 +3,6 @@ package org.aibe4.dodeul.domain.board.model.repository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.*;
-import java.util.*;
-import java.util.stream.Collectors;
 import org.aibe4.dodeul.domain.board.model.dto.request.BoardPostListRequest;
 import org.aibe4.dodeul.domain.board.model.dto.response.BoardPostListResponse;
 import org.aibe4.dodeul.domain.board.model.entity.BoardPost;
@@ -18,6 +16,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.*;
+import java.util.stream.Collectors;
+
 @Repository
 @Transactional(readOnly = true)
 public class BoardPostRepositoryImpl implements BoardPostRepositoryCustom {
@@ -30,7 +31,7 @@ public class BoardPostRepositoryImpl implements BoardPostRepositoryCustom {
 
     @Override
     public Page<BoardPostListResponse> findPosts(
-            BoardPostListRequest request, Long memberId, Pageable pageable) {
+        BoardPostListRequest request, Long memberId, Pageable pageable) {
 
         CriteriaBuilder cb = em.getCriteriaBuilder();
 
@@ -80,12 +81,12 @@ public class BoardPostRepositoryImpl implements BoardPostRepositoryCustom {
         final Set<Long> scrappedPostIds;
         if (memberId != null && !postIds.isEmpty()) {
             TypedQuery<Long> q =
-                    em.createQuery(
-                            "select s.boardPost.id "
-                                    + "from BoardPostScrap s "
-                                    + "where s.memberId = :memberId "
-                                    + "and s.boardPost.id in :postIds",
-                            Long.class);
+                em.createQuery(
+                    "select s.boardPost.id "
+                        + "from BoardPostScrap s "
+                        + "where s.memberId = :memberId "
+                        + "and s.boardPost.id in :postIds",
+                    Long.class);
             q.setParameter("memberId", memberId);
             q.setParameter("postIds", postIds);
             scrappedPostIds = new HashSet<>(q.getResultList());
@@ -96,11 +97,11 @@ public class BoardPostRepositoryImpl implements BoardPostRepositoryCustom {
         Map<Long, List<String>> tagMap = new HashMap<>();
         if (!postIds.isEmpty()) {
             TypedQuery<Object[]> relQ =
-                    em.createQuery(
-                            "select r.boardPost.id, r.skillTag.name "
-                                    + "from BoardPostTagRelation r "
-                                    + "where r.boardPost.id in :postIds",
-                            Object[].class);
+                em.createQuery(
+                    "select r.boardPost.id, r.skillTag.name "
+                        + "from BoardPostTagRelation r "
+                        + "where r.boardPost.id in :postIds",
+                    Object[].class);
             relQ.setParameter("postIds", postIds);
 
             for (Object[] row : relQ.getResultList()) {
@@ -114,46 +115,29 @@ public class BoardPostRepositoryImpl implements BoardPostRepositoryCustom {
         }
 
         List<BoardPostListResponse> dtos =
-                posts.stream()
-                        .map(
-                                p ->
-                                        BoardPostListResponse.builder()
-                                                .postId(p.getId())
-                                                .consultingTag(p.getBoardConsulting())
-                                                .title(p.getTitle())
-                                                .postStatus(
-                                                        p.getPostStatus() != null
-                                                                ? p.getPostStatus().name()
-                                                                : null)
-                                                .viewCount(
-                                                        p.getViewCount() != null
-                                                                ? p.getViewCount()
-                                                                : 0)
-                                                .scrapCount(
-                                                        p.getScrapCount() != null
-                                                                ? p.getScrapCount()
-                                                                : 0)
-                                                .commentCount(
-                                                        p.getCommentCount() != null
-                                                                ? p.getCommentCount()
-                                                                : 0)
-                                                .lastCommentedAt(p.getLastCommentedAt())
-                                                .createdAt(p.getCreatedAt())
-                                                .scrappedByMe(scrappedPostIds.contains(p.getId()))
-                                                .skillTags(
-                                                        tagMap.getOrDefault(
-                                                                p.getId(), Collections.emptyList()))
-                                                .build())
-                        .collect(Collectors.toList());
+            posts.stream()
+                .map(
+                    p ->
+                        BoardPostListResponse.builder()
+                            .postId(p.getId())
+                            .consultingTag(p.getBoardConsulting())
+                            .title(p.getTitle())
+                            .postStatus(p.getPostStatus() != null ? p.getPostStatus().name() : null)
+                            .viewCount(p.getViewCount() != null ? p.getViewCount() : 0)
+                            .scrapCount(p.getScrapCount() != null ? p.getScrapCount() : 0)
+                            .commentCount(p.getCommentCount() != null ? p.getCommentCount() : 0)
+                            .lastCommentedAt(p.getLastCommentedAt())
+                            .createdAt(p.getCreatedAt())
+                            .scrappedByMe(scrappedPostIds.contains(p.getId()))
+                            .skillTags(tagMap.getOrDefault(p.getId(), Collections.emptyList()))
+                            .build())
+                .collect(Collectors.toList());
 
         return new PageImpl<>(dtos, pageable, total);
     }
 
     private List<Predicate> buildPredicates(
-            CriteriaBuilder cb,
-            CriteriaQuery<?> query,
-            Root<BoardPost> root,
-            BoardPostListRequest request) {
+        CriteriaBuilder cb, CriteriaQuery<?> query, Root<BoardPost> root, BoardPostListRequest request) {
 
         List<Predicate> predicates = new ArrayList<>();
 
@@ -177,12 +161,12 @@ public class BoardPostRepositoryImpl implements BoardPostRepositoryCustom {
             predicates.add(cb.or(cb.like(root.get("title"), kw), cb.like(root.get("content"), kw)));
         }
 
-        if (request.getSkillTagIds() != null && !request.getSkillTagIds().isEmpty()) {
+        if (request.getTagIds() != null && !request.getTagIds().isEmpty()) {
             Subquery<Integer> sub = query.subquery(Integer.class);
             Root<BoardPostTagRelation> rel = sub.from(BoardPostTagRelation.class);
 
             Predicate p1 = cb.equal(rel.get("boardPost").get("id"), root.get("id"));
-            Predicate p2 = rel.get("skillTag").get("id").in(request.getSkillTagIds());
+            Predicate p2 = rel.get("skillTag").get("id").in(request.getTagIds());
 
             sub.select(cb.literal(1));
             sub.where(cb.and(p1, p2));
