@@ -1,25 +1,34 @@
 package org.aibe4.dodeul.domain.consulting.model.dto;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.aibe4.dodeul.domain.consulting.model.enums.ConsultingTag;
 
 @Getter
-@Setter // 타임리프 Form 데이터 바인딩을 위해 Setter 추가 권장
+@Setter
 @NoArgsConstructor
 public class ConsultingApplicationRequest {
 
+    // 멘티 ID는 컨트롤러에서 로그인 정보로 채워주므로 검증 불필요
     private Long menteeId;
-    private String title;
-    private String content;
-    private ConsultingTag consultingTag; // 카테고리 (커리어 전환 등)
 
-    // [추가됨] 와이어프레임의 '스킬 태그' (예: "Java, React")
+    @NotBlank(message = "제목을 입력해주세요.") // 공백, 빈 문자열 불가
+    @Size(max = 100, message = "제목은 100자를 넘을 수 없습니다.") // 길이 제한
+    private String title;
+
+    @NotBlank(message = "상담 내용을 입력해주세요.") // 필수 입력
+    private String content;
+
+    @NotNull(message = "상담 주제(카테고리)를 선택해주세요.") // Enum은 NotBlank 대신 NotNull 사용
+    private ConsultingTag consultingTag;
+
+    @NotBlank(message = "기술 태그를 입력해주세요.") // 예: "Java, Spring" (필수라면 NotBlank)
     private String techTags;
 
-    // [참고] 와이어프레임의 '첨부파일'
-    // 실제 파일 업로드를 하려면 MultipartFile로 바꿔야 하지만,
-    // 일단 기존 코드 유지(String)하고 나중에 기능 고도화 때 수정.
+    // 파일은 아직 기능 구현 전이므로 검증 제외 (선택 사항)
     private String fileUrl;
 }
