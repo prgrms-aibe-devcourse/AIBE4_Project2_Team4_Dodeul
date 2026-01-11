@@ -112,4 +112,44 @@ public class MemberService {
 
         member.updateNickname(trimmed);
     }
+
+    /**
+     * Google OAuth2 로그인 시 providerId(sub) 기준으로 회원을 찾거나 없으면 생성
+     */
+    @Transactional
+    public Member findOrCreateGoogleMember(String email, String providerId, Role role) {
+        return memberRepository
+            .findByProviderAndProviderId(Provider.GOOGLE, providerId)
+            .orElseGet(() -> createGoogleMember(email, providerId, role));
+    }
+
+    private Member createGoogleMember(String email, String providerId, Role role) {
+        if (role == null) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "역할 선택이 필요합니다.");
+        }
+
+        if (email == null || email.isBlank()) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "이메일 정보를 불러올 수 없습니다.");
+        }
+
+        if (memberRepository.existsByEmail(email)) {
+            throw new BusinessException(
+                ErrorCode.ALREADY_EXISTS,
+                "이미 가입된 이메일입니다. 로컬 로그인 또는 계정 연동 정책 확인이 필요합니다."
+            );
+        }
+
+        String tempNickname = "user_" + UUID.randomUUID().toString().replace("-", "").substring(0, 12);
+
+        Member member = Member.builder()
+            .email(email)
+            .passwordHash(null)
+            .provider(Provider.GOOGLE)
+            .providerId(providerId)
+            .role(role)
+            .nickname(tempNickname)
+            .build();
+
+        return memberRepository.save(member);
+    }
 }

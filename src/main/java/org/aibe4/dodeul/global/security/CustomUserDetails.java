@@ -1,13 +1,14 @@
 package org.aibe4.dodeul.global.security;
 
-import java.util.Collection;
-import java.util.List;
 import lombok.Getter;
 import org.aibe4.dodeul.domain.member.model.enums.Role;
 import org.springframework.security.core.CredentialsContainer;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+
+import java.util.Collection;
+import java.util.List;
 
 @Getter
 public class CustomUserDetails implements UserDetails, CredentialsContainer {
@@ -20,7 +21,7 @@ public class CustomUserDetails implements UserDetails, CredentialsContainer {
     private final Collection<? extends GrantedAuthority> authorities;
 
     public CustomUserDetails(
-            Long memberId, String email, String passwordHash, Role role, String nickname) {
+        Long memberId, String email, String passwordHash, Role role, String nickname) {
         this.memberId = memberId;
         this.email = email;
         this.passwordHash = passwordHash;
@@ -46,7 +47,7 @@ public class CustomUserDetails implements UserDetails, CredentialsContainer {
 
     @Override
     public String getUsername() {
-        return this.email; // Spring Security 기본 username은 email로 유지
+        return this.email;
     }
 
     @Override
