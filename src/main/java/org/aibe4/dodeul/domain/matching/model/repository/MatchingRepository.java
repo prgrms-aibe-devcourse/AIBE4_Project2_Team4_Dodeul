@@ -22,4 +22,14 @@ public interface MatchingRepository extends JpaRepository<Matching, Long> {
         @Param("mentorIds") List<Long> mentorIds,
         @Param("statuses") List<MatchingStatus> statuses
     );
+
+    @Query("SELECT m FROM Matching m " +
+        "JOIN FETCH m.application ca " +
+        "JOIN FETCH m.mentor mrt " +
+        "LEFT JOIN FETCH mrt.mentorProfile " +
+        "JOIN FETCH m.mentee mte " +
+        "LEFT JOIN FETCH mte.menteeProfile " +
+        "WHERE m.mentor.id = :memberId OR m.mentee.id = :memberId " +
+        "ORDER BY m.createdAt DESC")
+    List<Matching> findAllByMemberId(@Param("memberId") Long memberId);
 }
