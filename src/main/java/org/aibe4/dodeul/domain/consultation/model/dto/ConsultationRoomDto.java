@@ -3,6 +3,7 @@ package org.aibe4.dodeul.domain.consultation.model.dto;
 import lombok.Builder;
 import lombok.Getter;
 import org.aibe4.dodeul.domain.consultation.model.entity.ConsultationRoom;
+import org.aibe4.dodeul.domain.consultation.model.enums.ConsultationRoomStatus;
 import org.aibe4.dodeul.domain.consulting.model.dto.ConsultingApplicationDetailResponse;
 import org.aibe4.dodeul.domain.consulting.model.entity.ConsultingApplication;
 import org.aibe4.dodeul.domain.matching.model.entity.Matching;
@@ -16,6 +17,7 @@ public class ConsultationRoomDto {
 
     private Long consultationRoomId;
     private Long currentMemberId;
+    private ConsultationRoomStatus roomStatus;
 
     private List<MemberDto> participants;
     private ConsultingApplicationDetailResponse consultingApplicationDetailResponse;
@@ -32,6 +34,7 @@ public class ConsultationRoomDto {
 
         return ConsultationRoomDto.builder()
             .consultationRoomId(room.getId())
+            .roomStatus(room.getStatus())
             .currentMemberId(currentMemberId)
             .participants(participants)
             .consultingApplicationDetailResponse(consultingApplicationDetailResponse)

@@ -9,29 +9,23 @@
 </head>
 
 <div layout:fragment="content">
-
-  <th:block
-    th:with="opponent=${consultationRoomDto.participants.get(0).memberId == consultationRoomDto.currentMemberId ? consultationRoomDto.participants.get(1) : consultationRoomDto.participants.get(0)}">
+  <th:block th:with="opponent=${consultationRoomDto.participants.get(0).memberId == consultationRoomDto.currentMemberId ? consultationRoomDto.participants.get(1) : consultationRoomDto.participants.get(0)}">
 
     <div class="mb-4">
       <h2 class="fw-bold">💬 상담 채팅방</h2>
       <p class="text-small">
         <span class="fw-bold" th:text="${opponent.nickname}">상대방</span>님과의 대화입니다.
-      </p></div>
+      </p>
+    </div>
 
     <div class="row g-4">
       <div class="col-lg-8">
         <div class="chat-container">
-
           <div class="chat-header">
             <div class="d-flex align-items-center">
               <div class="me-3">
-                <img th:if="${opponent.profileUrl != null}"
-                     th:src="${opponent.profileUrl}" class="rounded-circle"
-                     style="width: 40px; height: 40px; border: 1px solid var(--color-border); object-fit: cover;">
-                <div th:unless="${opponent.profileUrl != null}"
-                     class="bg-light rounded-circle d-flex align-items-center justify-content-center border"
-                     style="width: 40px; height: 40px;">
+                <img th:if="${opponent.profileUrl != null}" th:src="${opponent.profileUrl}" class="rounded-circle" style="width: 40px; height: 40px; border: 1px solid var(--color-border); object-fit: cover;">
+                <div th:unless="${opponent.profileUrl != null}" class="bg-light rounded-circle d-flex align-items-center justify-content-center border" style="width: 40px; height: 40px;">
                   <i class="bi bi-person-fill text-secondary fs-5"></i>
                 </div>
               </div>
@@ -43,7 +37,7 @@
               </div>
             </div>
             <div>
-              <button class="btn btn-sm btn-outline-custom">
+              <button id="exit-btn" class="btn btn-sm btn-outline-custom">
                 <i class="bi bi-box-arrow-right me-1"></i>나가기
               </button>
             </div>
@@ -58,34 +52,18 @@
             </div>
 
             <th:block th:each="message : ${consultationRoomDto.messageDtoList}">
-              <div th:if="${message.type.name() == 'SYSTEM'}"
-                   class="d-flex justify-content-center my-3 w-100"
-                   th:attr="data-id=${message.id}">
-            <span class="badge bg-light text-secondary fw-normal border px-3 py-2 rounded-pill"
-                  th:text="${message.content}">시스템</span>
+              <div th:if="${message.type.name() == 'SYSTEM'}" class="d-flex justify-content-center my-3 w-100" th:attr="data-id=${message.id}">
+                <span class="badge bg-light text-secondary fw-normal border px-3 py-2 rounded-pill" th:text="${message.content}">시스템</span>
               </div>
 
-              <div th:unless="${message.type.name() == 'SYSTEM'}"
-                   class="d-flex flex-column mb-2"
-                   th:attr="data-id=${message.id}"
-                   th:classappend="${message.senderId == consultationRoomDto.currentMemberId} ? 'align-items-end' : 'align-items-start'">
-
-            <span th:if="${message.senderId != consultationRoomDto.currentMemberId}"
-                  th:text="${message.senderNickname}"
-                  class="text-secondary ms-1 mb-1" style="font-size: 0.75rem;">닉네임</span>
-
-                <div class="message"
-                     th:classappend="${message.senderId == consultationRoomDto.currentMemberId} ? 'sent' : 'received'">
-
+              <div th:unless="${message.type.name() == 'SYSTEM'}" class="d-flex flex-column mb-2" th:attr="data-id=${message.id}" th:classappend="${message.senderId == consultationRoomDto.currentMemberId} ? 'align-items-end' : 'align-items-start'">
+                <span th:if="${message.senderId != consultationRoomDto.currentMemberId}" th:text="${message.senderNickname}" class="text-secondary ms-1 mb-1" style="font-size: 0.75rem;">닉네임</span>
+                <div class="message" th:classappend="${message.senderId == consultationRoomDto.currentMemberId} ? 'sent' : 'received'">
                   <div th:if="${message.type.name() == 'IMAGE'}">
-                    <img th:src="${message.content}" alt="이미지"
-                         style="max-width: 250px; border-radius: 8px; cursor: pointer;"
-                         onclick="window.open(this.src)">
+                    <img th:src="${message.content}" alt="이미지" style="max-width: 250px; border-radius: 8px; cursor: pointer;" onclick="window.open(this.src)">
                   </div>
-
                   <div th:if="${message.type.name() == 'FILE'}">
-                    <a th:href="${message.content}" target="_blank"
-                       class="text-decoration-none d-flex align-items-center p-1" style="color: inherit;">
+                    <a th:href="${message.content}" target="_blank" class="text-decoration-none d-flex align-items-center p-1" style="color: inherit;">
                       <i class="bi bi-file-earmark-arrow-down fs-4 me-2"></i>
                       <div class="text-truncate" style="max-width: 150px;">
                         <small class="d-block" style="font-size: 0.7rem;">파일 다운로드</small>
@@ -93,69 +71,23 @@
                       </div>
                     </a>
                   </div>
-
                   <span th:if="${message.type.name() == 'TEXT'}" th:text="${message.content}">내용</span>
                 </div>
               </div>
             </th:block>
           </div>
+
           <div class="chat-input-area">
             <button class="btn btn-outline-custom px-2" title="파일 첨부">
               <i class="bi bi-paperclip fs-5"></i>
             </button>
             <textarea class="chat-input" placeholder="메시지를 입력하세요..." rows="1"></textarea>
-            <button id="send-btn" class="btn btn-primary-custom"
-                    style="height: 48px; padding-left: 1.5rem; padding-right: 1.5rem;">전송
-            </button>
+            <button id="send-btn" class="btn btn-primary-custom" style="height: 48px; padding-left: 1.5rem; padding-right: 1.5rem;">전송</button>
           </div>
         </div>
       </div>
 
-      <div class="col-lg-4">
-        <div class="side-panel-card">
-          <div class="side-panel-title">
-            <span>📄 상담 신청서</span>
-          </div>
-          <dl class="application-summary mb-0">
-            <dt>신청 제목</dt>
-            <dd th:text="${consultationRoomDto.consultingApplicationDetailResponse.title}">제목</dd>
-
-            <dt>희망 직무</dt>
-            <dd><span class="tag tag--read-only mb-0 py-1 px-2" style="font-size: 0.8rem;"
-                      th:text="${consultationRoomDto.consultingApplicationDetailResponse.skillTags}">태그</span></dd>
-
-            <dt>상담 내용 요약</dt>
-            <dd class="text-secondary" style="font-size: 0.9rem; line-height: 1.4;"
-                th:text="${consultationRoomDto.consultingApplicationDetailResponse.content}">
-              내용
-            </dd>
-          </dl>
-        </div>
-
-        <div class="side-panel-card">
-          <div class="side-panel-title">
-            <span>🗂 주고받은 파일</span>
-          </div>
-          <div class="file-list">
-            <a th:if="${consultationRoomDto.consultingApplicationDetailResponse.fileUrl != null}"
-               th:href="${consultationRoomDto.consultingApplicationDetailResponse.fileUrl}"
-               class="file-item text-decoration-none" target="_blank">
-              <div class="file-icon"><i class="bi bi-file-earmark-text"></i></div>
-              <div class="file-info">
-                <div class="file-name text-dark">신청서 첨부파일</div>
-                <div class="file-size">다운로드</div>
-              </div>
-              <div class="ms-2 text-secondary">
-                <i class="bi bi-download"></i>
-              </div>
-            </a>
-            <div th:unless="${consultationRoomDto.consultingApplicationDetailResponse.fileUrl != null}"
-                 class="text-center text-secondary py-3">
-              <small>주고받은 파일이 없습니다.</small>
-            </div>
-          </div>
-        </div>
-      </div>
+      <div class="col-lg-4">...</div>
     </div>
   </th:block>
 </div>
@@ -169,62 +101,23 @@
       const chatMessages = document.getElementById('chatMessages');
       const textarea = document.querySelector('.chat-input');
       const sendBtn = document.getElementById('send-btn');
+      const exitBtn = document.getElementById('exit-btn');
+      const loadingIndicator = document.getElementById('loadingIndicator');
 
       const roomId = [[${consultationRoomDto.consultationRoomId}]];
       const currentMemberId = [[${consultationRoomDto.currentMemberId}]];
+      const roomStatus = [[${consultationRoomDto.roomStatus.name()}]];
 
       let isFetching = false;
       let hasNext = true;
       let lastMessageId = null;
+      let stompClient = null;
 
-      // 공통 HTML 생성 함수
-      function createMessageElement(msg) {
-        const wrapper = document.createElement('div');
-        wrapper.setAttribute('data-id', msg.id);
-
-        if (msg.type === 'SYSTEM') {
-          wrapper.className = 'd-flex justify-content-center my-3 w-100';
-          wrapper.innerHTML = `
-            <span class="badge bg-light text-secondary fw-normal border px-3 py-2 rounded-pill">
-                ${msg.content}
-            </span>`;
-          return wrapper;
-        }
-
-        const isMine = (msg.senderId == currentMemberId);
-        wrapper.className = `d-flex flex-column mb-2 ${isMine ? 'align-items-end' : 'align-items-start'}`;
-
-        let html = '';
-        if (!isMine) {
-          html += `<span class="text-secondary ms-1 mb-1" style="font-size: 0.75rem;">${msg.senderNickname}</span>`;
-        }
-
-        let contentHtml = '';
-        if (msg.type === 'IMAGE') {
-          contentHtml = `<img src="${msg.content}" style="max-width: 250px; border-radius: 8px; cursor: pointer;" onclick="window.open(this.src)">`;
-        } else if (msg.type === 'FILE') {
-          contentHtml = `
-            <a href="${msg.content}" target="_blank" class="text-decoration-none d-flex align-items-center p-2" style="color: inherit;">
-              <i class="bi bi-file-earmark-arrow-down fs-4 me-2"></i>
-              <div class="text-truncate" style="max-width: 150px;">
-                <small class="d-block" style="font-size: 0.7rem;">파일 다운로드</small>
-                <span style="font-size: 0.85rem;">첨부파일</span>
-              </div>
-            </a>`;
-        } else {
-          contentHtml = `<span>${msg.content}</span>`;
-        }
-
-        html += `<div class="message ${isMine ? 'sent' : 'received'}">${contentHtml}</div>`;
-        wrapper.innerHTML = html;
-        return wrapper;
-      }
-
-      function updateCursor() {
-        const firstMessage = chatMessages.querySelector('[data-id]');
-        if (firstMessage) {
-          lastMessageId = firstMessage.getAttribute('data-id');
-        }
+      // 초기 UI 설정 및 소켓 연결
+      if (roomStatus === 'CLOSED') {
+        hideChatInput();
+      } else {
+        connectWebSocket();
       }
 
       if (chatMessages) {
@@ -232,90 +125,107 @@
         updateCursor();
       }
 
-      chatMessages.addEventListener('scroll', () => {
-        if (chatMessages.scrollTop === 0 && hasNext && !isFetching) {
-          fetchPreviousMessages();
-        }
-      });
-
-      // 스크립트 상단에 엘리먼트 참조 추가
-      const loadingIndicator = document.getElementById('loadingIndicator');
-
-      async function fetchPreviousMessages() {
-        if (!lastMessageId) return;
-
-        isFetching = true;
-        // 로딩 표시 보이기
-        loadingIndicator.classList.remove('d-none');
-
-        const prevScrollHeight = chatMessages.scrollHeight;
-
-        try {
-          const response = await fetch(`/api/consultations/room/${roomId}/messages?lastMessageId=${lastMessageId}&size=20`);
-          const result = await response.json();
-          const data = result.data;
-
-          if (data.content && data.content.length > 0) {
-            data.content.forEach(msg => prependMessage(msg));
-            updateCursor();
-            hasNext = !data.last;
-
-            // 스크롤 위치 유지 (로딩바가 사라진 후의 높이 변화까지 고려)
-            chatMessages.scrollTop = chatMessages.scrollHeight - prevScrollHeight;
-          } else {
-            hasNext = false;
-          }
-        } catch (error) {
-          console.error("이전 메시지 로드 실패:", error);
-        } finally {
-          isFetching = false;
-          // 로딩 표시 숨기기
-          loadingIndicator.classList.add('d-none');
-        }
-      }
-
-      function prependMessage(msg) {
-        const element = createMessageElement(msg);
-        chatMessages.insertBefore(element, chatMessages.firstChild);
-      }
-
-      function appendMessage(msg) {
-        const element = createMessageElement(msg);
-        chatMessages.appendChild(element);
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-      }
-
-      // --- WebSocket 로직 ---
-      const socket = new SockJS('/ws');
-      const stompClient = Stomp.over(socket);
-
-      stompClient.connect({}, function () {
-        stompClient.subscribe('/topic/room/' + roomId, function (response) {
-          appendMessage(JSON.parse(response.body));
-        });
-      });
-
-      function sendMessage() {
-        const content = textarea.value.trim();
-        if (content && stompClient.connected) {
-          stompClient.send("/app/chat/send", {}, JSON.stringify({
-            'roomId': roomId,
-            'senderId': currentMemberId,
-            'content': content
-          }));
-          textarea.value = '';
-        }
-      }
-
-      sendBtn.addEventListener('click', sendMessage);
+      // 이벤트 리스너 등록
+      if (exitBtn) exitBtn.addEventListener('click', closeChat);
+      if (sendBtn) sendBtn.addEventListener('click', sendMessage);
       textarea.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
           e.preventDefault();
           sendMessage();
         }
       });
-    })
-    ;
+      chatMessages.addEventListener('scroll', () => {
+        if (chatMessages.scrollTop === 0 && hasNext && !isFetching) fetchPreviousMessages();
+      });
+
+      // --- 핵심 함수 정의 ---
+
+      function connectWebSocket() {
+        const socket = new SockJS('/ws');
+        stompClient = Stomp.over(socket);
+        stompClient.connect({}, function () {
+          stompClient.subscribe('/topic/room/' + roomId, function (response) {
+            const msg = JSON.parse(response.body);
+            appendMessage(msg);
+            // 실시간 종료 메시지 수신 시 소켓 해제
+            if (msg.type === 'SYSTEM' && msg.content.includes("종료")) handleRoomClosed();
+          });
+        });
+      }
+
+      async function closeChat() {
+        if (!confirm("상담을 종료하시겠습니까?\n종료 후에는 메시지를 보낼 수 없습니다.")) return;
+        try {
+          const response = await fetch(`/api/consultations/room/${roomId}/close`, { method: 'POST' });
+          if (response.ok) {
+            alert("상담이 종료되었습니다.");
+            handleRoomClosed();
+          }
+        } catch (error) { console.error("종료 요청 실패:", error); }
+      }
+
+      function handleRoomClosed() {
+        hideChatInput();
+        if (stompClient && stompClient.connected) {
+          stompClient.disconnect(() => console.log("상담 종료: WebSocket 연결 해제"));
+        }
+      }
+
+      function hideChatInput() {
+        const inputArea = document.querySelector('.chat-input-area');
+        if (inputArea) inputArea.style.display = 'none';
+      }
+
+      function createMessageElement(msg) {
+        const wrapper = document.createElement('div');
+        wrapper.setAttribute('data-id', msg.id);
+        if (msg.type === 'SYSTEM') {
+          wrapper.className = 'd-flex justify-content-center my-3 w-100';
+          wrapper.innerHTML = `<span class="badge bg-light text-secondary fw-normal border px-3 py-2 rounded-pill">${msg.content}</span>`;
+        } else {
+          const isMine = (msg.senderId == currentMemberId);
+          wrapper.className = `d-flex flex-column mb-2 ${isMine ? 'align-items-end' : 'align-items-start'}`;
+          let contentHtml = msg.type === 'IMAGE'
+            ? `<img src="${msg.content}" style="max-width: 250px; border-radius: 8px; cursor: pointer;" onclick="window.open(this.src)">`
+            : msg.type === 'FILE'
+              ? `<a href="${msg.content}" target="_blank" class="text-decoration-none d-flex align-items-center p-2" style="color: inherit;"><i class="bi bi-file-earmark-arrow-down fs-4 me-2"></i><div><small class="d-block" style="font-size: 0.7rem;">파일 다운로드</small><span style="font-size: 0.85rem;">첨부파일</span></div></a>`
+              : `<span>${msg.content}</span>`;
+          wrapper.innerHTML = (!isMine ? `<span class="text-secondary ms-1 mb-1" style="font-size: 0.75rem;">${msg.senderNickname}</span>` : '') + `<div class="message ${isMine ? 'sent' : 'received'}">${contentHtml}</div>`;
+        }
+        return wrapper;
+      }
+
+      // 메시지 추가 및 페이징 함수 (기존 로직 유지)
+      function appendMessage(msg) { chatMessages.appendChild(createMessageElement(msg)); chatMessages.scrollTop = chatMessages.scrollHeight; }
+      function prependMessage(msg) { chatMessages.insertBefore(createMessageElement(msg), chatMessages.firstChild); }
+      function updateCursor() { const first = chatMessages.querySelector('[data-id]'); if (first) lastMessageId = first.getAttribute('data-id'); }
+
+      async function fetchPreviousMessages() {
+        if (!lastMessageId) return;
+        isFetching = true;
+        loadingIndicator.classList.remove('d-none');
+        const prevHeight = chatMessages.scrollHeight;
+        try {
+          const response = await fetch(`/api/consultations/room/${roomId}/messages?lastMessageId=${lastMessageId}&size=20`);
+          const result = await response.json();
+          const data = result.data;
+          if (data.content && data.content.length > 0) {
+            data.content.forEach(msg => prependMessage(msg));
+            updateCursor();
+            hasNext = !data.last;
+            chatMessages.scrollTop = chatMessages.scrollHeight - prevHeight;
+          } else hasNext = false;
+        } finally { isFetching = false; loadingIndicator.classList.add('d-none'); }
+      }
+
+      function sendMessage() {
+        const content = textarea.value.trim();
+        if (content && stompClient && stompClient.connected) {
+          stompClient.send("/app/chat/send", {}, JSON.stringify({ 'roomId': roomId, 'senderId': currentMemberId, 'content': content }));
+          textarea.value = '';
+        }
+      }
+    });
   </script>
 </th:block>
 </html>

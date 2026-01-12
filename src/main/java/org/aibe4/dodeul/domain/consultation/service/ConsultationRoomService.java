@@ -45,4 +45,13 @@ public class ConsultationRoomService {
 
         return consultationRoomRepository.save(newRoom).getId();
     }
+
+    @Transactional
+    public void closeRoom(Long roomId, Long currentMemberId) {
+        ConsultationRoom room = consultationRoomRepository.findById(roomId).orElseThrow(() -> new NoSuchElementException(ErrorCode.RESOURCE_NOT_FOUND.getMessage()));
+
+        room.changeStatusToClose();
+
+        chatService.sendSystemMessage(roomId, currentMemberId, "상담이 종료되었습니다.");
+    }
 }
