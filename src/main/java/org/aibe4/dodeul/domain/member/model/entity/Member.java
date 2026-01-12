@@ -9,6 +9,9 @@ import org.aibe4.dodeul.domain.common.model.entity.BaseEntity;
 import org.aibe4.dodeul.domain.member.model.enums.Provider;
 import org.aibe4.dodeul.domain.member.model.enums.Role;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity(name = "members")
@@ -39,6 +42,12 @@ public class Member extends BaseEntity {
 
     @Column(nullable = false, length = 20, unique = true)
     private String nickname;
+
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<MemberConsultingTag> consultingTags = new ArrayList<>();
+
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<MemberSkillTag> skillTags = new ArrayList<>();
 
     @Builder
     private Member(
