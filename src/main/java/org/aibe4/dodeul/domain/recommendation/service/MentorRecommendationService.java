@@ -125,7 +125,8 @@ public class MentorRecommendationService {
 
         double normReview = Math.min(reviewCnt / benchmarkReview, 1.0);
         double normMatching = Math.min(matchingCnt / benchmarkMatching, 1.0);
-        double normResponse = mentor.getMentorProfile().getResponseRate() / 100.0;
+        double responseRate = mentor.getMentorProfile().getResponseRate();
+        double normResponse = responseRate / 100.0;
 
         double weightedSum = (normConsulting * WEIGHT_CONSULTING)
             + (normSkill * WEIGHT_SKILL)
@@ -145,7 +146,7 @@ public class MentorRecommendationService {
                 .collect(Collectors.toList()))
             .recommendedReviewCount(reviewCnt)
             .completedMatchingCount(matchingCnt)
-            .responseRate(normResponse)
+            .responseRate(responseRate)
             .matchScore(totalScore)
             .build();
     }
