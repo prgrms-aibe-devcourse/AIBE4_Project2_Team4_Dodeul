@@ -18,8 +18,11 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -58,6 +61,17 @@ public class MatchingService {
         if (mentorActiveCount >= MAX_ACTIVE_MATCHING_COUNT) {
             throw new BusinessException(ErrorCode.MENTOR_MATCHING_LIMIT_EXCEEDED, "해당 멘토의 상담이 마감되었습니다. 다른 멘토를 선택해주세요.");
         }
+    }
+
+    public Map<Long, Long> getCompletedMatchingCounts(List<Long> mentorIds) {
+        if (mentorIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        return matchingRepository.countCompletedMatchingsByMentorIds(mentorIds).stream()
+            .collect(Collectors.toMap(
+                obj -> (Long) obj[0],
+                obj -> (Long) obj[1]
+            ));
     }
 
     @Transactional
