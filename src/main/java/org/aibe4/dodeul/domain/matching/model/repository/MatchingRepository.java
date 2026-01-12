@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface MatchingRepository extends JpaRepository<Matching, Long> {
@@ -22,6 +23,8 @@ public interface MatchingRepository extends JpaRepository<Matching, Long> {
         @Param("mentorIds") List<Long> mentorIds,
         @Param("statuses") List<MatchingStatus> statuses
     );
+
+    List<Matching> findAllByStatusAndCreatedAtBefore(MatchingStatus status, LocalDateTime cutoffTime);
 
     @Query("SELECT m FROM Matching m " +
         "JOIN FETCH m.application ca " +
