@@ -3,6 +3,7 @@ package org.aibe4.dodeul.domain.consultation.model.dto;
 import lombok.Builder;
 import lombok.Getter;
 import org.aibe4.dodeul.domain.consultation.model.entity.ConsultationRoom;
+import org.aibe4.dodeul.domain.consulting.model.dto.ConsultingApplicationDetailResponse;
 import org.aibe4.dodeul.domain.consulting.model.entity.ConsultingApplication;
 import org.aibe4.dodeul.domain.matching.model.entity.Matching;
 
@@ -17,14 +18,14 @@ public class ConsultationRoomDto {
     private Long currentMemberId;
 
     private List<MemberDto> participants;
-    private ConsultingApplicationDto consultingApplicationDto;
+    private ConsultingApplicationDetailResponse consultingApplicationDetailResponse;
     private List<MessageDto> messageDtoList;
 
     public static ConsultationRoomDto of(ConsultationRoom room, List<MessageDto> messageDtoList, Long currentMemberId) {
 
         Matching matching = room.getValidatedMatching();
         ConsultingApplication application = room.getValidatedApplication();
-
+        ConsultingApplicationDetailResponse consultingApplicationDetailResponse = ConsultingApplicationDetailResponse.from(application);
         List<MemberDto> participants = Stream.of(matching.getMentor(), matching.getMentee())
             .map(MemberDto::of)
             .toList();
@@ -33,7 +34,7 @@ public class ConsultationRoomDto {
             .consultationRoomId(room.getId())
             .currentMemberId(currentMemberId)
             .participants(participants)
-            .consultingApplicationDto(ConsultingApplicationDto.of(application))
+            .consultingApplicationDetailResponse(consultingApplicationDetailResponse)
             .messageDtoList(messageDtoList)
             .build();
     }
