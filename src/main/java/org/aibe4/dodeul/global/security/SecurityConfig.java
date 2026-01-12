@@ -5,6 +5,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.aibe4.dodeul.global.response.CommonResponse;
 import org.aibe4.dodeul.global.response.enums.ErrorCode;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -12,6 +13,7 @@ import org.springframework.http.MediaType;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -29,12 +31,12 @@ public class SecurityConfig {
     private final ObjectMapper objectMapper;
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(
+        HttpSecurity http, ObjectProvider<ClientRegistrationRepository> clientRegistrationRepositoryProvider)
+        throws Exception {
+
         http.cors(Customizer.withDefaults())
-            .csrf(
-                csrf ->
-                    csrf.ignoringRequestMatchers(
-                        "/api/**", "/h2-console/**", "/consultations/**", "/ws/**"))
+            .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**", "/h2-console/**"))
             .authorizeHttpRequests(
                 auth ->
                     auth
@@ -69,25 +71,15 @@ public class SecurityConfig {
                             "/api/onboarding/**")
                         .permitAll()
 
-                        // 게시판: GET 목록만 공개
+                        // 게시판 조회(GET)만 공개
                         .requestMatchers(HttpMethod.GET, "/api/board/posts", "/board/posts")
                         .permitAll()
 
-                        // 게시판(View): 목록 외는 로그인 필요
-                        .requestMatchers(HttpMethod.POST, "/board/posts")
-                        .authenticated()
-                        .requestMatchers("/board/posts/**")
-                        .authenticated()
-
-                        // 게시판(API): 목록 외는 로그인 필요 (상세/필터/검색/댓글/채택 등)
-                        .requestMatchers("/api/board/**")
-                        .authenticated()
-
-                        // 멘토 전용
+                        // 멘토 전용 구간
                         .requestMatchers("/mypage/mentor/**", "/api/demo/role/mentor", "/api/mentor/**")
                         .hasRole("MENTOR")
 
-                        // 멘티 전용
+                        // 멘티 전용 구간
                         .requestMatchers(
                             "/mypage/mentee/**",
                             "/matchings/**",
@@ -112,12 +104,6 @@ public class SecurityConfig {
                         .defaultSuccessUrl("/post-login")
                         .failureUrl("/auth/login?error")
                         .permitAll())
-            .oauth2Login(
-                oauth ->
-                    oauth
-                        .loginPage("/auth/login")
-                        .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
-                        .successHandler(oAuth2LoginSuccessHandler))
             .logout(
                 logout ->
                     logout
@@ -138,9 +124,7 @@ public class SecurityConfig {
 
                                     CommonResponse<Void> errorResponse =
                                         CommonResponse.fail(ErrorCode.UNAUTHORIZED_ACCESS);
-                                    response
-                                        .getWriter()
-                                        .write(objectMapper.writeValueAsString(errorResponse));
+                                    response.getWriter().write(objectMapper.writeValueAsString(errorResponse));
                                 } else {
                                     response.sendRedirect("/auth/login");
                                 }
@@ -156,13 +140,22 @@ public class SecurityConfig {
 
                                     CommonResponse<Void> errorResponse =
                                         CommonResponse.fail(ErrorCode.ACCESS_DENIED);
-                                    response
-                                        .getWriter()
-                                        .write(objectMapper.writeValueAsString(errorResponse));
+                                    response.getWriter().write(objectMapper.writeValueAsString(errorResponse));
                                 } else {
                                     response.sendRedirect("/error/403");
                                 }
                             }));
+
+        // ✅ OAuth2 설정이(= ClientRegistrationRepository Bean) 있을 때만 oauth2Login 활성화
+        ClientRegistrationRepository repo = clientRegistrationRepositoryProvider.getIfAvailable();
+        if (repo != null) {
+            http.oauth2Login(
+                oauth ->
+                    oauth
+                        .loginPage("/auth/login")
+                        .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
+                        .successHandler(oAuth2LoginSuccessHandler));
+        }
 
         http.headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()));
         return http.build();

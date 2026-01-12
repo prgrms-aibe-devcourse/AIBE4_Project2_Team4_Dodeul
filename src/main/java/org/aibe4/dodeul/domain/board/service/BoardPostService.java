@@ -20,7 +20,6 @@ import org.aibe4.dodeul.domain.member.model.repository.MemberRepository;
 import org.aibe4.dodeul.global.response.enums.ErrorCode;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,7 +46,8 @@ public class BoardPostService {
 
         validateListPolicy(memberId, normalized);
 
-        Page<BoardPostListResponse> page = boardPostRepository.findPosts(normalized, memberId, pageable);
+        Page<BoardPostListResponse> page =
+            boardPostRepository.findPosts(normalized, memberId, pageable);
 
         // ✅ 목록 댓글 수 0 문제 해결: postIds 묶어서 한 번에 count 조회 후 주입
         List<Long> postIds =
@@ -74,7 +74,7 @@ public class BoardPostService {
                     .viewCount(r.getViewCount())
                     .scrapCount(r.getScrapCount())
                     .skillTags(r.getSkillTags())
-                    .commentCount(commentCountMap.getOrDefault(r.getPostId(), 0L))
+                    .commentCount(commentCountMap.getOrDefault(r.getPostId(), 0L).intValue())
                     .build());
     }
 
@@ -122,7 +122,7 @@ public class BoardPostService {
     @Transactional
     public Long createPost(Long memberId, BoardPostCreateRequest request) {
         if (memberId == null) {
-            throw new BoardPolicyException(HttpStatus.UNAUTHORIZED, ErrorCode.ACCESS_DENIED, "로그인이 필요합니다.");
+            throw new BoardPolicyException(ErrorCode.ACCESS_DENIED, "로그인이 필요합니다.");
         }
 
         validateCreateRequest(request);
@@ -145,7 +145,8 @@ public class BoardPostService {
                 SkillTag skillTag =
                     skillTagRepository
                         .findById(tagId)
-                        .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 스킬태그가 포함되어 있습니다."));
+                        .orElseThrow(
+                            () -> new IllegalArgumentException("존재하지 않는 스킬태그가 포함되어 있습니다."));
                 boardPostTagRelationRepository.save(BoardPostTagRelation.of(saved, skillTag));
             }
         }
@@ -192,7 +193,7 @@ public class BoardPostService {
     @Transactional
     public Long acceptComment(Long memberId, Long postId, Long commentId) {
         if (memberId == null) {
-            throw new BoardPolicyException(HttpStatus.UNAUTHORIZED, ErrorCode.ACCESS_DENIED, "로그인이 필요합니다.");
+            throw new BoardPolicyException(ErrorCode.ACCESS_DENIED, "로그인이 필요합니다.");
         }
 
         BoardPost post =
@@ -202,7 +203,7 @@ public class BoardPostService {
 
         if (!memberId.equals(post.getMemberId())) {
             throw new BoardPolicyException(
-                HttpStatus.FORBIDDEN, ErrorCode.ACCESS_DENIED, "채택은 게시글 작성자만 가능합니다.");
+                ErrorCode.ACCESS_DENIED, "채택은 게시글 작성자만 가능합니다.");
         }
 
         BoardComment comment =
@@ -234,7 +235,7 @@ public class BoardPostService {
 
         if (memberId == null) {
             throw new BoardPolicyException(
-                HttpStatus.UNAUTHORIZED, ErrorCode.ACCESS_DENIED, "검색/필터 기능은 로그인 후 이용 가능합니다.");
+                ErrorCode.ACCESS_DENIED, "검색/필터 기능은 로그인 후 이용 가능합니다.");
         }
     }
 
@@ -250,7 +251,9 @@ public class BoardPostService {
         boolean hasKeyword = request.getKeyword() != null && !request.getKeyword().isBlank();
 
         boolean hasSort =
-            request.getSort() != null && !request.getSort().isBlank() && !"LATEST".equalsIgnoreCase(request.getSort());
+            request.getSort() != null
+                && !request.getSort().isBlank()
+                && !"LATEST".equalsIgnoreCase(request.getSort());
 
         return !(hasConsultingTag || hasTagIds || hasStatus || hasKeyword || hasSort);
     }

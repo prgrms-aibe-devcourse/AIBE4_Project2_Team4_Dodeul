@@ -1,3 +1,4 @@
+// src/main/java/org/aibe4/dodeul/domain/board/service/BoardCommentService.java
 package org.aibe4.dodeul.domain.board.service;
 
 import lombok.RequiredArgsConstructor;
@@ -17,7 +18,6 @@ import org.aibe4.dodeul.domain.board.model.repository.BoardPostRepository;
 import org.aibe4.dodeul.domain.member.model.entity.Member;
 import org.aibe4.dodeul.domain.member.model.repository.MemberRepository;
 import org.aibe4.dodeul.global.response.enums.ErrorCode;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,22 +25,24 @@ import java.util.*;
 
 @Service
 @RequiredArgsConstructor
-@org.springframework.transaction.annotation.Transactional(readOnly = true)
+@Transactional(readOnly = true)
 public class BoardCommentService {
 
-    private static final String DELETED_CONTENT = "삭제된 댓글입니다";
+    private static final String DELETED_CONTENT = "삭제된 댓글입니다.";
 
     private final BoardPostRepository boardPostRepository;
     private final BoardCommentRepository boardCommentRepository;
     private final BoardCommentLikeRepository boardCommentLikeRepository;
-
     private final MemberRepository memberRepository;
 
     public BoardCommentListResponse getComments(Long postId, Long memberId) {
         BoardPost post =
             boardPostRepository
                 .findById(postId)
-                .orElseThrow(() -> new IllegalArgumentException("게시글을 찾을 수 없습니다."));
+                .orElseThrow(
+                    () ->
+                        new BoardPolicyException(
+                            ErrorCode.RESOURCE_NOT_FOUND, "게시글을 찾을 수 없습니다."));
 
         Long postAuthorId = extractPostAuthorId(post);
 
@@ -120,18 +122,20 @@ public class BoardCommentService {
     @Transactional
     public void createComment(Long postId, Long memberId, BoardCommentCreateRequest request) {
         if (memberId == null) {
-            throw new BoardPolicyException(
-                HttpStatus.UNAUTHORIZED, ErrorCode.ACCESS_DENIED, "로그인이 필요합니다.");
+            throw new BoardPolicyException(ErrorCode.UNAUTHORIZED_ACCESS, "로그인이 필요합니다.");
         }
 
         BoardPost post =
             boardPostRepository
                 .findById(postId)
-                .orElseThrow(() -> new IllegalArgumentException("게시글을 찾을 수 없습니다."));
+                .orElseThrow(
+                    () ->
+                        new BoardPolicyException(
+                            ErrorCode.RESOURCE_NOT_FOUND, "게시글을 찾을 수 없습니다."));
 
         String content = normalize(request.getContent());
         if (content.isBlank()) {
-            throw new IllegalArgumentException("내용은 공백일 수 없습니다.");
+            throw new BoardPolicyException(ErrorCode.INVALID_INPUT_VALUE, "내용은 공백일 수 없습니다.");
         }
 
         BoardComment parent = null;
@@ -141,16 +145,21 @@ public class BoardCommentService {
             parent =
                 boardCommentRepository
                     .findById(request.getParentCommentId())
-                    .orElseThrow(() -> new IllegalArgumentException("부모 댓글을 찾을 수 없습니다."));
+                    .orElseThrow(
+                        () ->
+                            new BoardPolicyException(
+                                ErrorCode.RESOURCE_NOT_FOUND, "부모 댓글을 찾을 수 없습니다."));
 
             if (!Objects.equals(parent.getBoardPost().getId(), postId)) {
-                throw new IllegalArgumentException("부모 댓글이 해당 게시글에 속하지 않습니다.");
+                throw new BoardPolicyException(
+                    ErrorCode.INVALID_INPUT_VALUE, "부모 댓글이 해당 게시글에 속하지 않습니다.");
             }
             if (parent.getCommentStatus() == CommentStatus.DELETED) {
-                throw new IllegalStateException("삭제된 댓글에는 답글을 작성할 수 없습니다");
+                throw new BoardPolicyException(
+                    ErrorCode.INVALID_INPUT_VALUE, "삭제된 댓글에는 답글을 작성할 수 없습니다.");
             }
             if (parent.getParentComment() != null) {
-                throw new IllegalArgumentException("대댓글에는 답글을 작성할 수 없습니다.");
+                throw new BoardPolicyException(ErrorCode.INVALID_INPUT_VALUE, "대댓글에는 답글을 작성할 수 없습니다.");
             }
 
             root = parent;
@@ -170,28 +179,28 @@ public class BoardCommentService {
             boardCommentRepository.updateRootCommentId(saved.getId(), saved.getId());
         }
 
-        post.increaseCommentCount();
+        // ✅ 댓글 수는 목록/상세에서 실집계로 맞추므로, 엔티티 캐시 필드는 여기서 갱신하지 않는다.
     }
 
     @Transactional
     public void updateComment(Long commentId, Long memberId, BoardCommentUpdateRequest request) {
         if (memberId == null) {
-            throw new BoardPolicyException(
-                HttpStatus.UNAUTHORIZED, ErrorCode.ACCESS_DENIED, "로그인이 필요합니다.");
+            throw new BoardPolicyException(ErrorCode.UNAUTHORIZED_ACCESS, "로그인이 필요합니다.");
         }
 
         BoardComment comment =
             boardCommentRepository
                 .findById(commentId)
-                .orElseThrow(() -> new IllegalArgumentException("댓글을 찾을 수 없습니다."));
+                .orElseThrow(
+                    () -> new BoardPolicyException(ErrorCode.RESOURCE_NOT_FOUND, "댓글을 찾을 수 없습니다."));
 
         if (!Objects.equals(comment.getMemberId(), memberId)) {
-            throw new IllegalStateException("작성자만 수정할 수 있습니다");
+            throw new BoardPolicyException(ErrorCode.ACCESS_DENIED, "작성자만 수정할 수 있습니다.");
         }
 
         String content = normalize(request.getContent());
         if (content.isBlank()) {
-            throw new IllegalArgumentException("내용은 공백일 수 없습니다.");
+            throw new BoardPolicyException(ErrorCode.INVALID_INPUT_VALUE, "내용은 공백일 수 없습니다.");
         }
 
         comment.update(content);
@@ -200,17 +209,17 @@ public class BoardCommentService {
     @Transactional
     public void deleteComment(Long commentId, Long memberId) {
         if (memberId == null) {
-            throw new BoardPolicyException(
-                HttpStatus.UNAUTHORIZED, ErrorCode.ACCESS_DENIED, "로그인이 필요합니다.");
+            throw new BoardPolicyException(ErrorCode.UNAUTHORIZED_ACCESS, "로그인이 필요합니다.");
         }
 
         BoardComment comment =
             boardCommentRepository
                 .findById(commentId)
-                .orElseThrow(() -> new IllegalArgumentException("댓글을 찾을 수 없습니다."));
+                .orElseThrow(
+                    () -> new BoardPolicyException(ErrorCode.RESOURCE_NOT_FOUND, "댓글을 찾을 수 없습니다."));
 
         if (!Objects.equals(comment.getMemberId(), memberId)) {
-            throw new IllegalStateException("작성자만 삭제할 수 있습니다");
+            throw new BoardPolicyException(ErrorCode.ACCESS_DENIED, "작성자만 삭제할 수 있습니다.");
         }
 
         comment.delete();
@@ -219,14 +228,14 @@ public class BoardCommentService {
     @Transactional
     public void toggleLike(Long commentId, Long memberId) {
         if (memberId == null) {
-            throw new BoardPolicyException(
-                HttpStatus.UNAUTHORIZED, ErrorCode.ACCESS_DENIED, "로그인이 필요합니다.");
+            throw new BoardPolicyException(ErrorCode.UNAUTHORIZED_ACCESS, "로그인이 필요합니다.");
         }
 
         BoardComment comment =
             boardCommentRepository
                 .findById(commentId)
-                .orElseThrow(() -> new IllegalArgumentException("댓글을 찾을 수 없습니다."));
+                .orElseThrow(
+                    () -> new BoardPolicyException(ErrorCode.RESOURCE_NOT_FOUND, "댓글을 찾을 수 없습니다."));
 
         Optional<BoardCommentLike> existing =
             boardCommentLikeRepository.findByBoardCommentIdAndMemberId(commentId, memberId);
@@ -261,16 +270,23 @@ public class BoardCommentService {
 
         Long commentAuthorId = c.getMemberId();
         Member author = commentAuthorId == null ? null : memberMap.get(commentAuthorId);
-        String nickname = author != null && author.getNickname() != null ? author.getNickname() : "익명";
+        String nickname =
+            author != null && author.getNickname() != null && !author.getNickname().isBlank()
+                ? author.getNickname()
+                : "익명";
 
         String roleTag = resolveRoleTag(commentAuthorId, postAuthorId, author);
 
         boolean isAccepted = acceptedId != null && Objects.equals(acceptedId, c.getId());
 
-        boolean mine = viewerMemberId != null && commentAuthorId != null && Objects.equals(viewerMemberId, commentAuthorId);
+        boolean mine =
+            viewerMemberId != null
+                && commentAuthorId != null
+                && Objects.equals(viewerMemberId, commentAuthorId);
+
         boolean canEdit = mine && !deleted;
         boolean canDelete = mine && !deleted;
-        boolean canReply = isRoot && viewerMemberId != null && !deleted; // CLOSED여도 답글 가능 정책
+        boolean canReply = isRoot && viewerMemberId != null && !deleted;
 
         boolean canAccept =
             isRoot
@@ -321,7 +337,7 @@ public class BoardCommentService {
     private Long extractPostAuthorId(BoardPost post) {
         Long id = post.getMemberId();
         if (id == null) {
-            throw new IllegalStateException("게시글 작성자 정보를 가져올 수 없습니다.");
+            throw new BoardPolicyException(ErrorCode.INTERNAL_SERVER_ERROR, "게시글 작성자 정보를 가져올 수 없습니다.");
         }
         return id;
     }
