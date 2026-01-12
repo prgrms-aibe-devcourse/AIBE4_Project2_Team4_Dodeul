@@ -19,7 +19,7 @@ public class ChatApiController {
     private final ChatService chatService;
 
     @GetMapping("/{roomId}/messages")
-    @PreAuthorize("@consultationGuard.participantMember(#roomId, #userDetails.memberId)")
+    @PreAuthorize("@consultationGuard.isParticipantMember(#roomId, #userDetails.memberId)")
     public CommonResponse<Slice<MessageDto>> getMoreMessages(@PathVariable Long roomId,
                                                              @RequestParam(required = false) Long lastMessageId,
                                                              @RequestParam(defaultValue = "20") int size,
