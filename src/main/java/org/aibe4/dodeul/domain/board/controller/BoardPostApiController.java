@@ -1,3 +1,4 @@
+// src/main/java/org/aibe4/dodeul/domain/board/controller/BoardPostApiController.java
 package org.aibe4.dodeul.domain.board.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -10,11 +11,14 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.aibe4.dodeul.domain.board.model.dto.request.BoardPostAcceptRequest;
 import org.aibe4.dodeul.domain.board.model.dto.request.BoardPostCreateRequest;
 import org.aibe4.dodeul.domain.board.model.dto.request.BoardPostListRequest;
+import org.aibe4.dodeul.domain.board.model.dto.response.BoardPostAcceptResponse;
 import org.aibe4.dodeul.domain.board.model.dto.response.BoardPostCreateResponse;
 import org.aibe4.dodeul.domain.board.model.dto.response.BoardPostListPageResponse;
 import org.aibe4.dodeul.domain.board.model.dto.response.BoardPostListResponse;
+import org.aibe4.dodeul.domain.board.model.enums.PostStatus;
 import org.aibe4.dodeul.domain.board.service.BoardPostService;
 import org.aibe4.dodeul.domain.consulting.model.enums.ConsultingTag;
 import org.aibe4.dodeul.global.response.CommonResponse;
@@ -58,10 +62,7 @@ public class BoardPostApiController {
             description = "성공",
             content =
             @Content(
-                schema =
-                @Schema(
-                    implementation =
-                        org.aibe4.dodeul.global.response.CommonResponse.class))),
+                schema = @Schema(implementation = org.aibe4.dodeul.global.response.CommonResponse.class))),
         @ApiResponse(responseCode = "400", description = "요청값 검증 실패", content = @Content),
         @ApiResponse(responseCode = "401", description = "인증 필요", content = @Content),
         @ApiResponse(responseCode = "403", description = "권한 없음", content = @Content)
@@ -85,7 +86,8 @@ public class BoardPostApiController {
         @Parameter(
             in = ParameterIn.QUERY,
             description = "게시글 상태(없거나 잘못되면 OPEN으로 처리)",
-            schema = @Schema(allowableValues = {"OPEN", "CLOSED", "DELETED"}, defaultValue = "OPEN"))
+            schema =
+            @Schema(allowableValues = {"OPEN", "CLOSED", "DELETED"}, defaultValue = "OPEN"))
         @RequestParam(value = "status", required = false)
         String status,
         @Parameter(
@@ -98,9 +100,7 @@ public class BoardPostApiController {
             in = ParameterIn.QUERY,
             description = "정렬 기준",
             schema =
-            @Schema(
-                allowableValues = {"LATEST", "LIKES", "SCRAPS"},
-                defaultValue = "LATEST"))
+            @Schema(allowableValues = {"LATEST", "LIKES", "SCRAPS"}, defaultValue = "LATEST"))
         @RequestParam(value = "sort", required = false)
         String sort,
         @Parameter(
@@ -150,10 +150,7 @@ public class BoardPostApiController {
             description = "성공",
             content =
             @Content(
-                schema =
-                @Schema(
-                    implementation =
-                        org.aibe4.dodeul.global.response.CommonResponse.class))),
+                schema = @Schema(implementation = org.aibe4.dodeul.global.response.CommonResponse.class))),
         @ApiResponse(responseCode = "400", description = "요청값 검증 실패", content = @Content),
         @ApiResponse(responseCode = "401", description = "인증 필요", content = @Content),
         @ApiResponse(responseCode = "403", description = "권한 없음", content = @Content)
@@ -169,6 +166,44 @@ public class BoardPostApiController {
 
         return CommonResponse.success(
             SuccessCode.SUCCESS, new BoardPostCreateResponse(postId), "게시글 작성 성공");
+    }
+
+    @Operation(
+        summary = "댓글 채택",
+        description =
+            """
+                게시글의 최상위 댓글을 채택합니다.
+
+                - 게시글 작성자만 가능
+                - 최상위 댓글(root)만 채택 가능
+                - 채택 성공 시 게시글 상태는 CLOSED로 변경됩니다.
+                """)
+    @ApiResponses({
+        @ApiResponse(
+            responseCode = "200",
+            description = "성공",
+            content =
+            @Content(
+                schema = @Schema(implementation = org.aibe4.dodeul.global.response.CommonResponse.class))),
+        @ApiResponse(responseCode = "400", description = "요청값 검증 실패", content = @Content),
+        @ApiResponse(responseCode = "401", description = "인증 필요", content = @Content),
+        @ApiResponse(responseCode = "403", description = "권한 없음", content = @Content),
+        @ApiResponse(responseCode = "404", description = "게시글/댓글 없음", content = @Content)
+    })
+    @SecurityRequirement(name = "bearerAuth")
+    @PatchMapping("/{postId}/accept")
+    public CommonResponse<BoardPostAcceptResponse> acceptComment(
+        @AuthenticationPrincipal CustomUserDetails userDetails,
+        @PathVariable Long postId,
+        @RequestBody @Validated BoardPostAcceptRequest request) {
+
+        Long memberId = userDetails == null ? null : userDetails.getMemberId();
+        Long acceptedCommentId = boardPostService.acceptComment(memberId, postId, request.getCommentId());
+
+        BoardPostAcceptResponse data =
+            BoardPostAcceptResponse.of(postId, acceptedCommentId, PostStatus.CLOSED.name());
+
+        return CommonResponse.success(SuccessCode.SUCCESS, data, "댓글 채택 성공");
     }
 
     private Sort toSpringSort(String sort) {
