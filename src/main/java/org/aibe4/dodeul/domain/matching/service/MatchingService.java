@@ -28,6 +28,15 @@ public class MatchingService {
 
     private static final int MAX_ACTIVE_MATCHING_COUNT = 3;
     private static final List<MatchingStatus> ACTIVE_STATUSES = List.of(MatchingStatus.WAITING, MatchingStatus.MATCHED);
+    private static final List<MatchingStatus> RESPONDED_STATUSES = List.of(
+        MatchingStatus.MATCHED,
+        MatchingStatus.REJECTED,
+        MatchingStatus.INREVIEW,
+        MatchingStatus.COMPLETED
+    );
+    private static final List<MatchingStatus> IGNORED_STATUSES = List.of(
+        MatchingStatus.TIMEOUT
+    );
 
     private final MatchingRepository matchingRepository;
 
@@ -49,6 +58,22 @@ public class MatchingService {
         if (mentorActiveCount >= MAX_ACTIVE_MATCHING_COUNT) {
             throw new BusinessException(ErrorCode.MENTOR_MATCHING_LIMIT_EXCEEDED, "해당 멘토의 상담이 마감되었습니다. 다른 멘토를 선택해주세요.");
         }
+    }
+
+    @Transactional
+    public void updateMentorResponseRate(Long mentorId) {
+        long respondedCount = matchingRepository.countByMentorIdAndStatusIn(mentorId, RESPONDED_STATUSES);
+        long ignoredCount = matchingRepository.countByMentorIdAndStatusIn(mentorId, IGNORED_STATUSES);
+
+        double rawRate;
+        if (respondedCount + ignoredCount == 0) {
+            rawRate = 0.0;
+        } else {
+            rawRate = (double) respondedCount / (respondedCount + ignoredCount);
+        }
+
+        double responseRate = Math.round(rawRate * 100 * 10) / 10.0;
+        memberQueryService.updateMentorResponseRate(mentorId, responseRate);
     }
 
     @Transactional
@@ -94,6 +119,7 @@ public class MatchingService {
             throw new IllegalArgumentException("본인의 매칭만 수락할 수 있습니다.");
         }
         matching.accept();
+        updateMentorResponseRate(memberId);
 
         return new MatchingStatusResponse(matchingId, matching.getStatus());
     }
@@ -106,6 +132,7 @@ public class MatchingService {
             throw new IllegalArgumentException("본인의 매칭만 거절할 수 있습니다.");
         }
         matching.reject();
+        updateMentorResponseRate(memberId);
 
         return new MatchingStatusResponse(matchingId, matching.getStatus());
     }
