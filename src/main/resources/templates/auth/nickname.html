@@ -1,69 +1,75 @@
-<!doctype html>
-<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{common/layout/base}">
 <head>
-  <meta charset="utf-8"/>
-  <title>닉네임 설정</title>
+  <th:block layout:fragment="head">
+    <title>DODEUL | 닉네임 설정</title>
+  </th:block>
 </head>
+
 <body>
-<h1>닉네임 설정</h1>
+<section layout:fragment="content">
+  <div style="max-width: 560px; margin: 0 auto; padding: 48px 0;">
+    <h1 class="fw-bold" style="margin-bottom: 16px;">닉네임 설정</h1>
 
-<p id="msg" style="margin: 12px 0; color: red;"></p>
+    <p id="msg" style="margin: 12px 0; color: red;"></p>
 
-<form id="nicknameForm">
-  <!-- CSRF -->
-  <input type="hidden" id="csrfToken" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+    <form id="nicknameForm" style="display:flex; flex-direction:column; gap:12px;">
+      <input type="hidden" id="csrfToken" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
 
-  <div>
-    <label>닉네임</label>
-    <input type="text"
-           id="nickname"
-           name="nickname"
-           maxlength="10"
-           minlength="2"
-           required>
-    <small style="color: #666;">
-      닉네임은 2~10자의 한글, 영문, 숫자만 사용할 수 있으며 수정할 수 없습니다.
-    </small>
+      <div>
+        <label style="display:block; margin-bottom:6px;">닉네임</label>
+        <input type="text"
+               id="nickname"
+               name="nickname"
+               maxlength="10"
+               minlength="2"
+               required
+               class="form-control-custom">
+        <small class="text-small">
+          닉네임은 2~10자의 한글, 영문, 숫자만 사용할 수 있으며 수정할 수 없습니다.
+        </small>
+      </div>
+
+      <button type="submit" class="btn-primary-custom">저장</button>
+    </form>
   </div>
 
-  <button type="submit">저장</button>
-</form>
+  <script>
+    const form = document.getElementById('nicknameForm');
+    const msg = document.getElementById('msg');
 
-<script>
-  const form = document.getElementById('nicknameForm');
-  const msg = document.getElementById('msg');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      msg.textContent = "";
 
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    msg.textContent = "";
+      const nickname = document.getElementById('nickname').value;
+      const csrfToken = document.getElementById('csrfToken').value;
 
-    const nickname = document.getElementById('nickname').value;
-    const csrfToken = document.getElementById('csrfToken').value;
+      try {
+        const res = await fetch('/api/mypage/nickname', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': csrfToken
+          },
+          body: JSON.stringify({nickname})
+        });
 
-    try {
-      const res = await fetch('/api/mypage/nickname', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-TOKEN': csrfToken
-        },
-        body: JSON.stringify({nickname})
-      });
+        const json = await res.json();
 
-      const json = await res.json();
-
-      if (res.ok) {
-        // 성공 → 대시보드로 이동
-        window.location.href = '/';
-      } else {
-        // 실패 → 서버 메시지 표시
-        msg.textContent = json.message || '닉네임 설정 중 오류가 발생했습니다.';
+        if (res.ok) {
+          window.location.href = '/';
+        } else {
+          msg.textContent = json.message || '닉네임 설정 중 오류가 발생했습니다.';
+        }
+      } catch (err) {
+        msg.textContent = '서버와 통신할 수 없습니다.';
       }
-    } catch (err) {
-      msg.textContent = '서버와 통신할 수 없습니다.';
-    }
-  });
-</script>
-
+    });
+  </script>
+</section>
 </body>
 </html>

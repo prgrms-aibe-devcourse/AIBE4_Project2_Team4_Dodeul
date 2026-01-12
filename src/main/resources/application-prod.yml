@@ -38,7 +38,11 @@ spring:
         provider:
           google:
             user-name-attribute: sub
-
+          github:
+            client-id: ${GITHUB_CLIENT_ID}
+            client-secret: ${GITHUB_CLIENT_SECRET}
+            scope:
+              - read:user
 logging:
   level:
     root: INFO
