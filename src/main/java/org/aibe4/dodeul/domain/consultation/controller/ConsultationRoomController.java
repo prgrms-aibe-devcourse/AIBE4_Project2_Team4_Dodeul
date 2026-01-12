@@ -20,7 +20,7 @@ public class ConsultationRoomController {
     private final ConsultationRoomService consultationRoomService;
 
     @GetMapping("/room/{roomId}")
-    @PreAuthorize("@consultationGuard.check(#roomId, #userDetails.memberId)")
+    @PreAuthorize("@consultationGuard.isParticipantMember(#roomId, #userDetails.memberId)")
     public String enterRoom(@PathVariable Long roomId, @AuthenticationPrincipal CustomUserDetails userDetails, Model model) {
         ConsultationRoomDto consultationRoomDto = consultationRoomService.loadRoomInfo(roomId, userDetails.getMemberId());
 
