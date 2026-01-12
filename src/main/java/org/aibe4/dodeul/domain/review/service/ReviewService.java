@@ -1,4 +1,4 @@
-package org.aibe4.dodeul.domain.review.model;
+package org.aibe4.dodeul.domain.review.service;
 
 import lombok.RequiredArgsConstructor;
 import org.aibe4.dodeul.domain.review.model.repository.ReviewRepository;
@@ -24,7 +24,7 @@ public class ReviewService {
         return reviewRepository.countRecommendedReviewsByMentorIds(mentorIds).stream()
             .collect(Collectors.toMap(
                 obj -> (Long) obj[0],
-                obj -> (Long) obj[1]
+                obj -> ((Number) obj[1]).longValue()
             ));
     }
 }

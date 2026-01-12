@@ -40,6 +40,10 @@ public class MatchingService {
     private static final List<MatchingStatus> IGNORED_STATUSES = List.of(
         MatchingStatus.TIMEOUT
     );
+    private static final List<MatchingStatus> FINISHED_STATUSES = List.of(
+        MatchingStatus.INREVIEW,
+        MatchingStatus.COMPLETED
+    );
 
     private final MatchingRepository matchingRepository;
 
@@ -67,10 +71,10 @@ public class MatchingService {
         if (mentorIds.isEmpty()) {
             return Collections.emptyMap();
         }
-        return matchingRepository.countCompletedMatchingsByMentorIds(mentorIds).stream()
+        return matchingRepository.countByMentorIdAndStatusIn(mentorIds, FINISHED_STATUSES).stream()
             .collect(Collectors.toMap(
                 obj -> (Long) obj[0],
-                obj -> (Long) obj[1]
+                obj -> ((Number) obj[1]).longValue()
             ));
     }
 

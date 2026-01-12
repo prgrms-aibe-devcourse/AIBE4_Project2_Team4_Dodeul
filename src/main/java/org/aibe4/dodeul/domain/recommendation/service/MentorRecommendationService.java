@@ -9,7 +9,7 @@ import org.aibe4.dodeul.domain.member.model.entity.Member;
 import org.aibe4.dodeul.domain.member.model.entity.MemberConsultingTag;
 import org.aibe4.dodeul.domain.member.service.MemberQueryService;
 import org.aibe4.dodeul.domain.recommendation.model.dto.MentorRecommendationResponse;
-import org.aibe4.dodeul.domain.review.model.ReviewService;
+import org.aibe4.dodeul.domain.review.service.ReviewService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
