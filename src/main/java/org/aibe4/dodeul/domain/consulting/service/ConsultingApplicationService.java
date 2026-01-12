@@ -135,4 +135,32 @@ public class ConsultingApplicationService {
             .filter(tag -> tag != null) // DB에 없는 태그는 여기서 걸러짐
             .collect(Collectors.toList());
     }
+
+    /**
+     * [추가] 수정 폼을 위한 데이터 조회 및 DTO 변환
+     * 컨트롤러에 있던 로직을 서비스로 옮겨 캡슐화합니다.
+     */
+    public ConsultingApplicationRequest getRegistrationForm(Long applicationId) {
+        // 1. 엔티티 조회 (기존에 만들어두신 메서드 활용)
+        ConsultingApplication application = findApplicationEntity(applicationId);
+
+        // 2. DTO 생성 및 값 복사 (Null 방지 처리 포함)
+        ConsultingApplicationRequest form = new ConsultingApplicationRequest();
+        form.setTitle(application.getTitle() != null ? application.getTitle() : "");
+        form.setContent(application.getContent() != null ? application.getContent() : "");
+        form.setConsultingTag(application.getConsultingTag());
+        form.setFileUrl(application.getFileUrl());
+
+        // 3. 스킬 태그 리스트를 문자열(쉼표 구분)로 변환
+        String tags = "";
+        if (application.getApplicationSkillTags() != null) {
+            tags = application.getApplicationSkillTags().stream()
+                .filter(m -> m.getSkillTag() != null)
+                .map(m -> m.getSkillTag().getName())
+                .collect(Collectors.joining(", "));
+        }
+        form.setTechTags(tags);
+
+        return form;
+    }
 }

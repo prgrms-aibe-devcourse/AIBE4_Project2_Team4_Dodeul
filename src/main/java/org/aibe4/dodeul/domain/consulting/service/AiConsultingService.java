@@ -19,11 +19,15 @@ public class AiConsultingService {
     @Value("${groq.api.key}")
     private String apiKey;
 
+    @Value("${groq.api.url}")
+    private String url;
+
+    @Value("${groq.api.model}")
+    private String model;
+
     private final RestTemplate restTemplate = new RestTemplate();
 
     public String createDraft(String keywords) {
-        // Groq API 표준 엔드포인트
-        String url = "https://api.groq.com/openai/v1/chat/completions";
 
         // 1. Groq/OpenAI 호환 메시지 구조 생성
         Map<String, Object> message = Map.of(
@@ -33,7 +37,7 @@ public class AiConsultingService {
 
         // 2. 요청 바디 구성 (무료 티어에서 가장 성능 좋은 llama-3.3 모델 사용)
         Map<String, Object> requestBody = Map.of(
-            "model", "llama-3.3-70b-versatile",
+            "model", model,
             "messages", List.of(message)
         );
 
