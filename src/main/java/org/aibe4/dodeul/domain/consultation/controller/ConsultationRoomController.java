@@ -30,7 +30,8 @@ public class ConsultationRoomController {
     }
 
     @GetMapping("/matching/{matchingId}")
-    public String enterOrCreateRoom(@PathVariable Long matchingId) {
+    @PreAuthorize("@consultationGuard.isCorrectMatchedMember(#matchingId, #userDetails.memberId)")
+    public String enterOrCreateRoom(@PathVariable Long matchingId, @AuthenticationPrincipal CustomUserDetails userDetails) {
         Long roomId = consultationRoomService.getOrCreateRoom(matchingId);
 
         return "redirect:/consultations/room/" + roomId;
