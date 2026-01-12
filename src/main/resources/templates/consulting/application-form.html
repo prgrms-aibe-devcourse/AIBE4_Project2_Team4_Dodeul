@@ -69,7 +69,7 @@
       </div>
     </div>
 
-    <form th:action="${formActionUrl}" th:object="${request}" method="post">
+    <form th:action="${formActionUrl}" th:object="${request}" method="post" enctype="multipart/form-data">
 
       <div class="mb-5">
         <h4 class="fw-bold mb-2">카테고리 선택</h4>
@@ -103,13 +103,13 @@
       </div>
 
       <div class="mb-4">
-        <label class="fw-bold mb-2">상담 제목</label>
+        <label class="fw-bold mb-2">상담 제목 （필수）</label>
         <input type="text" class="form-control p-3" th:field="*{title}"
                placeholder="멘토링 상담 제목을 입력하세요" required>
       </div>
 
       <div class="mb-4">
-        <label class="fw-bold mb-2">상담 내용</label>
+        <label class="fw-bold mb-2">상담 내용 （필수）</label>
         <textarea id="content" class="form-control p-3" th:field="*{content}" rows="6"
                   placeholder="상담 받고 싶은 내용과 목표를 상세하게 작성해주세요."
                   required oninput="updateCharCount(this)"></textarea>
@@ -117,15 +117,16 @@
       </div>
 
       <div class="mb-4">
-        <label class="fw-bold mb-2">스킬 태그</label>
+        <label class="fw-bold mb-2">스킬 태그 （필수）</label>
         <input type="text" class="form-control p-3" th:field="*{techTags}"
                placeholder="예: Java, React, PM (쉼표로 구분)">
       </div>
 
       <div class="mb-5">
-        <label class="fw-bold mb-2">첨부파일</label>
-        <input type="text" class="form-control" th:field="*{fileUrl}"
-               placeholder="파일 URL을 입력하세요">
+        <label class="fw-bold mb-2">첨부파일 （선택）</label>
+        <input type="file" id="file" name="file" class="form-control"
+               accept=".jpg,.jpeg,.png,.gif,.pdf,.txt,.ppt,.pptx">
+        <div class="form-text text-muted small">이미지, PDF, PPT 등 최대 5MB까지 첨부 가능합니다.</div>
       </div>
 
       <hr class="my-5">
