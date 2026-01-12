@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{common/layout/mentee}">
+<head>
+  <th:block layout:fragment="head">
+    <title>DODEUL | 멘티 대시보드</title>
+  </th:block>
+</head>
+
+<body>
+<div layout:fragment="page">
+  <h2 class="fw-bold" style="margin-bottom:12px;">멘티 대시보드</h2>
+  <p class="text-small" style="margin-bottom:16px;">내 활동 요약을 불러오는 중입니다.</p>
+
+  <div id="da shboardRoot"></div>
+  <p id="dashboardError" style="color:red; margin-top:12px;"></p>
+</div>
+
+<th:block layout:fragment="script">
+  <script>
+    (async function () {
+      const root = document.getElementById('dashboardRoot');
+      const err = document.getElementById('dashboardError');
+
+      try {
+        const res = await fetch('/api/mypage/dashboard', {method: 'GET'});
+        const json = await res.json();
+
+        if (!res.ok) {
+          err.textContent = json?.message || '대시보드 조회 중 오류가 발생했습니다.';
+          return;
+        }
+
+        const data = json.data || {};
+
+        root.innerHTML = `
+          <div class="card-custom">
+            <div class="fw-bold" style="margin-bottom:8px;">내 정보</div>
+            <div>memberId: ${data.memberId ?? '-'}</div>
+            <div>role: ${data.role ?? '-'}</div>
+            <div>nickname: ${data.nickname ?? '-'}</div>
+          </div>
+        `;
+      } catch (e) {
+        err.textContent = '서버와 통신할 수 없습니다.';
+      }
+    })();
+  </script>
+</th:block>
+
+</body>
+</html>
