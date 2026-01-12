@@ -74,3 +74,4 @@ public class AiConsultingService {
         }
     }
 }
+// 106번 재커밋

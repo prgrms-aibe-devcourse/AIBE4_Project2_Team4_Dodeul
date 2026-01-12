@@ -70,7 +70,7 @@ public class SecurityConfig {
                 ).hasRole("MENTOR")
 
                 // 상담 신청 관련 (상세조회, 수정, 삭제 포함)
-                .requestMatchers("/consulting-applications/**").authenticated()
+                .requestMatchers("/consulting-applications/**").authenticated()// 106번 재커밋
 
                 // AI 초안 생성 API (이게 추가되어야 403 에러가 해결됩니다!)
                 .requestMatchers("/api/ai/**").authenticated()

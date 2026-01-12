@@ -28,3 +28,4 @@ public class AiConsultingController {
         return Map.of("content", aiResult);
     }
 }
+// 106번 재커밋
