@@ -25,7 +25,7 @@ public class MatchingApiController {
     @Operation(summary = "매칭 가능 여부 확인", description = "멘토와 멘티가 매칭이 가능한지 검증한다")
     @MatchingSwaggerDocs.CheckAvailability
     @PreAuthorize("hasRole('MENTEE')")
-    @GetMapping("/availability")
+    @PostMapping("/availability")
     public CommonResponse<Void> checkMatchingAvailability(
         @AuthenticationPrincipal CustomUserDetails userDetails,
         @Parameter(

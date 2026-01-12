@@ -31,9 +31,6 @@ public class MentorProfile implements Profile {
     @Column(name = "consultation_enabled", nullable = false)
     private boolean consultationEnabled;
 
-    @Column(name = "response_rate", nullable = false)
-    private Double responseRate = 0.0;
-
     @Column(name = "profile_url", columnDefinition = "TEXT")
     private String profileUrl;
 
@@ -69,9 +66,5 @@ public class MentorProfile implements Profile {
         this.job = job;
         this.careerYears = careerYears;
         this.consultationEnabled = consultationEnabled;
-    }
-
-    public void updateResponseRate(double responseRate) {
-        this.responseRate = responseRate;
     }
 }
