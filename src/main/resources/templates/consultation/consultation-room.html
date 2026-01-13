@@ -10,13 +10,14 @@
 
 <div layout:fragment="content">
 
-  <th:block th:with="opponent=${consultationRoomDto.participants.get(0).memberId == consultationRoomDto.currentMemberId ? consultationRoomDto.participants.get(1) : consultationRoomDto.participants.get(0)}">
+  <th:block
+    th:with="opponent=${consultationRoomDto.participants.get(0).memberId == consultationRoomDto.currentMemberId ? consultationRoomDto.participants.get(1) : consultationRoomDto.participants.get(0)}">
 
     <div class="mb-4">
       <h2 class="fw-bold">💬 상담 채팅방</h2>
       <p class="text-small">
         <span class="fw-bold" th:text="${opponent.nickname}">상대방</span>님과의 대화입니다.
-      </p> </div>
+      </p></div>
 
     <div class="row g-4">
       <div class="col-lg-8">
@@ -49,38 +50,55 @@
           </div>
 
           <div class="chat-messages" id="chatMessages">
-            <th:block th:each="message : ${consultationRoomDto.messageDtoList}">
+            <div id="loadingIndicator" class="text-center my-3 d-none w-100">
+              <div class="spinner-border spinner-border-sm text-secondary" role="status">
+                <span class="visually-hidden">Loading...</span>
+              </div>
+              <small class="text-secondary ms-2">이전 메시지를 불러오는 중...</small>
+            </div>
 
-              <div th:if="${message.type.name() == 'SYSTEM'}" class="text-center my-3">
-                                <span class="badge bg-light text-secondary fw-normal border px-3 py-2 rounded-pill"
-                                      th:text="${message.content}">시스템</span>
+            <th:block th:each="message : ${consultationRoomDto.messageDtoList}">
+              <div th:if="${message.type.name() == 'SYSTEM'}"
+                   class="d-flex justify-content-center my-3 w-100"
+                   th:attr="data-id=${message.id}">
+            <span class="badge bg-light text-secondary fw-normal border px-3 py-2 rounded-pill"
+                  th:text="${message.content}">시스템</span>
               </div>
 
               <div th:unless="${message.type.name() == 'SYSTEM'}"
                    class="d-flex flex-column mb-2"
+                   th:attr="data-id=${message.id}"
                    th:classappend="${message.senderId == consultationRoomDto.currentMemberId} ? 'align-items-end' : 'align-items-start'">
 
-                                <span th:if="${message.senderId != consultationRoomDto.currentMemberId}"
-                                      th:text="${message.senderNickname}"
-                                      class="text-secondary ms-1 mb-1"
-                                      style="font-size: 0.75rem;">닉네임</span>
+            <span th:if="${message.senderId != consultationRoomDto.currentMemberId}"
+                  th:text="${message.senderNickname}"
+                  class="text-secondary ms-1 mb-1" style="font-size: 0.75rem;">닉네임</span>
 
                 <div class="message"
                      th:classappend="${message.senderId == consultationRoomDto.currentMemberId} ? 'sent' : 'received'">
 
                   <div th:if="${message.type.name() == 'IMAGE'}">
                     <img th:src="${message.content}" alt="이미지"
-                         style="max-width: 100%; border-radius: 8px; cursor: pointer;"
+                         style="max-width: 250px; border-radius: 8px; cursor: pointer;"
                          onclick="window.open(this.src)">
                   </div>
-                  <span th:unless="${message.type.name() == 'IMAGE'}"
-                        th:text="${message.content}">내용</span>
+
+                  <div th:if="${message.type.name() == 'FILE'}">
+                    <a th:href="${message.content}" target="_blank"
+                       class="text-decoration-none d-flex align-items-center p-1" style="color: inherit;">
+                      <i class="bi bi-file-earmark-arrow-down fs-4 me-2"></i>
+                      <div class="text-truncate" style="max-width: 150px;">
+                        <small class="d-block" style="font-size: 0.7rem;">파일 다운로드</small>
+                        <span style="font-size: 0.85rem;">첨부파일</span>
+                      </div>
+                    </a>
+                  </div>
+
+                  <span th:if="${message.type.name() == 'TEXT'}" th:text="${message.content}">내용</span>
                 </div>
               </div>
-
             </th:block>
           </div>
-
           <div class="chat-input-area">
             <button class="btn btn-outline-custom px-2" title="파일 첨부">
               <i class="bi bi-paperclip fs-5"></i>
@@ -152,13 +170,122 @@
       const textarea = document.querySelector('.chat-input');
       const sendBtn = document.getElementById('send-btn');
 
-      // [수정] DTO 안에 있는 값으로 변경
       const roomId = [[${consultationRoomDto.consultationRoomId}]];
       const currentMemberId = [[${consultationRoomDto.currentMemberId}]];
 
-      if (chatMessages) chatMessages.scrollTop = chatMessages.scrollHeight;
+      let isFetching = false;
+      let hasNext = true;
+      let lastMessageId = null;
 
-      // WebSocket 연결
+      // 공통 HTML 생성 함수
+      function createMessageElement(msg) {
+        const wrapper = document.createElement('div');
+        wrapper.setAttribute('data-id', msg.id);
+
+        if (msg.type === 'SYSTEM') {
+          wrapper.className = 'd-flex justify-content-center my-3 w-100';
+          wrapper.innerHTML = `
+            <span class="badge bg-light text-secondary fw-normal border px-3 py-2 rounded-pill">
+                ${msg.content}
+            </span>`;
+          return wrapper;
+        }
+
+        const isMine = (msg.senderId == currentMemberId);
+        wrapper.className = `d-flex flex-column mb-2 ${isMine ? 'align-items-end' : 'align-items-start'}`;
+
+        let html = '';
+        if (!isMine) {
+          html += `<span class="text-secondary ms-1 mb-1" style="font-size: 0.75rem;">${msg.senderNickname}</span>`;
+        }
+
+        let contentHtml = '';
+        if (msg.type === 'IMAGE') {
+          contentHtml = `<img src="${msg.content}" style="max-width: 250px; border-radius: 8px; cursor: pointer;" onclick="window.open(this.src)">`;
+        } else if (msg.type === 'FILE') {
+          contentHtml = `
+            <a href="${msg.content}" target="_blank" class="text-decoration-none d-flex align-items-center p-2" style="color: inherit;">
+              <i class="bi bi-file-earmark-arrow-down fs-4 me-2"></i>
+              <div class="text-truncate" style="max-width: 150px;">
+                <small class="d-block" style="font-size: 0.7rem;">파일 다운로드</small>
+                <span style="font-size: 0.85rem;">첨부파일</span>
+              </div>
+            </a>`;
+        } else {
+          contentHtml = `<span>${msg.content}</span>`;
+        }
+
+        html += `<div class="message ${isMine ? 'sent' : 'received'}">${contentHtml}</div>`;
+        wrapper.innerHTML = html;
+        return wrapper;
+      }
+
+      function updateCursor() {
+        const firstMessage = chatMessages.querySelector('[data-id]');
+        if (firstMessage) {
+          lastMessageId = firstMessage.getAttribute('data-id');
+        }
+      }
+
+      if (chatMessages) {
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        updateCursor();
+      }
+
+      chatMessages.addEventListener('scroll', () => {
+        if (chatMessages.scrollTop === 0 && hasNext && !isFetching) {
+          fetchPreviousMessages();
+        }
+      });
+
+      // 스크립트 상단에 엘리먼트 참조 추가
+      const loadingIndicator = document.getElementById('loadingIndicator');
+
+      async function fetchPreviousMessages() {
+        if (!lastMessageId) return;
+
+        isFetching = true;
+        // 로딩 표시 보이기
+        loadingIndicator.classList.remove('d-none');
+
+        const prevScrollHeight = chatMessages.scrollHeight;
+
+        try {
+          const response = await fetch(`/api/consultations/room/${roomId}/messages?lastMessageId=${lastMessageId}&size=20`);
+          const result = await response.json();
+          const data = result.data;
+
+          if (data.content && data.content.length > 0) {
+            data.content.forEach(msg => prependMessage(msg));
+            updateCursor();
+            hasNext = !data.last;
+
+            // 스크롤 위치 유지 (로딩바가 사라진 후의 높이 변화까지 고려)
+            chatMessages.scrollTop = chatMessages.scrollHeight - prevScrollHeight;
+          } else {
+            hasNext = false;
+          }
+        } catch (error) {
+          console.error("이전 메시지 로드 실패:", error);
+        } finally {
+          isFetching = false;
+          // 로딩 표시 숨기기
+          loadingIndicator.classList.add('d-none');
+        }
+      }
+
+      function prependMessage(msg) {
+        const element = createMessageElement(msg);
+        chatMessages.insertBefore(element, chatMessages.firstChild);
+      }
+
+      function appendMessage(msg) {
+        const element = createMessageElement(msg);
+        chatMessages.appendChild(element);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      }
+
+      // --- WebSocket 로직 ---
       const socket = new SockJS('/ws');
       const stompClient = Stomp.over(socket);
 
@@ -168,7 +295,6 @@
         });
       });
 
-      // 메시지 전송
       function sendMessage() {
         const content = textarea.value.trim();
         if (content && stompClient.connected) {
@@ -178,50 +304,18 @@
             'content': content
           }));
           textarea.value = '';
-          textarea.style.height = '48px';
         }
       }
 
-      // 메시지 화면 추가
-      function appendMessage(msg) {
-        const isMine = (msg.senderId == currentMemberId);
-
-        // Flex container
-        const wrapper = document.createElement('div');
-        wrapper.className = `d-flex flex-column mb-2 ${isMine ? 'align-items-end' : 'align-items-start'}`;
-
-        let html = '';
-
-        // 상대방 이름 (말풍선 위)
-        if (!isMine) {
-          html += `<span class="text-secondary ms-1 mb-1" style="font-size: 0.75rem;">${msg.senderNickname}</span>`;
+      sendBtn.addEventListener('click', sendMessage);
+      textarea.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          sendMessage();
         }
-
-        // 말풍선
-        let contentHtml = '';
-        if (msg.type === 'IMAGE') {
-          contentHtml = `<img src="${msg.content}" style="max-width: 100%; border-radius: 8px; cursor: pointer;" onclick="window.open(this.src)">`;
-        } else {
-          contentHtml = `<span>${msg.content}</span>`;
-        }
-
-        html += `<div class="message ${isMine ? 'sent' : 'received'}">${contentHtml}</div>`;
-
-        wrapper.innerHTML = html;
-        chatMessages.appendChild(wrapper);
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-      }
-
-      if (sendBtn) sendBtn.addEventListener('click', sendMessage);
-      if (textarea) {
-        textarea.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            sendMessage();
-          }
-        });
-      }
-    });
+      });
+    })
+    ;
   </script>
 </th:block>
 </html>
