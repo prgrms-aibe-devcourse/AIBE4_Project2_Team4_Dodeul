@@ -39,9 +39,9 @@ public class Review extends BaseEntity {
     private ReviewStatus reviewStatus = ReviewStatus.PUBLISHED;
 
     @Builder
-    public Review(Member mentor, Member mentee, Matching matching, String content, boolean isRecommended) {
-        this.mentor = mentor;
-        this.mentee = mentee;
+    public Review(Matching matching, String content, boolean isRecommended) {
+        this.mentor = matching.getMentor();
+        this.mentee = matching.getMentee();
         this.matching = matching;
         this.content = content;
         this.isRecommended = isRecommended;
