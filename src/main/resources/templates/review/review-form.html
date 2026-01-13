@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{common/layout/base}">
+
+<head>
+  <title>상담 리뷰 작성</title>
+  <link rel="stylesheet" th:href="@{/css/review/review-form.css}">
+</head>
+
+<div layout:fragment="content">
+  <div class="container main">
+    <div class="review-form-container">
+      <div class="card-custom border-0 p-5">
+
+        <div class="review-header text-center mb-5">
+          <h2 class="fw-bold mb-3">🌟 상담 리뷰 작성</h2>
+          <p class="text-secondary">
+            <span class="fw-bold" style="color: var(--color-status-info);"
+                  th:text="${reviewFormDataDto.menteeNickname}">멘티</span>님,
+            <span class="fw-bold" th:text="${reviewFormDataDto.mentorNickname}">멘토</span>님과의 멘토링은 어떠셨나요?
+          </p>
+        </div>
+
+        <form id="reviewForm">
+          <input type="hidden" id="matchingId" th:value="${matchingId}">
+
+          <div class="mb-5 text-center">
+            <label class="form-label d-block mb-3 fw-bold">이 멘토님을 추천하시겠습니까?</label>
+            <div class="row g-3 recommend-selector">
+              <div class="col-6">
+                <input type="radio" class="btn-check" name="isRecommended" id="recommendYes" value="true" checked>
+                <label class="btn btn-outline-custom w-100 py-3 rounded-3" for="recommendYes">
+                  <i class="bi bi-hand-thumbs-up-fill d-block fs-3 mb-2 text-success"></i>
+                  <span class="fw-medium">추천해요</span>
+                </label>
+              </div>
+              <div class="col-6">
+                <input type="radio" class="btn-check" name="isRecommended" id="recommendNo" value="false">
+                <label class="btn btn-outline-custom w-100 py-3 rounded-3" for="recommendNo">
+                  <i class="bi bi-hand-thumbs-down-fill d-block fs-3 mb-2 text-danger"></i>
+                  <span class="fw-medium">아쉬워요</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <label for="content" class="form-label fw-bold">상세한 후기를 남겨주세요</label>
+            <textarea class="modal-textarea" name="content" id="content"
+                      placeholder="멘토님의 조언이 어떻게 도움이 되었나요? 따뜻한 후기는 멘토님께 큰 힘이 됩니다. (최대 200자)"
+                      maxlength="200" required></textarea>
+            <div class="text-end text-small mt-2" id="counterWrapper">
+              <span id="charCount">0</span> / 200
+            </div>
+          </div>
+
+          <div class="d-grid gap-3 mt-5">
+            <button type="submit" class="btn btn-primary-custom py-3 fs-5">
+              리뷰 등록 완료하기
+            </button>
+            <a th:href="@{/home}" class="btn btn-outline-custom py-2">나중에 하기</a>
+          </div>
+        </form>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="successModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow">
+        <div class="modal-body text-center py-5">
+          <div class="display-1 text-success mb-4">
+            <i class="bi bi-check-circle-fill"></i>
+          </div>
+          <h4 class="fw-bold mb-3">리뷰가 등록되었습니다!</h4>
+          <p class="text-secondary mb-4">소중한 의견을 남겨주셔서 감사합니다.</p>
+          <button type="button" class="btn btn-primary-custom px-5 py-2" id="goHomeBtn">확인</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<th:block layout:fragment="script">
+  <script th:inline="javascript">
+    document.addEventListener('DOMContentLoaded', function () {
+      const reviewForm = document.getElementById('reviewForm');
+      const textarea = document.getElementById('content');
+      const countLabel = document.getElementById('charCount');
+      const counterWrapper = document.getElementById('counterWrapper');
+      const successModal = new bootstrap.Modal(document.getElementById('successModal'));
+      const goHomeBtn = document.getElementById('goHomeBtn');
+
+      textarea.addEventListener('input', function () {
+        const len = this.value.length;
+        countLabel.textContent = len;
+        if (len >= 200) {
+          counterWrapper.style.color = 'var(--color-status-danger)';
+          counterWrapper.classList.add('fw-bold');
+        } else {
+          counterWrapper.style.color = 'var(--color-text-secondary)';
+          counterWrapper.classList.remove('fw-bold');
+        }
+      });
+
+      reviewForm.addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        if (!confirm("리뷰를 등록하시겠습니까?")) return;
+
+        // PathVariable 전송을 위해 ID 추출
+        const matchingId = document.getElementById('matchingId').value;
+        const apiUrl = `/api/reviews/${matchingId}`;
+
+        const data = {
+          content: textarea.value,
+          isRecommended: reviewForm.querySelector('input[name="isRecommended"]:checked').value === 'true'
+        };
+
+        try {
+          const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+          });
+
+          const result = await response.json();
+
+          if (response.ok && result.success) {
+            successModal.show();
+          } else {
+            alert(result.message || "리뷰 등록 중 오류가 발생했습니다.");
+          }
+        } catch (error) {
+          console.error("에러 발생:", error);
+          alert("네트워크 통신 중 오류가 발생했습니다.");
+        }
+      });
+
+      goHomeBtn.addEventListener('click', () => location.href = '/home');
+    });
+  </script>
+</th:block>
+</html>

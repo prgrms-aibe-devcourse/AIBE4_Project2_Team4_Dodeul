@@ -42,4 +42,12 @@ public class ConsultationGuard {
 
         return matchingRepository.isMemberParticipantOfMatching(matchingId, memberId);
     }
+
+    public boolean isMenteeOfMatching(Long matchingId, Long memberId) {
+        if (matchingId == null || memberId == null) return false;
+
+        return matchingRepository.findById(matchingId)
+            .map(matching -> matching.getMentee().getId().equals(memberId))
+            .orElse(false);
+    }
 }
