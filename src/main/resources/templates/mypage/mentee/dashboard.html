@@ -171,7 +171,6 @@
 
         const sessions = data.upcomingSessions || [];
 
-        // 진행중/최근은 임시로 upcomingSessions 일부를 보여줌 (추후 API 확장 시 교체)
         renderRows(
           document.getElementById('ongoingList'),
           sessions.slice(0, 2),

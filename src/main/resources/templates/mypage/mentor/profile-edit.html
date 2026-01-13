@@ -19,7 +19,7 @@
     <p class="text-small" style="margin-bottom:16px;">멘토 프로필 정보를 수정할 수 있습니다.</p>
   </div>
 
-  <!-- 상단 프로필 카드(조회 페이지와 동일한 느낌) -->
+  <!-- 상단 프로필 카드-->
   <section class="card-custom" style="margin-bottom:16px;">
     <div class="dashboard-profile">
       <div class="dashboard-avatar-lg"></div>
@@ -61,7 +61,7 @@
 
 <th:block layout:fragment="script">
   <script>
-    // TODO: /api/mypage/profile (mentor) API 생기면 아래 임시 로딩/세팅 교체
+    // TODO: /api/mypage/profile (mentor)
     (async function () {
       const err = document.getElementById('profileError');
       try {
@@ -79,7 +79,7 @@
         const fields = (data.consultingFields && data.consultingFields.length) ? data.consultingFields.join(', ') : '-';
         document.getElementById('mentorMeta').textContent = `${job} / ${fields}`;
 
-        // 임시로 기본값 세팅(나중에 profile API 붙이면 서버 값으로 채우기)
+        // 임시로 기본값 세팅
         document.getElementById('bioInput').value = data.bio ?? '';
         document.getElementById('skillsInput').value =
           (data.skillTags && data.skillTags.length) ? data.skillTags.join(', ') : '';
