@@ -48,3 +48,7 @@ logging:
     root: INFO
     org.hibernate.SQL: WARN
     org.aibe4.dodeul: INFO
+
+scheduler:
+  matching:
+    timeout-cron: "0 0 * * * *" # 매 1시만마다 스케줄러 실행
