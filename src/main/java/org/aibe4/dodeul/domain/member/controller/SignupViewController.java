@@ -4,7 +4,7 @@ import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.aibe4.dodeul.domain.member.model.dto.AuthSessionKeys;
-import org.aibe4.dodeul.domain.member.model.dto.SignupRequest;
+import org.aibe4.dodeul.domain.member.model.dto.request.SignupRequest;
 import org.aibe4.dodeul.domain.member.model.enums.Role;
 import org.aibe4.dodeul.domain.member.service.MemberService;
 import org.springframework.stereotype.Controller;
