@@ -1,7 +1,7 @@
 package org.aibe4.dodeul.domain.member.service;
 
 import lombok.RequiredArgsConstructor;
-import org.aibe4.dodeul.domain.member.model.dto.ProfileDto;
+import org.aibe4.dodeul.domain.member.model.dto.response.ProfileDto;
 import org.aibe4.dodeul.domain.member.model.entity.Member;
 import org.aibe4.dodeul.domain.member.model.entity.Profile;
 import org.aibe4.dodeul.domain.member.model.enums.Provider;
