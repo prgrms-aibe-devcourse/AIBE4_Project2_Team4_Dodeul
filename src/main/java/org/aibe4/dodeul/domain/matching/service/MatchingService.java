@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.aibe4.dodeul.domain.consulting.model.entity.ConsultingApplication;
 import org.aibe4.dodeul.domain.consulting.service.ConsultingApplicationService;
 import org.aibe4.dodeul.domain.matching.model.dto.MatchingCreateRequest;
+import org.aibe4.dodeul.domain.matching.model.dto.MatchingHistoryResponse;
 import org.aibe4.dodeul.domain.matching.model.dto.MatchingStatusResponse;
 import org.aibe4.dodeul.domain.matching.model.entity.Matching;
 import org.aibe4.dodeul.domain.matching.model.enums.MatchingStatus;
@@ -76,6 +77,14 @@ public class MatchingService {
                 obj -> (Long) obj[0],
                 obj -> ((Number) obj[1]).longValue()
             ));
+    }
+
+    public List<MatchingHistoryResponse> getMyMatchingHistory(Long memberId) {
+        List<Matching> matchings = matchingRepository.findAllByMemberId(memberId);
+
+        return matchings.stream()
+            .map(matching -> MatchingHistoryResponse.of(matching, memberId))
+            .toList();
     }
 
     @Transactional
