@@ -3,7 +3,6 @@ package org.aibe4.dodeul.global.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletResponse;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.aibe4.dodeul.global.response.CommonResponse;
 import org.aibe4.dodeul.global.response.enums.ErrorCode;
@@ -18,6 +17,8 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.List;
 
 @Configuration
 @EnableMethodSecurity
@@ -66,7 +67,9 @@ public class SecurityConfig {
                             "/login/oauth2/**",
                             "/api/auth/**",
                             "/onboarding/**",
-                            "/api/onboarding/**")
+                            "/api/onboarding/**",
+                            "/search/mentors",
+                            "/api/search/mentors")
                         .permitAll()
 
                         // 게시판 조회(GET)만 공개
