@@ -68,8 +68,8 @@ public class SecurityConfig {
                             "/api/auth/**",
                             "/onboarding/**",
                             "/api/onboarding/**",
-                            "/search/mentors",
-                            "/api/search/mentors")
+                            "/search/mentors/**",
+                            "/api/search/mentors/**")
                         .permitAll()
 
                         // 게시판 조회(GET)만 공개
