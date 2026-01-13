@@ -2,6 +2,7 @@ package org.aibe4.dodeul.domain.consultation.security;
 
 import lombok.RequiredArgsConstructor;
 import org.aibe4.dodeul.domain.consultation.model.entity.ConsultationRoom;
+import org.aibe4.dodeul.domain.consultation.model.enums.ConsultationRoomStatus;
 import org.aibe4.dodeul.domain.consultation.model.repository.ConsultationRoomRepository;
 import org.aibe4.dodeul.domain.matching.model.entity.Matching;
 import org.aibe4.dodeul.domain.matching.model.repository.MatchingRepository;
@@ -42,6 +43,19 @@ public class ConsultationGuard {
 
         return matchingRepository.isMemberParticipantOfMatching(matchingId, memberId);
     }
+
+    public boolean isCorrectMatchedMemberAndRoomClosed(Long matchingId, Long memberId) {
+        if (matchingId == null || memberId == null) {
+            return false;
+        }
+
+        Matching matching = matchingRepository.findById(matchingId).orElseThrow(() -> new NoSuchElementException(ErrorCode.RESOURCE_NOT_FOUND.getMessage()));
+        ConsultationRoom consultationRoom = consultationRoomRepository.findByMatching(matching).orElseThrow(() -> new NoSuchElementException(ErrorCode.RESOURCE_NOT_FOUND.getMessage()));
+        boolean isRoomClosed = consultationRoom.getStatus() == ConsultationRoomStatus.CLOSED;
+
+        return matchingRepository.isMemberParticipantOfMatching(matchingId, memberId) && isRoomClosed;
+    }
+
 
     public boolean isMenteeOfMatching(Long matchingId, Long memberId) {
         if (matchingId == null || memberId == null) return false;

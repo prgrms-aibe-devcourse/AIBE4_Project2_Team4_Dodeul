@@ -20,7 +20,7 @@ public class ReviewController {
     private final ReviewService reviewService;
 
     @GetMapping("/new/{matchingId}")
-    @PreAuthorize("@consultationGuard.isCorrectMatchedMember(#matchingId, #userDetails.memberId)")
+    @PreAuthorize("@consultationGuard.isCorrectMatchedMemberAndRoomClosed(#matchingId, #userDetails.memberId)")
     public String reviewForm(@PathVariable Long matchingId, @AuthenticationPrincipal CustomUserDetails userDetails, Model model) {
         ReviewFormDataDto reviewFormDataDto = reviewService.loadFormData(matchingId);
 
