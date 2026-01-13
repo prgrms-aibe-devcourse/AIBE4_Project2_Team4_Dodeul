@@ -17,6 +17,8 @@ public class ConsultationRoomDto {
 
     private Long consultationRoomId;
     private Long currentMemberId;
+    private Long matchingId;
+    private Long menteeId;
     private ConsultationRoomStatus roomStatus;
 
     private List<MemberDto> participants;
@@ -34,6 +36,8 @@ public class ConsultationRoomDto {
 
         return ConsultationRoomDto.builder()
             .consultationRoomId(room.getId())
+            .matchingId(matching.getId())
+            .menteeId(matching.getMentee().getId())
             .roomStatus(room.getStatus())
             .currentMemberId(currentMemberId)
             .participants(participants)
