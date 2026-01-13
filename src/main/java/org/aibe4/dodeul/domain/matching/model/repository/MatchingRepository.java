@@ -16,6 +16,9 @@ public interface MatchingRepository extends JpaRepository<Matching, Long> {
     @Query("SELECT COUNT(m) FROM Matching m WHERE m.mentor.id = :mentorId AND m.status IN :statuses")
     long countByMentorIdAndStatusIn(@Param("mentorId") Long mentorId, @Param("statuses") List<MatchingStatus> statuses);
 
+    @Query("SELECT COUNT(m) > 0 FROM Matching m WHERE m.id = :matchingId AND (m.mentee.id = :memberId OR m.mentor.id = :memberId)")
+    boolean isMemberParticipantOfMatching(@Param("matchingId") Long matchingId, @Param("memberId") Long memberId);
+  
     @Query("SELECT m.mentor.id, COUNT(m) FROM Matching m " +
         "WHERE m.mentor.id IN :mentorIds AND m.status IN :statuses " +
         "GROUP BY m.mentor.id")
