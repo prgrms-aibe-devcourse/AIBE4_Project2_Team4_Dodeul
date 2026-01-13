@@ -64,7 +64,7 @@ public class SecurityConfig {
 
                 // 멘토 전용 구간
                 .requestMatchers(
-                    "/mentor/**"
+                    "/mentor/**",
                     "/mypage/mentor/**",
                     "/api/demo/role/mentor",
                     "/api/mentor/**"
@@ -78,7 +78,7 @@ public class SecurityConfig {
 
                 // 멘티 전용 구간
                 .requestMatchers(
-                    "/mentee/**"
+                    "/mentee/**",
                     "/mypage/mentee/**",
                     "/matchings/**",
                     "/api/demo/role/mentee",
