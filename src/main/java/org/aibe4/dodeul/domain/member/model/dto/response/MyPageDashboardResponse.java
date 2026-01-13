@@ -1,12 +1,28 @@
 package org.aibe4.dodeul.domain.member.model.dto.response;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+
+import java.util.List;
 
 @Getter
-@AllArgsConstructor(staticName = "of")
+@RequiredArgsConstructor
 public class MyPageDashboardResponse {
-    private Long memberId;
-    private String role;
-    private String nickname;
+
+    private final Long memberId;
+    private final String role;
+    private final String nickname;
+
+    private final DashboardSummaryResponse summary;
+    private final List<DashboardSessionItemResponse> upcomingSessions;
+
+    public static MyPageDashboardResponse of(
+        Long memberId,
+        String role,
+        String nickname,
+        DashboardSummaryResponse summary,
+        List<DashboardSessionItemResponse> upcomingSessions
+    ) {
+        return new MyPageDashboardResponse(memberId, role, nickname, summary, upcomingSessions);
+    }
 }

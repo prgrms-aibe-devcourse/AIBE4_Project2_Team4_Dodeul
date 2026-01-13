@@ -3,29 +3,150 @@
       xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{common/layout/mentee}">
+
 <head>
   <th:block layout:fragment="head">
     <title>DODEUL | 멘티 대시보드</title>
+    <link rel="stylesheet" href="/css/mypage/dashboard.css">
   </th:block>
 </head>
 
 <body>
 <div layout:fragment="page">
-  <h2 class="fw-bold" style="margin-bottom:12px;">멘티 대시보드</h2>
-  <p class="text-small" style="margin-bottom:16px;">내 활동 요약을 불러오는 중입니다.</p>
+  <div class="dashboard-header">
+    <h2 class="fw-bold" style="margin-bottom:8px;">대시보드</h2>
+    <p id="dashboardSubtitle" class="text-small" style="margin-bottom:16px;">
+      멘티님의 상담 및 일정 현황을 불러오는 중입니다.
+    </p>
+  </div>
 
-  <div id="da shboardRoot"></div>
-  <p id="dashboardError" style="color:red; margin-top:12px;"></p>
+  <!-- 상단 프로필 카드 -->
+  <section class="card-custom" style="margin-bottom:16px;">
+    <div class="dashboard-profile">
+      <div class="dashboard-avatar-lg"></div>
+      <div style="flex:1;">
+        <div class="fw-bold" id="menteeName" style="margin-bottom:4px;">-</div>
+        <div class="text-small" id="menteeDesc">내 프로필 정보를 불러오는 중…</div>
+      </div>
+      <a class="btn-outline-custom" href="/mentee/profile">프로필 보기</a>
+    </div>
+  </section>
+
+  <!-- 상담 현황 요약 -->
+  <section style="margin-bottom:16px;">
+    <div class="fw-bold" style="margin-bottom:10px;">상담 현황 요약</div>
+
+    <div class="dashboard-summary-grid">
+      <div class="card-custom" style="margin:0; position:relative;">
+        <div class="text-small">진행 예정 상담</div>
+        <div class="dashboard-summary-value">
+          <span id="sumScheduled">-</span><span class="dashboard-unit">건</span>
+        </div>
+        <span class="status-badge status-pending">예정</span>
+        <a class="text-small" style="position:absolute; right:16px; bottom:16px;" href="/mentee/sessions">상담 내역 보기 →</a>
+      </div>
+
+      <div class="card-custom" style="margin:0; position:relative;">
+        <div class="text-small">진행중 상담</div>
+        <div class="dashboard-summary-value">
+          <span id="sumOngoing">-</span><span class="dashboard-unit">건</span>
+        </div>
+        <span class="status-badge status-approved">진행중</span>
+        <a class="text-small" style="position:absolute; right:16px; bottom:16px;" href="/mentee/sessions">상담 내역 보기 →</a>
+      </div>
+
+      <div class="card-custom" style="margin:0; position:relative;">
+        <div class="text-small">완료된 상담</div>
+        <div class="dashboard-summary-value">
+          <span id="sumCompleted">-</span><span class="dashboard-unit">건</span>
+        </div>
+        <span class="status-badge status-completed">완료</span>
+        <a class="text-small" style="position:absolute; right:16px; bottom:16px;" href="/mentee/sessions">상담 내역 보기 →</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- 진행중인 상담 -->
+  <section style="margin-bottom:16px;">
+    <div class="fw-bold" style="margin-bottom:10px;">진행중인 상담</div>
+    <div class="card-custom dashboard-list" id="ongoingList" style="margin:0;">
+      <div class="dashboard-row">
+        <div class="text-small">불러오는 중…</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 최근 상담 내역 -->
+  <section style="margin-bottom:16px;">
+    <div class="fw-bold" style="margin-bottom:10px;">최근 상담 내역</div>
+    <div class="card-custom dashboard-list" id="recentList" style="margin:0;">
+      <div class="dashboard-row">
+        <div class="text-small">불러오는 중…</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 최근 스크랩 -->
+  <section style="margin-bottom:16px;">
+    <div class="fw-bold" style="margin-bottom:10px;">최근 스크랩 글</div>
+    <div class="card-custom dashboard-list" id="scrapBox" style="margin:0;">
+      <div class="dashboard-row">
+        <div class="text-small">스크랩 글을 불러오는 중…</div>
+      </div>
+    </div>
+  </section>
+
+  <p id="dashboardError" style="color:#d33; margin-top:12px;"></p>
 </div>
 
 <th:block layout:fragment="script">
   <script>
+    function escapeHtml(s) {
+      return String(s ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", "&#039;");
+    }
+
+    function formatDateTime(iso) {
+      if (!iso) return '-';
+      return String(iso).replace('T', ' ').slice(0, 16);
+    }
+
+    function renderRows(rootEl, items, emptyText, rightButtonLabel, rightButtonHrefBuilder) {
+      if (!items || items.length === 0) {
+        rootEl.innerHTML =
+          `<div class="dashboard-row"><div class="text-small">${escapeHtml(emptyText)}</div></div>`;
+        return;
+      }
+
+      rootEl.innerHTML = items.map(it => {
+        const title = escapeHtml(it.title ?? '제목 없음');
+        const name = escapeHtml(it.counterpartName ?? '-');
+        const time = escapeHtml(formatDateTime(it.startAt));
+        const href = rightButtonHrefBuilder ? rightButtonHrefBuilder(it) : null;
+
+        return `
+          <div class="dashboard-row">
+            <div>
+              <div class="dashboard-row-title">${title}</div>
+              <div class="dashboard-row-sub">${name} · ${time}</div>
+            </div>
+            <div class="dashboard-row-right">
+              ${href ? `<a class="btn-outline-custom" style="padding:8px 10px; font-size:12px;" href="${escapeHtml(href)}">${escapeHtml(rightButtonLabel)}</a>` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
     (async function () {
-      const root = document.getElementById('dashboardRoot');
       const err = document.getElementById('dashboardError');
 
       try {
-        const res = await fetch('/api/mypage/dashboard', {method: 'GET'});
+        const res = await fetch('/api/mypage/dashboard', {credentials: 'same-origin'});
         const json = await res.json();
 
         if (!res.ok) {
@@ -34,17 +155,57 @@
         }
 
         const data = json.data || {};
+        document.getElementById('menteeName').textContent = data.nickname ? `${data.nickname} 멘티` : '멘티';
+        const desiredJob = data.desiredJobName ?? '-';
+        const interests = (data.interestConsultings && data.interestConsultings.length)
+          ? data.interestConsultings.join(', ')
+          : '-';
+        document.getElementById('menteeDesc').textContent = `${desiredJob} / ${interests}`;
 
-        root.innerHTML = `
-          <div class="card-custom">
-            <div class="fw-bold" style="margin-bottom:8px;">내 정보</div>
-            <div>memberId: ${data.memberId ?? '-'}</div>
-            <div>role: ${data.role ?? '-'}</div>
-            <div>nickname: ${data.nickname ?? '-'}</div>
+        document.getElementById('dashboardSubtitle').textContent = '멘티님의 상담 및 일정 현황을 확인해보세요.';
+
+        // summary
+        document.getElementById('sumScheduled').textContent = data.summary?.scheduled ?? '-';
+        document.getElementById('sumOngoing').textContent = data.summary?.ongoing ?? '-';
+        document.getElementById('sumCompleted').textContent = data.summary?.completed ?? '-';
+
+        const sessions = data.upcomingSessions || [];
+
+        // 진행중/최근은 임시로 upcomingSessions 일부를 보여줌 (추후 API 확장 시 교체)
+        renderRows(
+          document.getElementById('ongoingList'),
+          sessions.slice(0, 2),
+          '진행중인 상담이 없습니다.',
+          '상담 보기',
+          () => `/mentee/sessions`
+        );
+
+        renderRows(
+          document.getElementById('recentList'),
+          sessions.slice(0, 3),
+          '최근 상담 내역이 없습니다.',
+          '상담 내역 조회',
+          () => `/mentee/sessions`
+        );
+
+        // 최근 스크랩 글: 현재는 mock 1개 (추후 API 필드로 교체)
+        const scrapEl = document.getElementById('scrapBox');
+        const mockScrap = {title: '멘토 추천 기능 정리 글', href: '/board/posts'};
+
+        scrapEl.innerHTML = `
+          <div class="dashboard-row">
+            <div>
+              <div class="dashboard-row-title">${escapeHtml(mockScrap.title)}</div>
+              <div class="dashboard-row-sub">스크랩한 게시글 1건</div>
+            </div>
+            <div class="dashboard-row-right">
+              <a class="btn-outline-custom" style="padding:8px 10px; font-size:12px;" href="${escapeHtml(mockScrap.href)}">게시글 보기</a>
+            </div>
           </div>
         `;
       } catch (e) {
         err.textContent = '서버와 통신할 수 없습니다.';
+        console.error(e);
       }
     })();
   </script>
