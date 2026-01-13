@@ -2,8 +2,6 @@
 package org.aibe4.dodeul.domain.board.model.entity;
 
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
-import java.util.List;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -12,6 +10,10 @@ import org.aibe4.dodeul.domain.board.model.enums.PostStatus;
 import org.aibe4.dodeul.domain.common.model.entity.BaseEntity;
 import org.aibe4.dodeul.domain.common.model.entity.SkillTag;
 import org.aibe4.dodeul.domain.consulting.model.enums.ConsultingTag;
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "board_posts")
@@ -27,7 +29,7 @@ public class BoardPost extends BaseEntity {
     private BoardComment acceptedComment;
 
     @OneToMany(mappedBy = "boardPost", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<BoardPostTagRelation> boardPostTagRelations = new java.util.ArrayList<>();
+    private List<BoardPostTagRelation> boardPostTagRelations = new ArrayList<>();
 
     @Column(nullable = false, length = 255)
     private String title;
@@ -94,7 +96,7 @@ public class BoardPost extends BaseEntity {
     public void acceptComment(BoardComment comment) {
         validateNotDeleted();
         if (this.acceptedComment != null) {
-            throw new IllegalStateException("이미 채택된 댓글이 존재합니다");
+            throw new IllegalStateException("이미 채택된 댓글이 존재합니다.");
         }
         this.acceptedComment = comment;
         this.close();
@@ -128,14 +130,14 @@ public class BoardPost extends BaseEntity {
 
     public List<SkillTag> getSkillTags() {
         return boardPostTagRelations.stream()
-                .map(BoardPostTagRelation::getSkillTag)
-                .filter(java.util.Objects::nonNull)
-                .toList();
+            .map(BoardPostTagRelation::getSkillTag)
+            .filter(java.util.Objects::nonNull)
+            .toList();
     }
 
     private void validateNotDeleted() {
         if (this.postStatus == PostStatus.DELETED) {
-            throw new IllegalStateException("삭제된 게시글입니다");
+            throw new IllegalStateException("삭제된 게시글입니다.");
         }
     }
 }

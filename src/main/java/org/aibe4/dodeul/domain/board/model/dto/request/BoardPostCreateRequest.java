@@ -32,6 +32,9 @@ public class BoardPostCreateRequest {
     // 입력창(쉼표 구분)에서 받은 신규/이름 태그
     private List<String> skillTagNames = new ArrayList<>();
 
+    // 업로드된 첨부파일 URL 목록(게시글 생성 시 ViewController에서 채움)
+    private List<String> fileUrls = new ArrayList<>();
+
     // Thymeleaf 폼 바인딩용 Setter
     public void setConsultingTag(ConsultingTag consultingTag) {
         this.consultingTag = consultingTag;
@@ -45,14 +48,25 @@ public class BoardPostCreateRequest {
         this.content = content;
     }
 
-    // ViewController에서 수동 파싱 결과 주입용
     public void setSkillTagIds(List<Long> skillTagIds) {
-        this.skillTagIds =
-            (skillTagIds == null) ? new ArrayList<>() : new ArrayList<>(skillTagIds);
+        this.skillTagIds = (skillTagIds == null) ? new ArrayList<>() : new ArrayList<>(skillTagIds);
     }
 
     public void setSkillTagNames(List<String> skillTagNames) {
-        this.skillTagNames =
-            (skillTagNames == null) ? new ArrayList<>() : new ArrayList<>(skillTagNames);
+        this.skillTagNames = (skillTagNames == null) ? new ArrayList<>() : new ArrayList<>(skillTagNames);
+    }
+
+    public void setFileUrls(List<String> fileUrls) {
+        this.fileUrls = (fileUrls == null) ? new ArrayList<>() : new ArrayList<>(fileUrls);
+    }
+
+    public void addFileUrl(String fileUrl) {
+        if (fileUrl == null || fileUrl.isBlank()) {
+            return;
+        }
+        if (this.fileUrls == null) {
+            this.fileUrls = new ArrayList<>();
+        }
+        this.fileUrls.add(fileUrl);
     }
 }
