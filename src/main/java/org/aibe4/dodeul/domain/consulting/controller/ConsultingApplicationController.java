@@ -37,16 +37,33 @@ public class ConsultingApplicationController {
         Model model,
         @AuthenticationPrincipal CustomUserDetails user
     ) {
+        // 기본 유효성 검사 (빈칸 등)
         if (bindingResult.hasErrors()) {
             model.addAttribute("consultingTags", ConsultingTag.values());
             model.addAttribute("formActionUrl", "/consulting-applications");
             return "consulting/application-form";
         }
 
-        request.setMenteeId(user.getMemberId());
-        Long savedApplicationId = consultingApplicationService.saveApplication(request);
+        try {
+            // 정상적인 저장 시도
+            request.setMenteeId(user.getMemberId());
+            Long savedApplicationId = consultingApplicationService.saveApplication(request);
 
-        return "redirect:/matchings/new?applicationId=" + savedApplicationId;
+            return "redirect:/matchings/new?applicationId=" + savedApplicationId;
+
+        } catch (IllegalArgumentException e) {
+            // [추가된 부분] 비속어/정책 위반 예외 발생 시 처리
+
+            // 1. 에러 메시지 전달 (HTML에서 alert로 띄움)
+            model.addAttribute("errorMessage", e.getMessage());
+
+            // 2. 화면 구성을 위한 기본 데이터 다시 세팅
+            model.addAttribute("consultingTags", ConsultingTag.values());
+            model.addAttribute("formActionUrl", "/consulting-applications");
+
+            // 3. 입력했던 내용은 'request' 객체에 남아있으므로 그대로 폼으로 복귀
+            return "consulting/application-form";
+        }
     }
 
     // 3. 상세 조회
@@ -102,4 +119,3 @@ public class ConsultingApplicationController {
         return "redirect:/";
     }
 }
-// 106번 재커밋

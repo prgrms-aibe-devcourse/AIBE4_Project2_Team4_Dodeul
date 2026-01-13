@@ -10,11 +10,11 @@ import org.aibe4.dodeul.domain.consulting.model.entity.ConsultingApplication;
 import org.aibe4.dodeul.domain.consulting.model.repository.ConsultingApplicationRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 
 @Service
@@ -25,14 +25,20 @@ public class ConsultingApplicationService {
     private final ConsultingApplicationRepository consultingApplicationRepository;
     private final SkillTagRepository skillTagRepository;
 
-    // 임시 저장 경로 (내일 파일 컨텍스트가 생기면 이 설정도 그쪽으로 옮겨질 예정입니다)
-    private final String uploadPath = "C:/dodeul/uploads/";
+    // ▼▼▼ [1] 검사기 주입 (새로 추가된 줄) ▼▼▼
+    private final ApplicationValidatorService validatorService;
 
+    /**
+     * 상담 신청서 상세 조회 - 컨트롤러나 외부 반환용
+     */
     public ConsultingApplicationDetailResponse getApplicationDetail(Long applicationId) {
         ConsultingApplication application = findApplicationEntity(applicationId);
         return ConsultingApplicationDetailResponse.from(application);
     }
 
+    /**
+     * 상담 신청서 상세 조회 - 서비스나 내부 로직용
+     */
     public ConsultingApplication findApplicationEntity(Long applicationId) {
         return consultingApplicationRepository.findById(applicationId)
             .orElseThrow(() -> new NoSuchElementException("해당 신청서를 찾을 수 없습니다: " + applicationId));
@@ -44,26 +50,32 @@ public class ConsultingApplicationService {
     @Transactional
     public Long saveApplication(ConsultingApplicationRequest request) {
 
-        // [내일 교체 포인트] 파일 처리 로직을 별도 메서드로 분리하여 유지보수성 향상
-        String savedFileUrl = uploadFile(request.getFile());
+        // ▼▼▼ [2] 저장하기 전에 본문 검사 실행! (비속어/도배/XSS) ▼▼▼
+        // 문제가 있으면 여기서 에러가 터져서 밑으로 못 내려가고 멈춥니다.
+        validatorService.validateContent(request.getContent());
+        validatorService.validateContent(request.getTitle());
 
+        // 1. 태그 문자열을 객체 리스트로 변환
         List<SkillTag> foundSkillTags = getSkillTagsFromString(request.getTechTags());
 
+        // 2. 신청서 엔티티 생성
         ConsultingApplication application =
             ConsultingApplication.builder()
                 .menteeId(request.getMenteeId())
                 .title(request.getTitle())
                 .content(request.getContent())
                 .consultingTag(request.getConsultingTag())
-                .fileUrl(savedFileUrl) // 저장된 파일명(또는 경로)이 DB에 기록됩니다.
+                .fileUrl(request.getFileUrl())
                 .build();
 
+        // 3. 태그 연결
         for (SkillTag skillTag : foundSkillTags) {
             ApplicationSkillTag mapping =
                 ApplicationSkillTag.builder()
                     .consultingApplication(application)
                     .skillTag(skillTag)
                     .build();
+
             application.addSkillTag(mapping);
         }
 
@@ -76,23 +88,21 @@ public class ConsultingApplicationService {
      */
     @Transactional
     public void updateApplication(Long applicationId, Long memberId, ConsultingApplicationRequest request) {
+        // ▼▼▼ [3] 수정할 때도 본문 검사 실행! ▼▼▼
+        validatorService.validateContent(request.getContent());
+        validatorService.validateContent(request.getTitle());
+
         ConsultingApplication application = findApplicationEntity(applicationId);
 
         if (!application.getMenteeId().equals(memberId)) {
             throw new IllegalStateException("수정 권한이 없습니다.");
         }
 
-        // [내일 교체 포인트] 수정 시에도 새 파일이 들어오면 업로드 처리
-        String savedFileUrl = application.getFileUrl();
-        if (request.getFile() != null && !request.getFile().isEmpty()) {
-            savedFileUrl = uploadFile(request.getFile());
-        }
-
         application.update(
             request.getTitle(),
             request.getContent(),
             request.getConsultingTag(),
-            savedFileUrl
+            request.getFileUrl()
         );
 
         application.clearSkillTags();
@@ -107,19 +117,27 @@ public class ConsultingApplicationService {
         }
     }
 
+    /**
+     * 상담 신청서 삭제
+     */
     @Transactional
     public void deleteApplication(Long applicationId, Long memberId) {
         ConsultingApplication application = findApplicationEntity(applicationId);
+
         if (!application.getMenteeId().equals(memberId)) {
             throw new IllegalStateException("삭제 권한이 없습니다.");
         }
+
         consultingApplicationRepository.delete(application);
     }
+
+    // ... (아래 getSkillTagsFromString, getRegistrationForm 메서드는 기존과 동일하므로 생략하지 않고 그대로 두셔도 됩니다)
 
     private List<SkillTag> getSkillTagsFromString(String techTags) {
         if (techTags == null || techTags.isBlank()) {
             return new ArrayList<>();
         }
+
         return Arrays.stream(techTags.split(","))
             .map(String::trim)
             .filter(name -> !name.isEmpty())
@@ -130,6 +148,7 @@ public class ConsultingApplicationService {
 
     public ConsultingApplicationRequest getRegistrationForm(Long applicationId) {
         ConsultingApplication application = findApplicationEntity(applicationId);
+
         ConsultingApplicationRequest form = new ConsultingApplicationRequest();
         form.setTitle(application.getTitle() != null ? application.getTitle() : "");
         form.setContent(application.getContent() != null ? application.getContent() : "");
@@ -144,34 +163,7 @@ public class ConsultingApplicationService {
                 .collect(Collectors.joining(", "));
         }
         form.setTechTags(tags);
+
         return form;
-    }
-
-    /**
-     * [임시 파일 업로드 메서드]
-     * 내일 공통 파일 서비스가 완성되면 이 메서드 로직을 공통 서비스 호출로 대체할 예정입니다.
-     */
-    private String uploadFile(MultipartFile file) {
-        if (file == null || file.isEmpty()) {
-            return null;
-        }
-
-        // 1. 저장 디렉토리 생성
-        File dir = new File(uploadPath);
-        if (!dir.exists()) dir.mkdirs();
-
-        // 2. 파일명 중복 방지 (UUID 사용)
-        String originalName = file.getOriginalFilename();
-        String uuid = UUID.randomUUID().toString();
-        String extension = originalName.substring(originalName.lastIndexOf("."));
-        String savedName = uuid + extension;
-
-        // 3. 물리적 저장
-        try {
-            file.transferTo(new File(uploadPath + savedName));
-            return savedName; // DB의 fileUrl 컬럼에는 이 고유 파일명이 저장됩니다.
-        } catch (IOException e) {
-            throw new RuntimeException("파일 저장 중 오류가 발생했습니다.", e);
-        }
     }
 }
