@@ -13,6 +13,7 @@ import org.aibe4.dodeul.domain.member.model.repository.MemberRepository;
 import org.aibe4.dodeul.global.response.enums.ErrorCode;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +29,7 @@ public class ChatService {
     private final MemberRepository memberRepository;
     private final ConsultationRoomRepository consultationRoomRepository;
     private final MessageRepository messageRepository;
+    private final SimpMessagingTemplate messagingTemplate;
 
     private static final int INITIAL_MESSAGE_SIZE = 20;
 
@@ -64,5 +66,22 @@ public class ChatService {
             .map(MessageDto::of)
             .sorted(Comparator.comparing(MessageDto::getId))
             .toList();
+    }
+
+    @Transactional
+    public void sendSystemMessage(Long roomId, Long currentMemberId, String content) {
+        Member member = memberRepository.findById(currentMemberId).orElseThrow(() -> new NoSuchElementException(ErrorCode.RESOURCE_NOT_FOUND.getMessage()));
+        ConsultationRoom room = consultationRoomRepository.findById(roomId).orElseThrow(() -> new NoSuchElementException(ErrorCode.RESOURCE_NOT_FOUND.getMessage()));
+
+        Message systemMessage = Message.builder()
+            .consultationRoom(room)
+            .sender(member)
+            .content(content)
+            .messageType(MessageType.SYSTEM)
+            .build();
+
+        messageRepository.save(systemMessage);
+
+        messagingTemplate.convertAndSend("/topic/room" + roomId, MessageDto.of(systemMessage));
     }
 }
