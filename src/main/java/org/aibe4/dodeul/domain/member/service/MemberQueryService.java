@@ -2,12 +2,16 @@ package org.aibe4.dodeul.domain.member.service;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.aibe4.dodeul.domain.member.model.entity.Member;
 import org.aibe4.dodeul.domain.member.model.entity.MentorProfile;
 import org.aibe4.dodeul.domain.member.model.repository.MentorProfileRepository;
+import org.aibe4.dodeul.domain.member.model.repository.MentorRecommendationRepositoryCustom;
 import org.aibe4.dodeul.global.exception.BusinessException;
 import org.aibe4.dodeul.global.response.enums.ErrorCode;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -15,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class MemberQueryService {
 
     private final MentorProfileRepository mentorProfileRepository;
+    private final MentorRecommendationRepositoryCustom recommendationRepository;
 
     public void validateMentorConsultationEnabled(Long mentorId) {
         MentorProfile mentorProfile = mentorProfileRepository.findById(mentorId)
@@ -31,5 +36,9 @@ public class MemberQueryService {
             .orElseThrow(() -> new EntityNotFoundException("멘토 프로필 없음"));
 
         mentorProfile.updateResponseRate(responseRate);
+    }
+
+    public List<Member> findCandidateMentors() {
+        return recommendationRepository.findCandidateMentors();
     }
 }

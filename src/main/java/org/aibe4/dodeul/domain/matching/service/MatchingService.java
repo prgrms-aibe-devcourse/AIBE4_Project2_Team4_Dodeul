@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.aibe4.dodeul.domain.consulting.model.entity.ConsultingApplication;
 import org.aibe4.dodeul.domain.consulting.service.ConsultingApplicationService;
 import org.aibe4.dodeul.domain.matching.model.dto.MatchingCreateRequest;
+import org.aibe4.dodeul.domain.matching.model.dto.MatchingHistoryResponse;
 import org.aibe4.dodeul.domain.matching.model.dto.MatchingStatusResponse;
 import org.aibe4.dodeul.domain.matching.model.entity.Matching;
 import org.aibe4.dodeul.domain.matching.model.enums.MatchingStatus;
@@ -18,8 +19,11 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -36,6 +40,10 @@ public class MatchingService {
     );
     private static final List<MatchingStatus> IGNORED_STATUSES = List.of(
         MatchingStatus.TIMEOUT
+    );
+    private static final List<MatchingStatus> FINISHED_STATUSES = List.of(
+        MatchingStatus.INREVIEW,
+        MatchingStatus.COMPLETED
     );
 
     private final MatchingRepository matchingRepository;
@@ -58,6 +66,25 @@ public class MatchingService {
         if (mentorActiveCount >= MAX_ACTIVE_MATCHING_COUNT) {
             throw new BusinessException(ErrorCode.MENTOR_MATCHING_LIMIT_EXCEEDED, "해당 멘토의 상담이 마감되었습니다. 다른 멘토를 선택해주세요.");
         }
+    }
+
+    public Map<Long, Long> getCompletedMatchingCounts(List<Long> mentorIds) {
+        if (mentorIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        return matchingRepository.countByMentorIdAndStatusIn(mentorIds, FINISHED_STATUSES).stream()
+            .collect(Collectors.toMap(
+                obj -> (Long) obj[0],
+                obj -> ((Number) obj[1]).longValue()
+            ));
+    }
+
+    public List<MatchingHistoryResponse> getMyMatchingHistory(Long memberId) {
+        List<Matching> matchings = matchingRepository.findAllByMemberId(memberId);
+
+        return matchings.stream()
+            .map(matching -> MatchingHistoryResponse.of(matching, memberId))
+            .toList();
     }
 
     @Transactional

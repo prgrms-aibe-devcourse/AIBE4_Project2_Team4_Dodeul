@@ -4,7 +4,9 @@ import jakarta.annotation.PostConstruct;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import org.aibe4.dodeul.domain.member.model.dto.AuthSessionKeys;
 import org.aibe4.dodeul.domain.member.model.entity.Member;
 import org.aibe4.dodeul.domain.member.service.MemberService;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -60,7 +62,11 @@ public class OAuth2LoginSuccessHandler extends SavedRequestAwareAuthenticationSu
                     new UsernamePasswordAuthenticationToken(userDetails, null, authorities);
 
                 SecurityContextHolder.getContext().setAuthentication(newAuth);
-
+                
+                HttpSession session = request.getSession(false);
+                if (session != null) {
+                    session.removeAttribute(AuthSessionKeys.SELECTED_ROLE);
+                }
                 super.onAuthenticationSuccess(request, response, newAuth);
                 return;
             }

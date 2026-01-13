@@ -1,14 +1,15 @@
 // src/main/java/org/aibe4/dodeul/domain/board/model/dto/response/BoardPostDetailResponse.java
 package org.aibe4.dodeul.domain.board.model.dto.response;
 
-import java.time.LocalDateTime;
-import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.aibe4.dodeul.domain.board.model.entity.BoardPost;
 import org.aibe4.dodeul.domain.common.model.entity.SkillTag;
 import org.aibe4.dodeul.domain.consulting.model.enums.ConsultingTag;
+
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
@@ -35,31 +36,35 @@ public class BoardPostDetailResponse {
     private List<SkillTagSummary> skillTags;
     private List<AttachmentSummary> attachments;
 
-    public static BoardPostDetailResponse from(BoardPost post, boolean scrappedByMe) {
+    public static BoardPostDetailResponse from(
+        BoardPost post, String authorDisplayName, boolean scrappedByMe) {
         ConsultingTag consulting = post.getBoardConsulting();
         String consultingCode = consulting != null ? consulting.name() : null;
         String consultingName = consulting != null ? consulting.name() : null;
 
-        List<SkillTagSummary> tags =
-                post.getSkillTags().stream().map(SkillTagSummary::from).toList();
+        List<SkillTagSummary> tags = post.getSkillTags().stream().map(SkillTagSummary::from).toList();
+
+        String displayName = (authorDisplayName == null || authorDisplayName.isBlank())
+            ? "작성자"
+            : authorDisplayName;
 
         return new BoardPostDetailResponse(
-                post.getId(),
-                new Author("작성자"),
-                new ConsultingTagSummary(consultingCode, consultingName),
-                post.getTitle(),
-                post.getContent(),
-                post.getPostStatus().name(),
-                post.getViewCount() != null ? post.getViewCount().longValue() : 0L,
-                post.getScrapCount() != null ? post.getScrapCount().longValue() : 0L,
-                post.getCommentCount() != null ? post.getCommentCount().longValue() : 0L,
-                post.getLastCommentedAt(),
-                post.getCreatedAt(),
-                post.getUpdatedAt(),
-                scrappedByMe,
-                tags,
-                List.of() // 첨부파일은 후순위
-                );
+            post.getId(),
+            new Author(displayName),
+            new ConsultingTagSummary(consultingCode, consultingName),
+            post.getTitle(),
+            post.getContent(),
+            post.getPostStatus().name(),
+            post.getViewCount() != null ? post.getViewCount().longValue() : 0L,
+            post.getScrapCount() != null ? post.getScrapCount().longValue() : 0L,
+            post.getCommentCount() != null ? post.getCommentCount().longValue() : 0L,
+            post.getLastCommentedAt(),
+            post.getCreatedAt(),
+            post.getUpdatedAt(),
+            scrappedByMe,
+            tags,
+            List.of() // 첨부파일은 후순위
+        );
     }
 
     @Getter

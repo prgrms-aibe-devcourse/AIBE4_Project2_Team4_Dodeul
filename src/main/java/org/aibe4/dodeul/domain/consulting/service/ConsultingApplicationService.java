@@ -47,7 +47,7 @@ public class ConsultingApplicationService {
     @Transactional
     public Long saveApplication(ConsultingApplicationRequest request) {
 
-        // 1. 태그 문자열("Java, Spring")을 태그 객체 리스트로 변환 (도우미 메서드 사용)
+        // 1. 태그 문자열을 객체 리스트로 변환 (DB에 없어도 에러나지 않게 수정됨)
         List<SkillTag> foundSkillTags = getSkillTagsFromString(request.getTechTags());
 
         // 2. 신청서 엔티티 생성
@@ -60,7 +60,7 @@ public class ConsultingApplicationService {
                 .fileUrl(request.getFileUrl())
                 .build();
 
-        // 3. 태그 연결 (매핑 엔티티 생성)
+        // 3. 태그 연결
         for (SkillTag skillTag : foundSkillTags) {
             ApplicationSkillTag mapping =
                 ApplicationSkillTag.builder()
@@ -76,25 +76,16 @@ public class ConsultingApplicationService {
     }
 
     /**
-     * [추가됨] 상담 신청서 수정
+     * 상담 신청서 수정
      */
     @Transactional
     public void updateApplication(Long applicationId, Long memberId, ConsultingApplicationRequest request) {
         ConsultingApplication application = findApplicationEntity(applicationId);
 
-        // 1. 작성자 검증 (내 글이 맞는지?)
         if (!application.getMenteeId().equals(memberId)) {
             throw new IllegalStateException("수정 권한이 없습니다.");
         }
 
-        // 2. 상태 검증 (TODO: 상담 상태가 WAITING이 아니면 수정 불가 로직 필요)
-        /*
-        if (application.getStatus() != ConsultingStatus.WAITING) {
-            throw new IllegalStateException("대기 중인 상담만 수정할 수 있습니다.");
-        }
-        */
-
-        // 3. 기본 내용 업데이트 (제목, 내용, 카테고리 등)
         application.update(
             request.getTitle(),
             request.getContent(),
@@ -102,57 +93,75 @@ public class ConsultingApplicationService {
             request.getFileUrl()
         );
 
-        // 4. 스킬 태그 업데이트 (싹 지우고 다시 등록)
-        application.clearSkillTags(); // 기존 태그 연결 끊기
+        application.clearSkillTags();
 
-        List<SkillTag> newTags = getSkillTagsFromString(request.getTechTags()); // 새 태그 찾기
+        List<SkillTag> newTags = getSkillTagsFromString(request.getTechTags());
         for (SkillTag skillTag : newTags) {
             ApplicationSkillTag mapping = ApplicationSkillTag.builder()
                 .consultingApplication(application)
                 .skillTag(skillTag)
                 .build();
-            application.addSkillTag(mapping); // 새 태그 연결
+            application.addSkillTag(mapping);
         }
-
-        // JPA의 변경 감지(Dirty Checking) 덕분에 따로 save()를 호출하지 않아도 DB가 수정됩니다.
     }
 
     /**
-     * [추가됨] 상담 신청서 삭제
+     * 상담 신청서 삭제
      */
     @Transactional
     public void deleteApplication(Long applicationId, Long memberId) {
         ConsultingApplication application = findApplicationEntity(applicationId);
 
-        // 1. 작성자 검증
         if (!application.getMenteeId().equals(memberId)) {
             throw new IllegalStateException("삭제 권한이 없습니다.");
         }
 
-        // 2. 상태 검증 (TODO: 상담 상태 확인 필요)
-        /*
-        if (application.getStatus() != ConsultingStatus.WAITING) {
-             throw new IllegalStateException("대기 중인 상담만 삭제할 수 있습니다.");
-        }
-        */
-
-        // 3. 삭제
         consultingApplicationRepository.delete(application);
     }
 
     /**
-     * [도우미 메서드] 문자열 태그("Java, Spring")를 List<SkillTag>로 변환
-     * 저장과 수정 로직에서 공통으로 사용됩니다.
+     * [수정됨] 문자열 태그를 List<SkillTag>로 변환
+     * 존재하지 않는 태그(null)는 필터링하여 에러 발생을 방지합니다.
      */
     private List<SkillTag> getSkillTagsFromString(String techTags) {
-        if (techTags == null || techTags.isEmpty()) {
+        if (techTags == null || techTags.isBlank()) {
             return new ArrayList<>();
         }
 
         return Arrays.stream(techTags.split(","))
             .map(String::trim)
-            .map(tagName -> skillTagRepository.findByName(tagName)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 태그입니다: " + tagName)))
+            .filter(name -> !name.isEmpty())
+            .map(tagName -> skillTagRepository.findByName(tagName).orElse(null))
+            .filter(tag -> tag != null) // DB에 없는 태그는 여기서 걸러짐
             .collect(Collectors.toList());
     }
+
+    /**
+     * [추가] 수정 폼을 위한 데이터 조회 및 DTO 변환
+     * 컨트롤러에 있던 로직을 서비스로 옮겨 캡슐화합니다.
+     */
+    public ConsultingApplicationRequest getRegistrationForm(Long applicationId) {
+        // 1. 엔티티 조회 (기존에 만들어두신 메서드 활용)
+        ConsultingApplication application = findApplicationEntity(applicationId);
+
+        // 2. DTO 생성 및 값 복사 (Null 방지 처리 포함)
+        ConsultingApplicationRequest form = new ConsultingApplicationRequest();
+        form.setTitle(application.getTitle() != null ? application.getTitle() : "");
+        form.setContent(application.getContent() != null ? application.getContent() : "");
+        form.setConsultingTag(application.getConsultingTag());
+        form.setFileUrl(application.getFileUrl());
+
+        // 3. 스킬 태그 리스트를 문자열(쉼표 구분)로 변환
+        String tags = "";
+        if (application.getApplicationSkillTags() != null) {
+            tags = application.getApplicationSkillTags().stream()
+                .filter(m -> m.getSkillTag() != null)
+                .map(m -> m.getSkillTag().getName())
+                .collect(Collectors.joining(", "));
+        }
+        form.setTechTags(tags);
+
+        return form;
+    }
 }
+// 106번 재커밋

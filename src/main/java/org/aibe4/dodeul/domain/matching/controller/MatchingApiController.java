@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.aibe4.dodeul.domain.matching.model.dto.MatchingCreateRequest;
+import org.aibe4.dodeul.domain.matching.model.dto.MatchingHistoryResponse;
 import org.aibe4.dodeul.domain.matching.model.dto.MatchingStatusResponse;
 import org.aibe4.dodeul.domain.matching.service.MatchingService;
 import org.aibe4.dodeul.global.response.CommonResponse;
@@ -14,6 +15,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @Tag(name = "Matching", description = "매칭 API")
 @RestController
 @RequestMapping("/api/matchings")
@@ -21,6 +24,16 @@ import org.springframework.web.bind.annotation.*;
 public class MatchingApiController {
 
     private final MatchingService matchingService;
+
+    @Operation(summary = "내 매칭 내역 조회", description = "사용자의 모든 매칭 내역을 조회")
+    @GetMapping
+    public CommonResponse<List<MatchingHistoryResponse>> getMyMatchingHistory(
+        @AuthenticationPrincipal CustomUserDetails userDetails) {
+
+        List<MatchingHistoryResponse> responses = matchingService.getMyMatchingHistory(userDetails.getMemberId());
+
+        return CommonResponse.success(SuccessCode.SELECT_SUCCESS, responses, "내 매칭 내역 조회를 성공했습니다.");
+    }
 
     @Operation(summary = "매칭 가능 여부 확인", description = "멘토와 멘티가 매칭이 가능한지 검증한다")
     @MatchingSwaggerDocs.CheckAvailability

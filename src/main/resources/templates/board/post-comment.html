@@ -1,0 +1,34 @@
+<!-- src/main/resources/templates/board/post-comment.html -->
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<body>
+<section class="card card--soft" th:fragment="postCommentSection">
+  <header class="card__header card__header--compact">
+    <h2 class="subtitle">
+      <span class="subtitle__icon">💬</span>
+      <span>답변</span>
+      <span id="answerCount" class="subtitle__count">0</span>
+      <span class="subtitle__suffix">개</span>
+    </h2>
+  </header>
+
+  <!-- 댓글 작성 -->
+  <div class="composer">
+    <textarea
+      id="commentContent"
+      class="composer__input"
+      placeholder="답변을 작성하세요..."
+    ></textarea>
+    <div class="composer__actions">
+      <button id="commentSubmitBtn" class="btn btn--primary" type="button">답변 작성</button>
+    </div>
+  </div>
+
+  <div class="comment-list" id="commentList"></div>
+
+  <div class="comment-placeholder" id="commentHint" style="display:none;">
+    댓글이 없습니다.
+  </div>
+</section>
+</body>
+</html>

@@ -1,4 +1,4 @@
-package org.aibe4.dodeul.domain.member.model.dto;
+package org.aibe4.dodeul.domain.member.model.dto.request;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
