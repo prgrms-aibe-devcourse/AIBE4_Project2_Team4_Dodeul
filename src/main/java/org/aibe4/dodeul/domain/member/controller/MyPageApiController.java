@@ -19,16 +19,11 @@ public class MyPageApiController {
     public CommonResponse<MyPageDashboardResponse> dashboard(
         @AuthenticationPrincipal CustomUserDetails user
     ) {
-        MyPageDashboardResponse data = MyPageDashboardResponse.of(
-            user.getMemberId(),
-            user.getRole().name(),
-            user.getNickname()
-        );
-
+        // NOTE: 대시보드 데이터 연동은 후속 작업에서 진행 (라우팅 PR 범위 밖)
         return CommonResponse.success(
             SuccessCode.SUCCESS,
-            data,
-            "대시보드 조회 성공"
+            null,
+            "대시보드 데이터는 추후 연동 예정입니다."
         );
     }
 }
