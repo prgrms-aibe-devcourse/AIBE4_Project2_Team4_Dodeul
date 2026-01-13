@@ -23,14 +23,8 @@ public class ConsultationRoomService {
     private final ConsultationRoomRepository consultationRoomRepository;
     private final MessageRepository messageRepository;
 
-    public ConsultationRoomDto getRoomWithApplication(Long roomId, Long currentMemberId) {
-        ConsultationRoom room =
-            consultationRoomRepository
-                .findById(roomId)
-                .orElseThrow(
-                    () ->
-                        new EntityNotFoundException(
-                            "해당 ID의 상담방을 찾을 수 없습니다." + roomId));
+    public ConsultationRoomDto loadRoomInfo(Long roomId, Long currentMemberId) {
+        ConsultationRoom room = consultationRoomRepository.findById(roomId).orElseThrow(() -> new EntityNotFoundException("해당 ID의 상담방을 찾을 수 없습니다." + roomId));
 
         List<MessageDto> messageDtoList = getMessageDtoList(roomId, currentMemberId);
 
@@ -54,6 +48,7 @@ public class ConsultationRoomService {
 
     private Long createAndSaveRoom(Matching matching) {
         ConsultationRoom newRoom = ConsultationRoom.createRoom(matching);
+
         return consultationRoomRepository.save(newRoom).getId();
     }
 }

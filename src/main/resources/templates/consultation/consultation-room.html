@@ -100,15 +100,15 @@
           </div>
           <dl class="application-summary mb-0">
             <dt>신청 제목</dt>
-            <dd th:text="${consultationRoomDto.consultingApplicationDto.title}">제목</dd>
+            <dd th:text="${consultationRoomDto.consultingApplicationDetailResponse.title}">제목</dd>
 
             <dt>희망 직무</dt>
             <dd><span class="tag tag--read-only mb-0 py-1 px-2" style="font-size: 0.8rem;"
-                      th:text="${consultationRoomDto.consultingApplicationDto.consultingTag}">태그</span></dd>
+                      th:text="${consultationRoomDto.consultingApplicationDetailResponse.skillTags}">태그</span></dd>
 
             <dt>상담 내용 요약</dt>
             <dd class="text-secondary" style="font-size: 0.9rem; line-height: 1.4;"
-                th:text="${consultationRoomDto.consultingApplicationDto.content}">
+                th:text="${consultationRoomDto.consultingApplicationDetailResponse.content}">
               내용
             </dd>
           </dl>
@@ -119,8 +119,8 @@
             <span>🗂 주고받은 파일</span>
           </div>
           <div class="file-list">
-            <a th:if="${consultationRoomDto.consultingApplicationDto.fileUrl != null}"
-               th:href="${consultationRoomDto.consultingApplicationDto.fileUrl}"
+            <a th:if="${consultationRoomDto.consultingApplicationDetailResponse.fileUrl != null}"
+               th:href="${consultationRoomDto.consultingApplicationDetailResponse.fileUrl}"
                class="file-item text-decoration-none" target="_blank">
               <div class="file-icon"><i class="bi bi-file-earmark-text"></i></div>
               <div class="file-info">
@@ -131,7 +131,7 @@
                 <i class="bi bi-download"></i>
               </div>
             </a>
-            <div th:unless="${consultationRoomDto.consultingApplicationDto.fileUrl != null}"
+            <div th:unless="${consultationRoomDto.consultingApplicationDetailResponse.fileUrl != null}"
                  class="text-center text-secondary py-3">
               <small>주고받은 파일이 없습니다.</small>
             </div>
