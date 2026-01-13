@@ -12,7 +12,3 @@ spring:
     properties:
       hibernate:
         default_batch_fetch_size: 100
-
-scheduler:
-  matching:
-    timeout-cron: "0 * * * * *" # 매 1분마다 스케줄러 실행
