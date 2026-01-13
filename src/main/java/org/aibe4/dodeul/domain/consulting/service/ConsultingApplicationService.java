@@ -10,11 +10,11 @@ import org.aibe4.dodeul.domain.consulting.model.entity.ConsultingApplication;
 import org.aibe4.dodeul.domain.consulting.model.repository.ConsultingApplicationRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.NoSuchElementException;
+import java.io.File;
+import java.io.IOException;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -25,17 +25,14 @@ public class ConsultingApplicationService {
     private final ConsultingApplicationRepository consultingApplicationRepository;
     private final SkillTagRepository skillTagRepository;
 
-    /**
-     * 상담 신청서 상세 조회 - 컨트롤러나 외부 반환용
-     */
+    // 임시 저장 경로 (내일 파일 컨텍스트가 생기면 이 설정도 그쪽으로 옮겨질 예정입니다)
+    private final String uploadPath = "C:/dodeul/uploads/";
+
     public ConsultingApplicationDetailResponse getApplicationDetail(Long applicationId) {
         ConsultingApplication application = findApplicationEntity(applicationId);
         return ConsultingApplicationDetailResponse.from(application);
     }
 
-    /**
-     * 상담 신청서 상세 조회 - 서비스나 내부 로직용
-     */
     public ConsultingApplication findApplicationEntity(Long applicationId) {
         return consultingApplicationRepository.findById(applicationId)
             .orElseThrow(() -> new NoSuchElementException("해당 신청서를 찾을 수 없습니다: " + applicationId));
@@ -47,27 +44,26 @@ public class ConsultingApplicationService {
     @Transactional
     public Long saveApplication(ConsultingApplicationRequest request) {
 
-        // 1. 태그 문자열을 객체 리스트로 변환 (DB에 없어도 에러나지 않게 수정됨)
+        // [내일 교체 포인트] 파일 처리 로직을 별도 메서드로 분리하여 유지보수성 향상
+        String savedFileUrl = uploadFile(request.getFile());
+
         List<SkillTag> foundSkillTags = getSkillTagsFromString(request.getTechTags());
 
-        // 2. 신청서 엔티티 생성
         ConsultingApplication application =
             ConsultingApplication.builder()
                 .menteeId(request.getMenteeId())
                 .title(request.getTitle())
                 .content(request.getContent())
                 .consultingTag(request.getConsultingTag())
-                .fileUrl(request.getFileUrl())
+                .fileUrl(savedFileUrl) // 저장된 파일명(또는 경로)이 DB에 기록됩니다.
                 .build();
 
-        // 3. 태그 연결
         for (SkillTag skillTag : foundSkillTags) {
             ApplicationSkillTag mapping =
                 ApplicationSkillTag.builder()
                     .consultingApplication(application)
                     .skillTag(skillTag)
                     .build();
-
             application.addSkillTag(mapping);
         }
 
@@ -86,11 +82,17 @@ public class ConsultingApplicationService {
             throw new IllegalStateException("수정 권한이 없습니다.");
         }
 
+        // [내일 교체 포인트] 수정 시에도 새 파일이 들어오면 업로드 처리
+        String savedFileUrl = application.getFileUrl();
+        if (request.getFile() != null && !request.getFile().isEmpty()) {
+            savedFileUrl = uploadFile(request.getFile());
+        }
+
         application.update(
             request.getTitle(),
             request.getContent(),
             request.getConsultingTag(),
-            request.getFileUrl()
+            savedFileUrl
         );
 
         application.clearSkillTags();
@@ -105,53 +107,35 @@ public class ConsultingApplicationService {
         }
     }
 
-    /**
-     * 상담 신청서 삭제
-     */
     @Transactional
     public void deleteApplication(Long applicationId, Long memberId) {
         ConsultingApplication application = findApplicationEntity(applicationId);
-
         if (!application.getMenteeId().equals(memberId)) {
             throw new IllegalStateException("삭제 권한이 없습니다.");
         }
-
         consultingApplicationRepository.delete(application);
     }
 
-    /**
-     * [수정됨] 문자열 태그를 List<SkillTag>로 변환
-     * 존재하지 않는 태그(null)는 필터링하여 에러 발생을 방지합니다.
-     */
     private List<SkillTag> getSkillTagsFromString(String techTags) {
         if (techTags == null || techTags.isBlank()) {
             return new ArrayList<>();
         }
-
         return Arrays.stream(techTags.split(","))
             .map(String::trim)
             .filter(name -> !name.isEmpty())
             .map(tagName -> skillTagRepository.findByName(tagName).orElse(null))
-            .filter(tag -> tag != null) // DB에 없는 태그는 여기서 걸러짐
+            .filter(tag -> tag != null)
             .collect(Collectors.toList());
     }
 
-    /**
-     * [추가] 수정 폼을 위한 데이터 조회 및 DTO 변환
-     * 컨트롤러에 있던 로직을 서비스로 옮겨 캡슐화합니다.
-     */
     public ConsultingApplicationRequest getRegistrationForm(Long applicationId) {
-        // 1. 엔티티 조회 (기존에 만들어두신 메서드 활용)
         ConsultingApplication application = findApplicationEntity(applicationId);
-
-        // 2. DTO 생성 및 값 복사 (Null 방지 처리 포함)
         ConsultingApplicationRequest form = new ConsultingApplicationRequest();
         form.setTitle(application.getTitle() != null ? application.getTitle() : "");
         form.setContent(application.getContent() != null ? application.getContent() : "");
         form.setConsultingTag(application.getConsultingTag());
         form.setFileUrl(application.getFileUrl());
 
-        // 3. 스킬 태그 리스트를 문자열(쉼표 구분)로 변환
         String tags = "";
         if (application.getApplicationSkillTags() != null) {
             tags = application.getApplicationSkillTags().stream()
@@ -160,8 +144,34 @@ public class ConsultingApplicationService {
                 .collect(Collectors.joining(", "));
         }
         form.setTechTags(tags);
-
         return form;
     }
+
+    /**
+     * [임시 파일 업로드 메서드]
+     * 내일 공통 파일 서비스가 완성되면 이 메서드 로직을 공통 서비스 호출로 대체할 예정입니다.
+     */
+    private String uploadFile(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            return null;
+        }
+
+        // 1. 저장 디렉토리 생성
+        File dir = new File(uploadPath);
+        if (!dir.exists()) dir.mkdirs();
+
+        // 2. 파일명 중복 방지 (UUID 사용)
+        String originalName = file.getOriginalFilename();
+        String uuid = UUID.randomUUID().toString();
+        String extension = originalName.substring(originalName.lastIndexOf("."));
+        String savedName = uuid + extension;
+
+        // 3. 물리적 저장
+        try {
+            file.transferTo(new File(uploadPath + savedName));
+            return savedName; // DB의 fileUrl 컬럼에는 이 고유 파일명이 저장됩니다.
+        } catch (IOException e) {
+            throw new RuntimeException("파일 저장 중 오류가 발생했습니다.", e);
+        }
+    }
 }
-// 106번 재커밋
