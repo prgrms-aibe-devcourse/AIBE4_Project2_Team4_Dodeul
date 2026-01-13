@@ -3,6 +3,7 @@ package org.aibe4.dodeul.global.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletResponse;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.aibe4.dodeul.global.response.CommonResponse;
 import org.aibe4.dodeul.global.response.enums.ErrorCode;
@@ -18,8 +19,6 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.List;
-
 @Configuration
 @EnableMethodSecurity
 @RequiredArgsConstructor
@@ -31,8 +30,7 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
-            .cors(Customizer.withDefaults())
+        http.cors(Customizer.withDefaults())
             .csrf(
                 csrf ->
                     csrf.ignoringRequestMatchers(
@@ -81,6 +79,7 @@ public class SecurityConfig {
 
                         // 멘토 전용 구간
                         .requestMatchers(
+                            "/mentor/**",
                             "/mypage/mentor/**",
                             "/api/demo/role/mentor",
                             "/api/mentor/**")
@@ -96,6 +95,7 @@ public class SecurityConfig {
 
                         // 멘티 전용 구간
                         .requestMatchers(
+                            "/mentee/**",
                             "/mypage/mentee/**",
                             "/matchings/**",
                             "/api/demo/role/mentee",
@@ -107,8 +107,7 @@ public class SecurityConfig {
             .sessionManagement(
                 session ->
                     session
-                        .sessionFixation(
-                            sessionFixation -> sessionFixation.migrateSession())
+                        .sessionFixation(sessionFixation -> sessionFixation.migrateSession())
                         .invalidSessionUrl("/auth/login?expired"))
             .formLogin(
                 form ->
@@ -134,7 +133,6 @@ public class SecurityConfig {
             .exceptionHandling(
                 handler ->
                     handler
-                        // 인증되지 않은 사용자
                         .authenticationEntryPoint(
                             (request, response, authException) -> {
                                 if (request.getRequestURI().startsWith("/api/")) {
@@ -151,7 +149,6 @@ public class SecurityConfig {
                                     response.sendRedirect("/auth/login");
                                 }
                             })
-                        // 권한이 없는 사용자
                         .accessDeniedHandler(
                             (request, response, accessDeniedException) -> {
                                 if (request.getRequestURI().startsWith("/api/")) {
