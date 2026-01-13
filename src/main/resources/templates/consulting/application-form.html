@@ -180,6 +180,15 @@
   </div>
 
   <script th:inline="javascript">
+
+    /* [추가] 서버에서 보낸 에러 메시지가 있으면 경고창 띄우기 */
+    /*<![CDATA[*/
+    const errorMessage = [[${errorMessage}]];
+    if (errorMessage) {
+      alert(errorMessage);
+    }
+    /*]]>*/
+
     // 글자수 업데이트 함수
     function updateCharCount(textarea) {
       const currentLength = textarea.value.length;
@@ -260,4 +269,4 @@
 </section>
 </body>
 </html>
-<!--// 106번 재커밋-->
+

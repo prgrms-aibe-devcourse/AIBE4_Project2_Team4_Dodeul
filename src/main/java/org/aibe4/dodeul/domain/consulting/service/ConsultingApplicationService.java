@@ -25,6 +25,9 @@ public class ConsultingApplicationService {
     private final ConsultingApplicationRepository consultingApplicationRepository;
     private final SkillTagRepository skillTagRepository;
 
+    // ▼▼▼ [1] 검사기 주입 (새로 추가된 줄) ▼▼▼
+    private final ApplicationValidatorService validatorService;
+
     /**
      * 상담 신청서 상세 조회 - 컨트롤러나 외부 반환용
      */
@@ -47,7 +50,12 @@ public class ConsultingApplicationService {
     @Transactional
     public Long saveApplication(ConsultingApplicationRequest request) {
 
-        // 1. 태그 문자열을 객체 리스트로 변환 (DB에 없어도 에러나지 않게 수정됨)
+        // ▼▼▼ [2] 저장하기 전에 본문 검사 실행! (비속어/도배/XSS) ▼▼▼
+        // 문제가 있으면 여기서 에러가 터져서 밑으로 못 내려가고 멈춥니다.
+        validatorService.validateContent(request.getContent());
+        validatorService.validateContent(request.getTitle());
+
+        // 1. 태그 문자열을 객체 리스트로 변환
         List<SkillTag> foundSkillTags = getSkillTagsFromString(request.getTechTags());
 
         // 2. 신청서 엔티티 생성
@@ -80,6 +88,10 @@ public class ConsultingApplicationService {
      */
     @Transactional
     public void updateApplication(Long applicationId, Long memberId, ConsultingApplicationRequest request) {
+        // ▼▼▼ [3] 수정할 때도 본문 검사 실행! ▼▼▼
+        validatorService.validateContent(request.getContent());
+        validatorService.validateContent(request.getTitle());
+
         ConsultingApplication application = findApplicationEntity(applicationId);
 
         if (!application.getMenteeId().equals(memberId)) {
@@ -119,10 +131,8 @@ public class ConsultingApplicationService {
         consultingApplicationRepository.delete(application);
     }
 
-    /**
-     * [수정됨] 문자열 태그를 List<SkillTag>로 변환
-     * 존재하지 않는 태그(null)는 필터링하여 에러 발생을 방지합니다.
-     */
+    // ... (아래 getSkillTagsFromString, getRegistrationForm 메서드는 기존과 동일하므로 생략하지 않고 그대로 두셔도 됩니다)
+
     private List<SkillTag> getSkillTagsFromString(String techTags) {
         if (techTags == null || techTags.isBlank()) {
             return new ArrayList<>();
@@ -132,26 +142,19 @@ public class ConsultingApplicationService {
             .map(String::trim)
             .filter(name -> !name.isEmpty())
             .map(tagName -> skillTagRepository.findByName(tagName).orElse(null))
-            .filter(tag -> tag != null) // DB에 없는 태그는 여기서 걸러짐
+            .filter(tag -> tag != null)
             .collect(Collectors.toList());
     }
 
-    /**
-     * [추가] 수정 폼을 위한 데이터 조회 및 DTO 변환
-     * 컨트롤러에 있던 로직을 서비스로 옮겨 캡슐화합니다.
-     */
     public ConsultingApplicationRequest getRegistrationForm(Long applicationId) {
-        // 1. 엔티티 조회 (기존에 만들어두신 메서드 활용)
         ConsultingApplication application = findApplicationEntity(applicationId);
 
-        // 2. DTO 생성 및 값 복사 (Null 방지 처리 포함)
         ConsultingApplicationRequest form = new ConsultingApplicationRequest();
         form.setTitle(application.getTitle() != null ? application.getTitle() : "");
         form.setContent(application.getContent() != null ? application.getContent() : "");
         form.setConsultingTag(application.getConsultingTag());
         form.setFileUrl(application.getFileUrl());
 
-        // 3. 스킬 태그 리스트를 문자열(쉼표 구분)로 변환
         String tags = "";
         if (application.getApplicationSkillTags() != null) {
             tags = application.getApplicationSkillTags().stream()
@@ -164,4 +167,3 @@ public class ConsultingApplicationService {
         return form;
     }
 }
-// 106번 재커밋
