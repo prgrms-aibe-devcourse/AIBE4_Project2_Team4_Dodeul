@@ -22,9 +22,17 @@ public class ReviewController {
     @GetMapping("/new/{matchingId}")
     @PreAuthorize("@consultationGuard.isCorrectMatchedMemberAndRoomClosed(#matchingId, #userDetails.memberId)")
     public String reviewForm(@PathVariable Long matchingId, @AuthenticationPrincipal CustomUserDetails userDetails, Model model) {
-        ReviewFormDataDto reviewFormDataDto = reviewService.loadFormData(matchingId);
 
+        if (reviewService.hasReview(matchingId)) {
+            model.addAttribute("errorMessage", "이미 작성된 리뷰가 존재합니다.");
+            model.addAttribute("nextUrl", "/mentee/dashboard");
+
+            return "error/access-denied";
+        }
+
+        ReviewFormDataDto reviewFormDataDto = reviewService.loadFormData(matchingId);
         model.addAttribute("reviewFormDataDto", reviewFormDataDto);
+
         return "review/review-form";
     }
 }

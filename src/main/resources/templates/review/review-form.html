@@ -59,7 +59,7 @@
             <button type="submit" class="btn btn-primary-custom py-3 fs-5">
               리뷰 등록 완료하기
             </button>
-            <a th:href="@{/home}" class="btn btn-outline-custom py-2">나중에 하기</a>
+            <a th:href="@{/mentee/dashboard}" class="btn btn-outline-custom py-2">나중에 하기</a>
           </div>
         </form>
 
@@ -76,7 +76,9 @@
           </div>
           <h4 class="fw-bold mb-3">리뷰가 등록되었습니다!</h4>
           <p class="text-secondary mb-4">소중한 의견을 남겨주셔서 감사합니다.</p>
-          <button type="button" class="btn btn-primary-custom px-5 py-2" id="goHomeBtn">확인</button>
+          <button type="button" class="btn btn-primary-custom px-5 py-2" id="goHomeBtn">
+            확인
+          </button>
         </div>
       </div>
     </div>
@@ -93,6 +95,13 @@
       const successModal = new bootstrap.Modal(document.getElementById('successModal'));
       const goHomeBtn = document.getElementById('goHomeBtn');
 
+      // [핵심 수정] 확인 버튼 클릭 이벤트 리스너
+      // 타임리프 인라인 문법을 사용하여 서버 컨텍스트 경로가 포함된 URL을 생성합니다.
+      goHomeBtn.addEventListener('click', function() {
+        location.href = /*[[@{/mentee/dashboard}]]*/ '/mentee/dashboard';
+      });
+
+      // 글자수 세기 로직
       textarea.addEventListener('input', function () {
         const len = this.value.length;
         countLabel.textContent = len;
@@ -105,12 +114,12 @@
         }
       });
 
+      // 폼 제출 로직
       reviewForm.addEventListener('submit', async function (e) {
         e.preventDefault();
 
         if (!confirm("리뷰를 등록하시겠습니까?")) return;
 
-        // PathVariable 전송을 위해 ID 추출
         const matchingId = document.getElementById('matchingId').value;
         const apiUrl = `/api/reviews/${matchingId}`;
 
@@ -129,7 +138,7 @@
           const result = await response.json();
 
           if (response.ok && result.success) {
-            successModal.show();
+            successModal.show(); // 성공 시 모달 띄움 -> 이후 사용자가 '확인' 누르면 위 이벤트 리스너 작동
           } else {
             alert(result.message || "리뷰 등록 중 오류가 발생했습니다.");
           }
@@ -138,8 +147,6 @@
           alert("네트워크 통신 중 오류가 발생했습니다.");
         }
       });
-
-      goHomeBtn.addEventListener('click', () => location.href = '/home');
     });
   </script>
 </th:block>

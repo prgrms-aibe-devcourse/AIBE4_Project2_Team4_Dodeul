@@ -71,4 +71,8 @@ public class ReviewService {
                 obj -> ((Number) obj[1]).longValue()
             ));
     }
+
+    public boolean hasReview(Long matchingId) {
+        return reviewRepository.existsByMatchingId(matchingId);
+    }
 }
