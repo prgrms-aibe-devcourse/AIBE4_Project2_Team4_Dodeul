@@ -10,6 +10,7 @@ import lombok.Setter;
 @NoArgsConstructor
 public class ReviewRequest {
     private String content;
+
     @JsonProperty("isRecommended")
     private boolean isRecommended;
 }
