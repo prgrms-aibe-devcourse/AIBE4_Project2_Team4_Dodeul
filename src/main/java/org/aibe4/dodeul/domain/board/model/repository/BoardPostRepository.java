@@ -10,9 +10,14 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.Optional;
 
-public interface BoardPostRepository extends JpaRepository<BoardPost, Long>, BoardPostRepositoryCustom {
+public interface BoardPostRepository
+    extends JpaRepository<BoardPost, Long>, BoardPostRepositoryCustom {
 
-    @EntityGraph(attributePaths = {"boardPostTagRelations", "boardPostTagRelations.skillTag"})
+    @EntityGraph(
+        attributePaths = {
+            "boardPostTagRelations",
+            "boardPostTagRelations.skillTag"
+        })
     Optional<BoardPost> findDetailById(Long id);
 
     @Query(

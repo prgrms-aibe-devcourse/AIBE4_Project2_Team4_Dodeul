@@ -22,7 +22,13 @@
           <div class="header__spacer"></div>
 
           <div class="header__actions">
-            <button id="scrapBtn" class="iconbtn" type="button" aria-label="스크랩" aria-pressed="false">
+            <button
+              id="scrapBtn"
+              class="iconbtn"
+              type="button"
+              aria-label="스크랩"
+              aria-pressed="false"
+            >
               <span class="iconbtn__icon">🔖</span>
               <span id="scrapBtnCount" class="iconbtn__count">0</span>
             </button>
@@ -80,24 +86,57 @@
       </section>
     </article>
 
+    <!-- 첨부파일 섹션 -->
+    <section class="attachments" id="attachmentsSection" style="display: none">
+      <div class="attachments__head">
+        <div class="attachments__title">첨부파일</div>
+        <div class="attachments__count" id="attachmentsCount">0</div>
+      </div>
+
+      <!-- 파일 카드 리스트 -->
+      <div id="attachmentsList" class="attachments__list"></div>
+
+      <!-- 미리보기 영역(파일 타입별 렌더링) -->
+      <div id="attachmentsPreview" style="display:none; margin-top: 12px;">
+        <div style="display:flex; align-items:center; justify-content: space-between; gap: 8px; margin-bottom: 8px;">
+          <div id="previewTitle" style="font-weight: 700;">미리보기</div>
+          <button id="previewCloseBtn" type="button" class="btn" style="padding:8px 12px;">닫기</button>
+        </div>
+        <div id="previewBody"></div>
+      </div>
+    </section>
+
+    <!-- 댓글 섹션 -->
     <div th:replace="~{board/post-comment :: postCommentSection}"></div>
 
     <input type="hidden" id="postId" th:value="${postId}"/>
   </section>
 </main>
-
 <script>
   (function () {
     const postIdEl = document.getElementById("postId");
     const postId = postIdEl ? postIdEl.value : "";
 
+    const SUPABASE_PUBLIC_BASE = "https://dnpcfxbsyccwbfnmlaaq.supabase.co/storage/v1/object/public";
+    const SUPABASE_BUCKET = "files";
+
     function pick(obj, path, fallback) {
       try {
-        const v = path.split(".").reduce((acc, key) => (acc == null ? null : acc[key]), obj);
+        const v = path
+          .split(".")
+          .reduce((acc, key) => (acc == null ? null : acc[key]), obj);
         return v ?? fallback;
       } catch (e) {
         return fallback;
       }
+    }
+
+    function firstArrayValue(post, paths) {
+      for (const p of paths) {
+        const v = pick(post, p, null);
+        if (Array.isArray(v)) return v;
+      }
+      return [];
     }
 
     function formatDate(value) {
@@ -175,6 +214,243 @@
       }
     }
 
+    function getExtFromName(name) {
+      if (!name) return "";
+      const i = String(name).lastIndexOf(".");
+      return i >= 0 ? String(name).slice(i + 1).toLowerCase() : "";
+    }
+
+    function guessTypeByExt(ext) {
+      if (!ext) return "";
+      if (ext === "pdf") return "application/pdf";
+      if (ext === "txt" || ext === "log" || ext === "md") return "text/plain";
+      if (ext === "png") return "image/png";
+      if (ext === "jpg" || ext === "jpeg") return "image/jpeg";
+      if (ext === "gif") return "image/gif";
+      if (ext === "webp") return "image/webp";
+      return "";
+    }
+
+    function buildPublicUrlFromPath(path) {
+      if (!path) return "";
+      const p = String(path).replace(/^\/+/, "");
+      if (p.startsWith("http://") || p.startsWith("https://")) return p;
+
+      const normalized = p.startsWith(SUPABASE_BUCKET + "/")
+        ? p.substring((SUPABASE_BUCKET + "/").length)
+        : p;
+
+      return SUPABASE_PUBLIC_BASE + "/" + SUPABASE_BUCKET + "/" + normalized;
+    }
+
+    function normalizeFile(a) {
+      const obj = a && typeof a === "object" ? a : {};
+
+      const rawUrl =
+        obj.fileUrl ??
+        obj.url ??
+        obj.downloadUrl ??
+        obj.publicUrl ??
+        obj.presignedUrl ??
+        obj.s3Url ??
+        "";
+
+      const rawPath =
+        obj.path ??
+        obj.filePath ??
+        obj.storagePath ??
+        obj.key ??
+        obj.objectKey ??
+        "";
+
+      const fileName =
+        obj.fileName ??
+        obj.originFileName ??
+        obj.originalName ??
+        obj.name ??
+        "첨부파일";
+
+      const contentTypeRaw = (obj.fileType ?? obj.contentType ?? obj.mimeType ?? "").toString();
+      const ext = getExtFromName(fileName);
+      const guessed = guessTypeByExt(ext);
+
+      const fileUrl = rawUrl
+        ? buildPublicUrlFromPath(rawUrl)
+        : rawPath
+          ? buildPublicUrlFromPath(rawPath)
+          : "";
+
+      const contentType = contentTypeRaw || guessed || "";
+
+      const fileSizeRaw = obj.fileSize ?? obj.size ?? obj.bytes ?? null;
+      const fileSize = fileSizeRaw == null ? null : Number(fileSizeRaw);
+
+      return {
+        fileUrl: String(fileUrl || ""),
+        fileName: String(fileName || "첨부파일"),
+        contentType: String(contentType || ""),
+        fileSize: Number.isFinite(fileSize) ? fileSize : null,
+        ext: ext,
+      };
+    }
+
+    function openPreview(file) {
+      const wrap = document.getElementById("attachmentsPreview");
+      const title = document.getElementById("previewTitle");
+      const body = document.getElementById("previewBody");
+      const closeBtn = document.getElementById("previewCloseBtn");
+      if (!wrap || !title || !body || !closeBtn) return;
+
+      title.textContent = "미리보기 · " + (file.fileName || "첨부파일");
+      body.innerHTML = "";
+      wrap.style.display = "block";
+
+      closeBtn.onclick = () => {
+        wrap.style.display = "none";
+        body.innerHTML = "";
+      };
+
+      const url = file.fileUrl;
+      const type = (file.contentType || guessTypeByExt(file.ext) || "").toLowerCase();
+
+      if (type.startsWith("image/")) {
+        const img = document.createElement("img");
+        img.src = url;
+        img.alt = file.fileName || "첨부파일";
+        img.style.maxWidth = "100%";
+        img.style.borderRadius = "12px";
+        body.appendChild(img);
+        return;
+      }
+
+      if (type === "application/pdf" || file.ext === "pdf") {
+        const iframe = document.createElement("iframe");
+        iframe.src = url;
+        iframe.style.width = "100%";
+        iframe.style.height = "640px";
+        iframe.style.border = "0";
+        iframe.style.borderRadius = "12px";
+        body.appendChild(iframe);
+        return;
+      }
+
+      if (type.startsWith("text/") || file.ext === "txt" || file.ext === "md" || file.ext === "log") {
+        const pre = document.createElement("pre");
+        pre.style.whiteSpace = "pre-wrap";
+        pre.style.wordBreak = "break-word";
+        pre.style.padding = "16px";
+        pre.style.borderRadius = "12px";
+        pre.style.border = "1px solid rgba(0,0,0,0.08)";
+        pre.textContent = "불러오는 중...";
+        body.appendChild(pre);
+
+        fetch(url, {method: "GET"})
+          .then((r) => (r.ok ? r.text() : Promise.reject(r)))
+          .then((text) => {
+            pre.textContent = text;
+          })
+          .catch(() => {
+            pre.textContent = "텍스트를 불러오지 못했습니다. (다운로드로 확인해주세요)";
+          });
+        return;
+      }
+
+      const p = document.createElement("div");
+      p.style.padding = "12px 0";
+      p.innerHTML = `
+        <div style="margin-bottom:8px;">브라우저에서 미리보기를 지원하지 않는 형식입니다.</div>
+        <a href="${url}" target="_blank" rel="noopener">파일 열기/다운로드</a>
+      `;
+      body.appendChild(p);
+    }
+
+    // ✅ 수정: BoardPostFileResponse 구조(files) + CommonResponse(data.files) 우선 대응
+    function renderAttachments(payload) {
+      const section = document.getElementById("attachmentsSection");
+      const list = document.getElementById("attachmentsList");
+      const countEl = document.getElementById("attachmentsCount");
+      const previewWrap = document.getElementById("attachmentsPreview");
+      const previewBody = document.getElementById("previewBody");
+      if (!section || !list || !countEl) return;
+
+      if (previewWrap && previewBody) {
+        previewWrap.style.display = "none";
+        previewBody.innerHTML = "";
+      }
+
+      const atts = firstArrayValue(payload, [
+        "files",
+        "data.files",
+        "attachments",
+        "commonFiles",
+        "boardAttachments",
+        "data.attachments",
+        "data.commonFiles",
+        "data.boardAttachments",
+      ]).map(normalizeFile);
+
+      const valid = atts.filter((x) => x.fileUrl);
+
+      if (valid.length === 0) {
+        section.style.display = "none";
+        list.innerHTML = "";
+        countEl.innerText = "0";
+        return;
+      }
+
+      section.style.display = "block";
+      countEl.innerText = String(valid.length);
+      list.innerHTML = "";
+
+      valid.forEach((a) => {
+        const item = document.createElement("div");
+        item.className = "attachcard";
+        item.style.cursor = "pointer";
+
+        const icon =
+          (a.contentType && a.contentType.toLowerCase().startsWith("image/")) ||
+          a.ext === "png" ||
+          a.ext === "jpg" ||
+          a.ext === "jpeg" ||
+          a.ext === "gif" ||
+          a.ext === "webp"
+            ? "🖼"
+            : a.ext === "pdf"
+              ? "📕"
+              : a.ext === "txt" || a.ext === "md" || a.ext === "log"
+                ? "📝"
+                : "📄";
+
+        const sizeLabel =
+          a.fileSize == null
+            ? ""
+            : a.fileSize < 1024 * 1024
+              ? Math.round(a.fileSize / 1024) + "KB"
+              : (a.fileSize / (1024 * 1024)).toFixed(1) + "MB";
+
+        const meta =
+          (a.contentType ? a.contentType : "file") + (sizeLabel ? " · " + sizeLabel : "");
+
+        item.innerHTML = `
+          <div class="attachcard__icon">${icon}</div>
+          <div class="attachcard__body">
+            <div class="attachcard__name">${a.fileName}</div>
+            <div class="attachcard__meta">${meta}</div>
+          </div>
+          <div class="attachcard__go">↗</div>
+        `;
+
+        item.addEventListener("click", () => openPreview(a));
+
+        item.querySelector(".attachcard__go")?.addEventListener("click", (e) => {
+          e.stopPropagation();
+          window.open(a.fileUrl, "_blank", "noopener");
+        });
+
+        list.appendChild(item);
+      });
+    }
+
     function getApiData(res) {
       if (res && res.data != null) return res.data;
       return res;
@@ -190,7 +466,6 @@
         "Authorization",
         "authorization",
       ];
-
       for (const k of candidates) {
         const v1 = localStorage.getItem(k);
         if (v1) return v1;
@@ -208,16 +483,23 @@
       const token = String(raw).trim();
       if (!token) return headers;
 
-      headers["Authorization"] = token.toLowerCase().startsWith("bearer ") ? token : "Bearer " + token;
+      headers["Authorization"] = token.toLowerCase().startsWith("bearer ")
+        ? token
+        : "Bearer " + token;
       return headers;
     }
 
     function fetchJson(url, options) {
       const base = {
         credentials: "include",
-        headers: {Accept: "application/json", ...(options && options.headers ? options.headers : {})},
+        headers: {
+          Accept: "application/json",
+          ...(options && options.headers ? options.headers : {}),
+        },
       };
-      return fetch(url, {...base, ...(options || {})}).then((r) => (r.ok ? r.json() : Promise.reject(r)));
+      return fetch(url, {...base, ...(options || {})}).then((r) =>
+        r.ok ? r.json() : Promise.reject(r)
+      );
     }
 
     function closeAllMenus() {
@@ -278,10 +560,7 @@
 
       fetchJson("/api/board/posts/" + postId + "/scrap", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...auth,
-        },
+        headers: {"Content-Type": "application/json", ...auth},
         body: JSON.stringify({}),
       })
         .then((res) => {
@@ -303,20 +582,17 @@
           setScrapUi(
             nextCount != null
               ? Number(nextCount)
-              : (toggled ? fallbackCount + 1 : Math.max(0, fallbackCount - 1)),
+              : toggled
+                ? fallbackCount + 1
+                : Math.max(0, fallbackCount - 1),
             nextScrapped != null ? !!nextScrapped : toggled
           );
         })
-        .catch(() => {
-          alert("스크랩 처리 중 오류가 발생했습니다.");
-        });
+        .catch(() => alert("스크랩 처리 중 오류가 발생했습니다."));
     }
 
-    fetchJson("/api/board/posts/" + postId, {
-      headers: {
-        ...buildAuthHeaders(),
-      },
-    })
+    // ✅ 1) 게시글 상세 + files가 있으면 즉시 렌더링
+    fetchJson("/api/board/posts/" + postId, {headers: {...buildAuthHeaders()}})
       .then((res) => {
         const post = getApiData(res);
 
@@ -328,18 +604,23 @@
         document.getElementById("title").innerText = pick(post, "title", "-");
         document.getElementById("content").innerText = pick(post, "content", "-");
 
+        // ✅ authorDisplayName까지 탐색
         const authorName =
           pick(post, "author.nickname", null) ??
           pick(post, "author.displayName", null) ??
           pick(post, "authorName", null) ??
           pick(post, "authorNickname", null) ??
+          pick(post, "authorDisplayName", null) ??
           pick(post, "nickname", null) ??
           "-";
         document.getElementById("author").innerText = authorName;
 
-        const consultingObj = pick(post, "consultingTagSummary", null) ?? pick(post, "consultingTag", null);
+        const consultingObj =
+          pick(post, "consultingTagSummary", null) ?? pick(post, "consultingTag", null);
         const consultingName =
-          (consultingObj && typeof consultingObj === "object" && (consultingObj.name ?? consultingObj.code)) ||
+          (consultingObj &&
+            typeof consultingObj === "object" &&
+            (consultingObj.name ?? consultingObj.code)) ||
           (typeof consultingObj === "string" ? consultingObj : "-");
         document.getElementById("consulting").innerText = consultingName;
 
@@ -365,18 +646,34 @@
 
         renderTags(post);
         window.__POST_DETAIL__.postStatus = String(status || "").toUpperCase();
+
+        // ✅ 상세 응답에 files가 있으면 우선 렌더링
+        const filesInDetail = pick(post, "files", null);
+        if (filesInDetail && Array.isArray(filesInDetail) && filesInDetail.length > 0) {
+          renderAttachments({files: filesInDetail});
+        }
       })
+      // ✅ 2) 첨부파일 조회 엔드포인트 변경: /api/board/posts/{postId}/files
+      .then(() =>
+        fetchJson("/api/board/posts/" + postId + "/files", {
+          headers: {...buildAuthHeaders()},
+        })
+          .then((res) => {
+            console.log("Files API Response:", res);
+            renderAttachments(getApiData(res));
+          })
+          .catch((err) => {
+            console.error("Files API Error:", err);
+            renderAttachments({files: []});
+          })
+      )
       .then(() => loadComments())
       .catch(() => {
         document.getElementById("title").innerText = "상세 조회 중 오류가 발생했습니다.";
       });
 
     function loadComments() {
-      return fetchJson("/api/board/posts/" + postId + "/comments", {
-        headers: {
-          ...buildAuthHeaders(),
-        },
-      })
+      return fetchJson("/api/board/posts/" + postId + "/comments", {headers: {...buildAuthHeaders()}})
         .then((res) => {
           const data = getApiData(res);
           const acceptedId = pick(data, "acceptedCommentId", null);
@@ -439,9 +736,7 @@
 
       const item = document.createElement("article");
       item.className = "comment";
-      if (isAccepted) {
-        item.classList.add("comment--accepted");
-      }
+      if (isAccepted) item.classList.add("comment--accepted");
       item.dataset.commentId = String(commentId || "");
 
       const header = document.createElement("div");
@@ -452,7 +747,7 @@
 
       const avatar = document.createElement("div");
       avatar.className = "comment__avatar";
-      avatar.textContent = (authorName && authorName.length > 0 ? authorName[0] : "👤");
+      avatar.textContent = authorName && authorName.length > 0 ? authorName[0] : "👤";
 
       const meta = document.createElement("div");
       meta.className = "comment__meta";
@@ -500,9 +795,7 @@
       likeBtn.addEventListener("click", () => {
         fetchJson("/api/board/comments/" + commentId + "/likes/toggle", {
           method: "POST",
-          headers: {
-            ...buildAuthHeaders(),
-          },
+          headers: {...buildAuthHeaders()},
         })
           .then(() => loadComments())
           .catch(() => alert("좋아요 처리 중 오류가 발생했습니다."));
@@ -623,7 +916,6 @@
     function openEdit(commentEl, commentId, currentContent) {
       const body = commentEl.querySelector(".comment__body");
       if (!body) return;
-
       if (commentEl.querySelector(".comment__editor")) return;
 
       const editor = document.createElement("div");
@@ -659,10 +951,7 @@
 
         fetchJson("/api/board/comments/" + commentId, {
           method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            ...buildAuthHeaders(),
-          },
+          headers: {"Content-Type": "application/json", ...buildAuthHeaders()},
           body: JSON.stringify({content: next}),
         })
           .then(() => loadComments())
@@ -710,10 +999,7 @@
 
         fetchJson("/api/board/posts/" + postId + "/comments", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...buildAuthHeaders(),
-          },
+          headers: {"Content-Type": "application/json", ...buildAuthHeaders()},
           body: JSON.stringify({content: content, parentCommentId: parentCommentId}),
         })
           .then(() => loadComments())
@@ -733,9 +1019,7 @@
 
       fetchJson("/api/board/comments/" + commentId, {
         method: "DELETE",
-        headers: {
-          ...buildAuthHeaders(),
-        },
+        headers: {...buildAuthHeaders()},
       })
         .then(() => loadComments())
         .catch(() => alert("댓글 삭제에 실패했습니다."));
@@ -753,19 +1037,14 @@
 
       fetchJson("/api/board/posts/" + postId + "/comments", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...buildAuthHeaders(),
-        },
+        headers: {"Content-Type": "application/json", ...buildAuthHeaders()},
         body: JSON.stringify({content: content, parentCommentId: null}),
       })
         .then(() => {
           textarea.value = "";
           return loadComments();
         })
-        .catch(() => {
-          alert("댓글 작성에 실패했습니다.");
-        });
+        .catch(() => alert("댓글 작성에 실패했습니다."));
     }
 
     function acceptComment(commentId) {
@@ -773,10 +1052,7 @@
 
       fetchJson("/api/board/posts/" + postId + "/accept", {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          ...buildAuthHeaders(),
-        },
+        headers: {"Content-Type": "application/json", ...buildAuthHeaders()},
         body: JSON.stringify({commentId: commentId}),
       })
         .then((res) => {
@@ -784,14 +1060,12 @@
 
           window.__POST_DETAIL__.postStatus = "CLOSED";
           window.__POST_DETAIL__.acceptedCommentId =
-            (data && data.acceptedCommentId != null) ? data.acceptedCommentId : commentId;
+            data && data.acceptedCommentId != null ? data.acceptedCommentId : commentId;
 
           setStatusBadge("CLOSED");
           return loadComments();
         })
-        .catch(() => {
-          alert("채택 처리 중 오류가 발생했습니다.");
-        });
+        .catch(() => alert("채택 처리 중 오류가 발생했습니다."));
     }
   })();
 </script>
