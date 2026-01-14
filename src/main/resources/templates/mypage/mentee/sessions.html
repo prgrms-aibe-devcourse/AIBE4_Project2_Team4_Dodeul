@@ -1,10 +1,191 @@
 <!DOCTYPE html>
-<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
-      layout:decorate="~{common/layout/mentor}">
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{common/layout/mentee}">
+
+<head>
+  <th:block layout:fragment="head">
+    <title>DODEUL | 멘티 상담 내역</title>
+    <link rel="stylesheet" href="/css/mypage/dashboard.css">
+  </th:block>
+</head>
+
 <body>
 <div layout:fragment="page">
-  <h2 class="fw-bold">상담 내역</h2>
-  <p class="text-small">준비중입니다.</p>
+
+  <div class="dashboard-header">
+    <h2 class="fw-bold" style="margin-bottom:8px;">상담 내역</h2>
+    <p class="text-small" style="margin-bottom:16px;">예약/진행/완료된 상담 내역을 확인할 수 있습니다.</p>
+  </div>
+
+  <!-- 필터 -->
+  <section class="card-custom" style="margin-bottom:16px;">
+    <div class="fw-bold" style="margin-bottom:10px;">필터</div>
+    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+      <button class="tag tag--selectable tag--active" type="button" data-filter="all">전체</button>
+      <button class="tag tag--selectable" type="button" data-filter="requested">예약신청</button>
+      <button class="tag tag--selectable" type="button" data-filter="waiting">대기중</button>
+      <button class="tag tag--selectable" type="button" data-filter="ongoing">진행중</button>
+      <button class="tag tag--selectable" type="button" data-filter="completed">완료</button>
+      <button class="tag tag--selectable" type="button" data-filter="canceled">취소됨</button>
+    </div>
+    <p class="text-small" style="margin-top:10px;">※ 현재는 UI만 제공되며, 추후 API 연동 예정입니다.</p>
+  </section>
+
+  <!-- 리스트 -->
+  <section>
+    <div class="fw-bold" style="margin-bottom:10px;">상담 목록</div>
+
+    <div class="card-custom dashboard-list" id="sessionList" style="margin:0;">
+      <div class="dashboard-row">
+        <div class="text-small">불러오는 중…</div>
+      </div>
+    </div>
+
+    <p id="sessionError" style="color:#d33; margin-top:12px;"></p>
+  </section>
+
 </div>
+
+<th:block layout:fragment="script">
+  <script>
+    function escapeHtml(s) {
+      return String(s ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", "&#039;");
+    }
+
+    function formatDateTime(iso) {
+      if (!iso) return '-';
+      return String(iso).replace('T', ' ').slice(0, 16);
+    }
+
+    // mentee status: requested | waiting | ongoing | completed | canceled
+    function badgeHtml(status) {
+      if (status === 'requested') return '<span class="status-badge status-pending">예약신청</span>';
+      if (status === 'waiting') return '<span class="status-badge status-review">대기중</span>';
+      if (status === 'ongoing') return '<span class="status-badge status-approved">진행중</span>';
+      if (status === 'completed') return '<span class="status-badge status-completed">완료</span>';
+      if (status === 'canceled') return '<span class="status-badge status-canceled">취소됨</span>';
+      return '<span class="status-badge status-canceled">-</span>';
+    }
+
+    function roomHref(matchingId) {
+      // TODO: 상담방 라우트 확정되면 교체
+      return `/consulting-room/${matchingId}`;
+    }
+
+    function render(listEl, items) {
+      if (!items || items.length === 0) {
+        listEl.innerHTML = `<div class="dashboard-row"><div class="text-small">상담 내역이 없습니다.</div></div>`;
+        return;
+      }
+
+      listEl.innerHTML = items.map(it => {
+        const title = escapeHtml(it.title);
+        const mentor = escapeHtml(it.counterpartName);
+        const time = escapeHtml(formatDateTime(it.startAt));
+        const badge = badgeHtml(it.status);
+
+        const detailBtn = `<a class="btn-outline-custom" style="padding:8px 10px; font-size:12px;" href="/mentee/sessions">상세</a>`;
+        const enterBtn = (it.status === 'ongoing')
+          ? `<a class="btn-primary-custom" style="padding:8px 10px; font-size:12px;" href="${escapeHtml(roomHref(it.matchingId))}">입실</a>`
+          : '';
+
+        return `
+          <div class="dashboard-row">
+            <div>
+              <div class="dashboard-row-title">${title}</div>
+              <div class="dashboard-row-sub">${mentor} · ${time}</div>
+            </div>
+            <div class="dashboard-row-right">
+              ${badge}
+              ${enterBtn}
+              ${detailBtn}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    (function () {
+      const listEl = document.getElementById('sessionList');
+      const errEl = document.getElementById('sessionError');
+
+      // TODO: 추후 API 연동 예정
+      const mock = [
+        {
+          matchingId: 2001,
+          title: '이력서 피드백 요청',
+          counterpartName: '멘토A',
+          startAt: '2026-01-16T19:30:00',
+          status: 'requested'
+        },
+        {
+          matchingId: 2002,
+          title: '면접 대비 모의 질문',
+          counterpartName: '멘토B',
+          startAt: '2026-01-14T20:00:00',
+          status: 'waiting'
+        },
+        {
+          matchingId: 2003,
+          title: '커리어 로드맵 상담',
+          counterpartName: '멘토C',
+          startAt: '2026-01-14T21:00:00',
+          status: 'ongoing'
+        },
+        {
+          matchingId: 2004,
+          title: '포트폴리오 피드백',
+          counterpartName: '멘토D',
+          startAt: '2026-01-10T18:00:00',
+          status: 'completed'
+        },
+        {
+          matchingId: 2005,
+          title: '상담 취소 케이스',
+          counterpartName: '멘토E',
+          startAt: '2026-01-09T18:00:00',
+          status: 'canceled'
+        }
+      ];
+
+      let currentFilter = 'all';
+
+      function setActive(btn) {
+        document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('tag--active'));
+        btn.classList.add('tag--active');
+      }
+
+      function applyFilter() {
+        const filtered = (currentFilter === 'all')
+          ? mock
+          : mock.filter(x => x.status === currentFilter);
+        render(listEl, filtered);
+      }
+
+      document.querySelectorAll('[data-filter]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          currentFilter = btn.getAttribute('data-filter');
+          setActive(btn);
+          applyFilter();
+        });
+      });
+
+      try {
+        applyFilter();
+      } catch (e) {
+        errEl.textContent = '화면을 렌더링할 수 없습니다.';
+        console.error(e);
+      }
+    })();
+  </script>
+</th:block>
+
 </body>
 </html>
