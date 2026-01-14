@@ -20,10 +20,9 @@ public class ConsultationRoomController {
     private final ConsultationRoomService consultationRoomService;
 
     @GetMapping("/room/{roomId}")
-    @PreAuthorize("@consultationGuard.check(#roomId, #userDetails.memberId)")
+    @PreAuthorize("@consultationGuard.isParticipantMember(#roomId, #userDetails.memberId)")
     public String enterRoom(@PathVariable Long roomId, @AuthenticationPrincipal CustomUserDetails userDetails, Model model) {
-
-        ConsultationRoomDto consultationRoomDto = consultationRoomService.getRoomWithApplication(roomId, userDetails.getMemberId());
+        ConsultationRoomDto consultationRoomDto = consultationRoomService.loadRoomInfo(roomId, userDetails.getMemberId());
 
         model.addAttribute("consultationRoomDto", consultationRoomDto);
 
@@ -31,6 +30,7 @@ public class ConsultationRoomController {
     }
 
     @GetMapping("/matching/{matchingId}")
+    @PreAuthorize("@consultationGuard.isCorrectMatchedMember(#matchingId, #userDetails.memberId)")
     public String enterOrCreateRoom(@PathVariable Long matchingId, @AuthenticationPrincipal CustomUserDetails userDetails) {
         Long roomId = consultationRoomService.getOrCreateRoom(matchingId);
 

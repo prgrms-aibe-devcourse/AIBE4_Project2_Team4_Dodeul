@@ -8,6 +8,10 @@ import lombok.NoArgsConstructor;
 import org.aibe4.dodeul.domain.common.model.entity.BaseEntity;
 import org.aibe4.dodeul.domain.member.model.enums.Provider;
 import org.aibe4.dodeul.domain.member.model.enums.Role;
+import org.hibernate.annotations.BatchSize;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -39,6 +43,14 @@ public class Member extends BaseEntity {
 
     @Column(nullable = false, length = 20, unique = true)
     private String nickname;
+
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
+    @BatchSize(size = 50)
+    private List<MemberConsultingTag> consultingTags = new ArrayList<>();
+
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
+    @BatchSize(size = 50)
+    private List<MemberSkillTag> skillTags = new ArrayList<>();
 
     @Builder
     private Member(

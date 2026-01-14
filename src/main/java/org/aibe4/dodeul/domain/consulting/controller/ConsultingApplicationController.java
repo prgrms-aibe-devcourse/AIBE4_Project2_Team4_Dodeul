@@ -4,7 +4,6 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.aibe4.dodeul.domain.consulting.model.dto.ConsultingApplicationDetailResponse;
 import org.aibe4.dodeul.domain.consulting.model.dto.ConsultingApplicationRequest;
-import org.aibe4.dodeul.domain.consulting.model.entity.ConsultingApplication;
 import org.aibe4.dodeul.domain.consulting.model.enums.ConsultingTag;
 import org.aibe4.dodeul.domain.consulting.service.ConsultingApplicationService;
 import org.aibe4.dodeul.global.security.CustomUserDetails;
@@ -13,8 +12,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/consulting-applications")
@@ -32,7 +29,7 @@ public class ConsultingApplicationController {
         return "consulting/application-form";
     }
 
-    // 2. 등록 처리 (✅ 깔끔해진 버전)
+    // 2. 등록 처리
     @PostMapping
     public String registerApplication(
         @Valid @ModelAttribute("request") ConsultingApplicationRequest request,
@@ -40,21 +37,33 @@ public class ConsultingApplicationController {
         Model model,
         @AuthenticationPrincipal CustomUserDetails user
     ) {
-        // 유효성 검사 실패 시 다시 폼으로
+        // 기본 유효성 검사 (빈칸 등)
         if (bindingResult.hasErrors()) {
             model.addAttribute("consultingTags", ConsultingTag.values());
             model.addAttribute("formActionUrl", "/consulting-applications");
             return "consulting/application-form";
         }
 
-        // 로그인한 사용자 ID 설정 (user가 null이면 에러가 나는 게 맞음)
-        request.setMenteeId(user.getMemberId());
+        try {
+            // 정상적인 저장 시도
+            request.setMenteeId(user.getMemberId());
+            Long savedApplicationId = consultingApplicationService.saveApplication(request);
 
-        // 저장 (try-catch 제거 -> 에러 나면 스프링이 알아서 처리)
-        Long savedApplicationId = consultingApplicationService.saveApplication(request);
+            return "redirect:/matchings/new?applicationId=" + savedApplicationId;
 
-        // ★ 성공 후 HTML 메시지 대신 '상세 페이지'로 바로 이동 (Redirect)
-        return "redirect:/consulting-applications/" + savedApplicationId;
+        } catch (IllegalArgumentException e) {
+            // [추가된 부분] 비속어/정책 위반 예외 발생 시 처리
+
+            // 1. 에러 메시지 전달 (HTML에서 alert로 띄움)
+            model.addAttribute("errorMessage", e.getMessage());
+
+            // 2. 화면 구성을 위한 기본 데이터 다시 세팅
+            model.addAttribute("consultingTags", ConsultingTag.values());
+            model.addAttribute("formActionUrl", "/consulting-applications");
+
+            // 3. 입력했던 내용은 'request' 객체에 남아있으므로 그대로 폼으로 복귀
+            return "consulting/application-form";
+        }
     }
 
     // 3. 상세 조회
@@ -62,7 +71,7 @@ public class ConsultingApplicationController {
     public String getApplicationDetail(@PathVariable Long applicationId, Model model) {
         ConsultingApplicationDetailResponse response =
             consultingApplicationService.getApplicationDetail(applicationId);
-        model.addAttribute("application", response);
+        model.addAttribute("appDetail", response);
         return "consulting/application-detail";
     }
 
@@ -71,28 +80,20 @@ public class ConsultingApplicationController {
     public String editForm(
         @PathVariable Long applicationId,
         Model model,
-        @AuthenticationPrincipal CustomUserDetails user
+        @AuthenticationPrincipal CustomUserDetails user // [수정] 이 부분이 추가되어야 빨간 줄이 사라집니다!
     ) {
-        ConsultingApplication application = consultingApplicationService.findApplicationEntity(applicationId);
+        // 서비스에서 수정용 폼 데이터 가져오기
+        ConsultingApplicationRequest form = consultingApplicationService.getRegistrationForm(applicationId);
 
-        // (필요 시) 본인 확인 로직 추가 가능
-        // if (!application.getMenteeId().equals(user.getMemberId())) { ... }
-
-        ConsultingApplicationRequest form = new ConsultingApplicationRequest();
-        form.setTitle(application.getTitle());
-        form.setContent(application.getContent());
-        form.setConsultingTag(application.getConsultingTag());
-        form.setFileUrl(application.getFileUrl());
-
-        // Entity -> DTO 매핑 (SkillTag)
-        String tags = application.getApplicationSkillTags().stream()
-            .map(tag -> tag.getSkillTag().getName())
-            .collect(Collectors.joining(", "));
-        form.setTechTags(tags);
+        // [보안 검사] 이제 user 변수를 사용할 수 있습니다.
+        if (!form.getMenteeId().equals(user.getMemberId())) {
+            throw new IllegalStateException("수정 권한이 없습니다.");
+        }
 
         model.addAttribute("request", form);
         model.addAttribute("consultingTags", ConsultingTag.values());
         model.addAttribute("formActionUrl", "/consulting-applications/" + applicationId + "/edit");
+
         return "consulting/application-form";
     }
 
@@ -111,7 +112,6 @@ public class ConsultingApplicationController {
             return "consulting/application-form";
         }
 
-        // 로그인한 유저 ID 사용
         consultingApplicationService.updateApplication(applicationId, user.getMemberId(), request);
 
         return "redirect:/consulting-applications/" + applicationId;
@@ -123,7 +123,6 @@ public class ConsultingApplicationController {
         @PathVariable Long applicationId,
         @AuthenticationPrincipal CustomUserDetails user
     ) {
-        // 로그인한 유저 ID 사용
         consultingApplicationService.deleteApplication(applicationId, user.getMemberId());
         return "redirect:/";
     }

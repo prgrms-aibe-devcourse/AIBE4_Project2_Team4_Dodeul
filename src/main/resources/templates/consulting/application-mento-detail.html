@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>상담 신청 상세</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+    }
+  </style>
+</head>
+<body class="bg-gray-50">
+
+<header class="bg-white border-b border-gray-200">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+    <div class="flex items-center gap-8">
+      <a href="/" class="text-xl font-bold text-gray-900">DoDeul</a>
+      <nav class="flex gap-6 text-sm font-medium text-gray-500">
+        <a href="/" class="hover:text-gray-900">홈</a>
+        <a href="/consulting-applications" class="hover:text-gray-900">상담 관리</a>
+      </nav>
+    </div>
+    <div>
+      <span class="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-white">MY</span>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+  <div class="mb-6 text-sm text-gray-500">
+    홈 > 상담 관리 > 신청 내역 > <span class="font-bold text-gray-900">상담 신청 상세</span>
+  </div>
+
+  <div class="flex flex-col lg:flex-row gap-6">
+
+    <aside class="w-full lg:w-1/4">
+      <div class="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+        <div class="flex items-center gap-4 mb-6">
+          <div class="w-12 h-12 rounded-full bg-gray-400 flex items-center justify-center text-white text-lg font-bold">
+            <span th:text="${#strings.substring(appDetail.menteeName, 0, 1)}">김</span>
+          </div>
+          <div>
+            <h3 class="font-bold text-gray-900" th:text="${appDetail.menteeName}">김멘티</h3>
+            <p class="text-xs text-gray-500">취업 준비생 / 백엔드 지망</p>
+          </div>
+        </div>
+
+        <div class="border-t border-gray-100 pt-4">
+          <div class="flex justify-between items-center">
+            <span class="text-sm text-gray-600">현재 상태</span>
+            <span
+              class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200">
+                                대기중
+                            </span>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <section class="w-full lg:w-3/4">
+      <div class="bg-white rounded-lg border border-gray-200 p-8 shadow-sm">
+
+        <div class="mb-6">
+          <h2 class="text-lg font-bold text-gray-900 mb-2">기본 정보</h2>
+          <div class="flex flex-wrap gap-2">
+        <span th:each="tag : ${appDetail.skillTags}"
+              class="px-3 py-1 rounded-full text-sm bg-slate-700 text-white"
+              th:text="${tag}">
+            Java
+        </span>
+          </div>
+        </div>
+
+        <div class="mb-8">
+          <h1 class="text-2xl font-bold text-gray-900" th:text="${appDetail.title}">
+            JPA N+1 문제 해결 조언을 구하고 싶습니다.
+          </h1>
+        </div>
+
+        <div class="mb-8">
+          <h3 class="text-base font-semibold text-gray-900 mb-2">내용</h3>
+          <div class="prose max-w-none text-gray-700 whitespace-pre-line" th:text="${appDetail.content}">
+            내용이 들어갑니다...
+          </div>
+        </div>
+
+        <div class="mb-8" th:if="${appDetail.fileUrl != null}">
+          <h3 class="text-base font-semibold text-gray-900 mb-2">첨부 파일 및 링크</h3>
+          <a th:href="${appDetail.fileUrl}" download
+             class="inline-flex items-center gap-2 text-blue-600 hover:underline">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path>
+            </svg>
+            <span>첨부파일 다운로드</span>
+          </a>
+        </div>
+
+        <hr class="border-gray-200 my-8">
+
+        <div class="flex justify-end gap-3">
+          <form th:action="@{/consulting-applications/{id}/reject(id=${appDetail.id})}" method="post">
+            <button type="submit"
+                    class="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded hover:bg-gray-50 font-medium transition"
+                    onclick="return confirm('정말 거절하시겠습니까?');">
+              거절하기
+            </button>
+          </form>
+
+          <form th:action="@{/consulting-applications/{id}/accept(id=${appDetail.id})}" method="post">
+            <button type="submit"
+                    class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 font-medium transition">
+              수락하기
+            </button>
+          </form>
+        </div>
+
+      </div>
+    </section>
+  </div>
+</main>
+
+</body>
+</html>

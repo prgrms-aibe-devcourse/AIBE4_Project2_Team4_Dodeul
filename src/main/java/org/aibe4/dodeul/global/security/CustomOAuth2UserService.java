@@ -31,38 +31,88 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) {
         OAuth2User oauthUser = delegate.loadUser(userRequest);
-
         Map<String, Object> attrs = oauthUser.getAttributes();
 
-        // Google: user-name-attribute=sub 로 설정했으니 sub가 providerId
-        String providerId = (String) attrs.get("sub");
-        String email = (String) attrs.get("email");
+        // google / github
+        String registrationId =
+            userRequest.getClientRegistration().getRegistrationId();
 
-        if (providerId == null || providerId.isBlank()) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "구글 사용자 식별자(sub)를 가져올 수 없습니다.");
-        }
-        if (email == null || email.isBlank()) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "구글 이메일 정보를 가져올 수 없습니다.");
+        String providerId;
+        String email;
+
+        if ("google".equalsIgnoreCase(registrationId)) {
+            providerId = (String) attrs.get("sub");
+            email = (String) attrs.get("email");
+
+            if (providerId == null || providerId.isBlank()) {
+                throw new BusinessException(
+                    ErrorCode.INVALID_INPUT_VALUE,
+                    "구글 사용자 식별자(sub)를 가져올 수 없습니다."
+                );
+            }
+            if (email == null || email.isBlank()) {
+                throw new BusinessException(
+                    ErrorCode.INVALID_INPUT_VALUE,
+                    "구글 이메일 정보를 가져올 수 없습니다."
+                );
+            }
+
+        } else if ("github".equalsIgnoreCase(registrationId)) {
+            Object idObj = attrs.get("id");
+            providerId = (idObj == null) ? null : String.valueOf(idObj);
+
+            // GitHub email은 null일 수 있음
+            email = (String) attrs.get("email");
+
+            if (providerId == null || providerId.isBlank()) {
+                throw new BusinessException(
+                    ErrorCode.INVALID_INPUT_VALUE,
+                    "GitHub 사용자 식별자(id)를 가져올 수 없습니다."
+                );
+            }
+
+            // email은 null이어도 진행
+            if (email != null) {
+                email = email.trim();
+                if (email.isBlank()) {
+                    email = null;
+                }
+            }
+
+        } else {
+            throw new BusinessException(
+                ErrorCode.INVALID_INPUT_VALUE,
+                "지원하지 않는 OAuth2 로그인입니다: " + registrationId
+            );
         }
 
         Role role = getSelectedRoleFromSession();
         if (role == null) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "역할 선택이 필요합니다. 역할을 먼저 선택해주세요.");
+            throw new BusinessException(
+                ErrorCode.INVALID_INPUT_VALUE,
+                "역할 선택이 필요합니다. 역할을 먼저 선택해주세요."
+            );
         }
 
-        Member member = memberService.findOrCreateGoogleMember(email, providerId, role);
+        Member member;
+        if ("google".equalsIgnoreCase(registrationId)) {
+            member = memberService.findOrCreateGoogleMember(email, providerId, role);
+        } else {
+            member = memberService.findOrCreateGithubMember(email, providerId, role);
+        }
 
         Set<SimpleGrantedAuthority> authorities =
             Set.of(new SimpleGrantedAuthority("ROLE_" + member.getRole().name()));
 
         Map<String, Object> mappedAttrs = Map.of(
-            "sub", providerId,
+            "provider", registrationId,
+            "providerId", providerId,
             "email", email,
             "memberId", member.getId(),
             "role", member.getRole().name()
         );
 
-        return new DefaultOAuth2User(authorities, mappedAttrs, "sub");
+        return new DefaultOAuth2User(authorities, mappedAttrs, "providerId");
     }
 
     private Role getSelectedRoleFromSession() {

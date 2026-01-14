@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{common/layout/mentor}">
+
+<head>
+  <th:block layout:fragment="head">
+    <title>DODEUL | 받은 후기 관리</title>
+    <link rel="stylesheet" href="/css/mypage/dashboard.css">
+    <style>
+      .cursor-pointer {
+        cursor: pointer;
+      }
+
+      .tag--selectable {
+        cursor: pointer;
+        border: none;
+        outline: none;
+      }
+
+      /* 추천 상태별 뱃지 스타일 커스텀 */
+      .status-badge.recommended {
+        background-color: #e8f5e9;
+        color: #2e7d32;
+      }
+
+      .status-badge.not-recommended {
+        background-color: #f5f5f5;
+        color: #757575;
+      }
+    </style>
+  </th:block>
+</head>
+
+<body>
+<div layout:fragment="page">
+
+  <div class="dashboard-header">
+    <h2 class="fw-bold" style="margin-bottom:8px;">🌟 받은 후기 관리</h2>
+    <p class="text-small" style="margin-bottom:16px;">멘티들이 남겨준 소중한 피드백과 응원입니다.</p>
+  </div>
+
+  <section class="card-custom" style="margin-bottom:16px;">
+    <div class="fw-bold" style="margin-bottom:10px;">필터</div>
+    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+      <button class="tag tag--selectable tag--active" type="button" onclick="filterReviews('all', this)">전체</button>
+      <button class="tag tag--selectable" type="button" onclick="filterReviews('true', this)">👍 추천함</button>
+      <button class="tag tag--selectable" type="button" onclick="filterReviews('false', this)">아쉬워요</button>
+    </div>
+  </section>
+
+  <section>
+    <div class="fw-bold" style="margin-bottom:10px;">후기 목록</div>
+
+    <div class="card-custom dashboard-list" style="margin:0;">
+      <div th:each="review : ${reviewResponses.content}"
+           class="dashboard-row cursor-pointer review-item"
+           th:data-recommended="${review.isRecommended}"
+           th:onclick="showReviewModal([[${review.menteeNickname}]], [[${review.content}]], [[${review.isRecommended}]])">
+        <div>
+          <div class="dashboard-row-title" style="margin-bottom: 0;">
+            <span th:text="${review.menteeNickname} + ' 멘티님'">멘티이름</span>
+          </div>
+        </div>
+        <div class="dashboard-row-right">
+          <span th:if="${review.isRecommended}" class="status-badge recommended">👍 추천함</span>
+          <span th:unless="${review.isRecommended}" class="status-badge not-recommended">아쉬워요</span>
+          <div class="text-small text-secondary" style="margin-left: 12px;"
+               th:text="${#temporals.format(review.createdAt, 'yyyy-MM-dd')}">2026-01-13
+          </div>
+        </div>
+      </div>
+
+      <div th:if="${reviewResponses.isEmpty()}" class="dashboard-row">
+        <div class="text-small">아직 도착한 후기가 없습니다.</div>
+      </div>
+    </div>
+  </section>
+
+  <nav th:if="${reviewResponses.totalPages > 0}" aria-label="Page navigation" class="mt-4">
+    <ul class="pagination justify-content-center" style="gap: 5px;">
+
+      <li class="page-item" th:classappend="${reviewResponses.first} ? 'disabled'">
+        <a class="page-link border-0" th:href="@{/mentor/reviews(page=${reviewResponses.number - 1})}">&laquo;</a>
+      </li>
+
+      <li th:each="pageNum : ${#numbers.sequence(0, reviewResponses.totalPages - 1)}"
+          class="page-item"
+          th:classappend="${pageNum == reviewResponses.number} ? 'active'">
+        <a class="page-link border-0 rounded"
+           th:href="@{/mentor/reviews(page=${pageNum})}"
+           th:text="${pageNum + 1}">1</a>
+      </li>
+
+      <li class="page-item" th:classappend="${reviewResponses.last} ? 'disabled'">
+        <a class="page-link border-0" th:href="@{/mentor/reviews(page=${reviewResponses.number + 1})}">&raquo;</a>
+      </li>
+
+    </ul>
+  </nav>
+
+  <div class="modal fade" id="reviewDetailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow">
+        <div class="modal-header border-0 pb-0">
+          <h5 class="modal-title fw-bold">리뷰 상세 보기</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body py-4">
+          <div class="mb-3">
+            <span class="text-secondary">작성자: </span>
+            <span id="mTarget" class="fw-bold"></span>
+            <span id="mBadge" class="ms-2"></span>
+          </div>
+          <div class="p-3 bg-light rounded-3 shadow-sm">
+            <p id="mContent" class="mb-0" style="white-space: pre-wrap; line-height: 1.6;"></p>
+          </div>
+        </div>
+        <div class="modal-footer border-0">
+          <button type="button" class="btn btn-primary-custom px-4" data-bs-dismiss="modal">닫기</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<th:block layout:fragment="script">
+  <script th:inline="javascript">
+    /**
+     * 상세 모달 표시
+     */
+    function showReviewModal(name, content, isRec) {
+      document.getElementById('mTarget').textContent = name + " 멘티님";
+      document.getElementById('mContent').textContent = content;
+
+      const badgeArea = document.getElementById('mBadge');
+      badgeArea.innerHTML = isRec
+        ? '<span class="status-badge recommended" style="font-size:11px;">👍 추천함</span>'
+        : '<span class="status-badge not-recommended" style="font-size:11px;">아쉬워요</span>';
+
+      new bootstrap.Modal(document.getElementById('reviewDetailModal')).show();
+    }
+
+    /**
+     * 클라이언트 사이드 필터링 (현재 페이지 내 데이터 기준)
+     */
+    function filterReviews(type, btn) {
+      document.querySelectorAll('.tag--selectable').forEach(b => b.classList.remove('tag--active'));
+      btn.classList.add('tag--active');
+
+      const items = document.querySelectorAll('.review-item');
+      items.forEach(item => {
+        const isRec = item.getAttribute('data-recommended');
+        if (type === 'all' || isRec === type) {
+          item.style.display = 'flex';
+        } else {
+          item.style.display = 'none';
+        }
+      });
+    }
+  </script>
+</th:block>
+
+</body>
+</html>

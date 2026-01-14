@@ -5,6 +5,8 @@
       layout:decorate="~{common/layout/base}">
 
 <head>
+  <meta name="_csrf" th:content="${_csrf.token}"/>
+  <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
   <title>상담 신청서 작성</title>
   <style>
     .step-circle {
@@ -34,6 +36,13 @@
       color: white;
       border-color: #6c757d;
     }
+
+    /* AI 결과창 스타일 */
+    #aiResult {
+      background-color: #f8f9fa;
+      resize: none;
+      border: 1px solid #dee2e6;
+    }
   </style>
 </head>
 
@@ -60,7 +69,8 @@
       </div>
     </div>
 
-    <form th:action="${formActionUrl}" th:object="${request}" method="post">
+    <form th:action="${formActionUrl}" th:object="${request}" method="post" enctype="multipart/form-data">
+
       <div class="mb-5">
         <h4 class="fw-bold mb-2">카테고리 선택</h4>
         <p class="text-muted small mb-3">관심 있는 멘토링 분야를 1개 선택해주세요.</p>
@@ -79,42 +89,53 @@
 
       <div class="card bg-light border-0 mb-4">
         <div class="card-body p-4">
-          <h5 class="fw-bold">AI 비서와 함께 작성하기</h5>
-          <p class="text-muted small">AI가 상담 내용을 미리 작성하는 데 도움을 드립니다.</p>
-          <div class="input-group mb-2">
-            <span class="input-group-text bg-white border-end-0">🔍</span>
-            <input type="text" class="form-control border-start-0" placeholder="고민되는 키워드를 입력하세요">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h5 class="fw-bold m-0">🤖 AI 비서와 함께 작성하기</h5>
+            <span class="badge bg-primary">Beta</span>
           </div>
-          <div class="text-center mt-2">
-            <button type="button" class="btn btn-sm btn-light text-secondary">✨ AI로 내용 자동 완성</button>
-          </div>
+          <p class="text-muted small">키워드만 입력하면 AI가 정중한 상담 신청서를 대신 써드립니다.</p>
+
+          <button type="button" class="btn btn-white border w-100 py-2 text-primary fw-bold bg-white"
+                  data-bs-toggle="modal" data-bs-target="#aiModal">
+            ✨ 눌러서 AI 초안 생성 도우미 열기
+          </button>
         </div>
       </div>
 
       <div class="mb-4">
-        <label class="fw-bold mb-2">상담 제목</label>
+        <label class="fw-bold mb-2">상담 제목 （필수）</label>
         <input type="text" class="form-control p-3" th:field="*{title}"
                placeholder="멘토링 상담 제목을 입력하세요" required>
       </div>
 
       <div class="mb-4">
-        <label class="fw-bold mb-2">상담 내용</label>
-        <textarea class="form-control p-3" th:field="*{content}" rows="6"
+        <label class="fw-bold mb-2">상담 내용 （필수）</label>
+        <textarea id="content" class="form-control p-3" th:field="*{content}" rows="6"
                   placeholder="상담 받고 싶은 내용과 목표를 상세하게 작성해주세요."
                   required oninput="updateCharCount(this)"></textarea>
         <div id="charCount" class="text-end text-muted small mt-1">0/1000</div>
       </div>
 
       <div class="mb-4">
-        <label class="fw-bold mb-2">스킬 태그</label>
+        <label class="fw-bold mb-2">스킬 태그 （필수）</label>
         <input type="text" class="form-control p-3" th:field="*{techTags}"
                placeholder="예: Java, React, PM (쉼표로 구분)">
       </div>
 
       <div class="mb-5">
-        <label class="fw-bold mb-2">첨부파일</label>
-        <input type="text" class="form-control" th:field="*{fileUrl}"
-               placeholder="파일 URL을 입력하세요">
+        <label class="fw-bold mb-2">첨부파일 （선택）</label>
+
+        <input type="file" id="file" name="file"
+               class="form-control"
+               th:classappend="${#fields.hasErrors('file')} ? 'is-invalid'"
+               accept=".jpg,.jpeg,.png,.gif,.pdf,.txt,.ppt,.pptx"
+               onchange="validateFile(this)">
+
+        <div class="form-text text-muted small">이미지, PDF, PPT 등 최대 10MB까지 첨부 가능합니다.</div>
+
+        <div class="invalid-feedback" th:if="${#fields.hasErrors('file')}" th:errors="*{file}">
+          파일 관련 에러 메시지가 여기에 표시됩니다.
+        </div>
       </div>
 
       <hr class="my-5">
@@ -130,12 +151,154 @@
     </form>
   </div>
 
-  <script>
+  <div class="modal fade" id="aiModal" tabindex="-1" aria-labelledby="aiModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold" id="aiModalLabel">🤖 AI 초안 생성 결과</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="aiKeywords" class="form-label fw-bold">어떤 고민이 있으신가요?</label>
+            <input type="text" class="form-control" id="aiKeywords"
+                   placeholder="예: 스프링 부트 에러, 취업 포트폴리오 고민, 자소서 첨삭">
+          </div>
+
+          <div class="mb-3">
+            <label for="aiResult" class="form-label fw-bold">추천 본문</label>
+            <textarea class="form-control" id="aiResult" rows="8"
+                      placeholder="키워드를 입력하고 생성 버튼을 누르면, 여기에 AI가 쓴 글이 나옵니다."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer justify-content-between">
+          <button type="button" class="btn btn-primary" id="generateBtn" onclick="generateDraft()">
+            ✨ 초안 생성하기
+          </button>
+
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-outline-secondary" onclick="generateDraft()">
+              🔄 다시 생성하기
+            </button>
+            <button type="button" class="btn btn-success" onclick="applyDraft()">
+              ✅ 본문에 적용하기
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script th:inline="javascript">
+
+    /* [추가] 서버에서 보낸 에러 메시지가 있으면 경고창 띄우기 */
+    /*<![CDATA[*/
+    const errorMessage = [[${errorMessage}]];
+    if (errorMessage) {
+      alert(errorMessage);
+    }
+    /*]]>*/
+
+    // 글자수 업데이트 함수
     function updateCharCount(textarea) {
       const currentLength = textarea.value.length;
       document.getElementById('charCount').textContent = currentLength + '/1000';
     }
+
+    // [추가] 파일 유효성 검사 (크기 및 확장자)
+    function validateFile(input) {
+      const file = input.files[0];
+      if (!file) return; // 파일 선택 취소 시 중단
+
+      // 1. 용량 제한 (10MB) - 여기 수정됨
+      const maxSize = 10 * 1024 * 1024; // 10MB
+      if (file.size > maxSize) {
+        alert("파일 크기는 10MB를 초과할 수 없습니다.");
+        input.value = ""; // 선택된 파일 초기화
+        return;
+      }
+
+      // 2. 확장자 제한 (보안 강화)
+      const allowedExtensions = /(\.jpg|\.jpeg|\.png|\.gif|\.pdf|\.txt|\.ppt|\.pptx)$/i;
+      if (!allowedExtensions.exec(file.name)) {
+        alert("허용되지 않는 파일 형식입니다.\n(이미지, PDF, TXT, PPT 파일만 가능)");
+        input.value = ""; // 선택된 파일 초기화
+        return;
+      }
+    }
+
+    // 1. AI 생성 요청
+    async function generateDraft() {
+      const keywords = document.getElementById('aiKeywords').value;
+      const resultArea = document.getElementById('aiResult');
+      const generateBtn = document.getElementById('generateBtn');
+
+      if (!keywords.trim()) {
+        alert("키워드를 입력해주세요!");
+        return;
+      }
+
+      // 로딩 UI 처리
+      const originalBtnText = generateBtn.innerText;
+      generateBtn.disabled = true;
+      generateBtn.innerText = "생성 중... (약 3초)";
+      resultArea.value = "AI가 멘토님께 보낼 편지를 작성하고 있습니다... ✍️";
+
+      try {
+        // CSRF 토큰 처리
+        const csrfTokenMeta = document.querySelector('meta[name="_csrf"]');
+        const csrfHeaderMeta = document.querySelector('meta[name="_csrf_header"]');
+        const headers = {'Content-Type': 'application/json'};
+
+        if (csrfTokenMeta && csrfHeaderMeta) {
+          headers[csrfHeaderMeta.content] = csrfTokenMeta.content;
+        }
+
+        // API 호출
+        const response = await fetch('/api/ai/draft', {
+          method: 'POST',
+          headers: headers,
+          body: JSON.stringify({keywords: keywords})
+        });
+
+        if (!response.ok) throw new Error("서버 통신 실패");
+
+        const data = await response.json();
+        resultArea.value = data.content; // 결과창에 표시
+
+      } catch (error) {
+        console.error(error);
+        resultArea.value = "오류가 발생했습니다. 잠시 후 다시 시도해주세요.";
+      } finally {
+        generateBtn.disabled = false;
+        generateBtn.innerText = originalBtnText;
+      }
+    }
+
+    // 2. 본문에 적용하기
+    function applyDraft() {
+      const aiText = document.getElementById('aiResult').value;
+      const mainContent = document.getElementById('content');
+
+      if (!aiText || aiText.includes("작성하고 있습니다")) {
+        alert("적용할 내용이 없습니다. 먼저 초안을 생성해주세요.");
+        return;
+      }
+
+      // 본문에 AI 글 삽입
+      mainContent.value = aiText;
+
+      // 글자수 업데이트
+      updateCharCount(mainContent);
+
+      // 모달 닫기
+      const modalEl = document.getElementById('aiModal');
+      const modal = bootstrap.Modal.getInstance(modalEl);
+      modal.hide();
+    }
   </script>
+
 </section>
 </body>
 </html>
+

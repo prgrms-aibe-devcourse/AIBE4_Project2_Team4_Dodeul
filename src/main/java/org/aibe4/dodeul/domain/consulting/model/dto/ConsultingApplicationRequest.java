@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.aibe4.dodeul.domain.consulting.model.enums.ConsultingTag;
+import org.springframework.web.multipart.MultipartFile;
 
 @Getter
 @Setter
@@ -28,6 +29,9 @@ public class ConsultingApplicationRequest {
 
     @NotBlank(message = "기술 태그를 입력해주세요.") // 예: "Java, Spring" (필수라면 NotBlank)
     private String techTags;
+
+    // HTML의 <input name="file">과 이름이 같아야 합니다.
+    private MultipartFile file;
 
     // 파일은 아직 기능 구현 전이므로 검증 제외 (선택 사항)
     private String fileUrl;

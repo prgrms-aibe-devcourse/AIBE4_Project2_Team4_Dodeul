@@ -40,7 +40,7 @@ public class ConsultationRoom extends BaseEntity {
             .build();
     }
 
-    public void close() {
+    public void changeStatusToClose() {
         if (this.status == ConsultationRoomStatus.CLOSED) {
             throw new IllegalStateException("이미 종료된 상담방입니다.");
         }

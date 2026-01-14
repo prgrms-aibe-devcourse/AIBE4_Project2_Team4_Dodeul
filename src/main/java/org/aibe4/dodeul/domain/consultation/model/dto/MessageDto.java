@@ -8,7 +8,7 @@ import org.aibe4.dodeul.domain.consultation.model.enums.MessageType;
 @Getter
 @Builder
 public class MessageDto {
-
+    private Long id;
     private Long senderId;
     private String senderNickname;
     private MessageType type;
@@ -16,10 +16,11 @@ public class MessageDto {
 
     public static MessageDto of(Message message) {
         return MessageDto.builder()
-                .senderId(message.getSender().getId())
-                .senderNickname(message.getSender().getNickname())
-                .type(message.getMessageType())
-                .content(message.getContent())
-                .build();
+            .id(message.getId())
+            .senderId(message.getSender().getId())
+            .senderNickname(message.getSender().getNickname())
+            .type(message.getMessageType())
+            .content(message.getContent())
+            .build();
     }
 }

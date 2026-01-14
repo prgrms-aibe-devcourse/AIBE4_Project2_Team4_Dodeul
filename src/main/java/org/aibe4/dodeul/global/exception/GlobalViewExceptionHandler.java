@@ -46,7 +46,7 @@ public class GlobalViewExceptionHandler {
     @ExceptionHandler({AuthorizationDeniedException.class, AccessDeniedException.class})
     public String handleAccessDenied(Exception e, Model model) {
         model.addAttribute("errorMessage", e.getMessage());
-        model.addAttribute("nextUrl", "/home");
+        model.addAttribute("nextUrl", "/");
 
         return "error/access-denied";
     }

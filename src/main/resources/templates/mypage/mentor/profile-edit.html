@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{common/layout/mentor}">
+
+<head>
+  <th:block layout:fragment="head">
+    <title>DODEUL | 멘토 프로필 수정</title>
+    <link rel="stylesheet" href="/css/mypage/dashboard.css">
+  </th:block>
+</head>
+
+<body>
+<div layout:fragment="page">
+
+  <div class="dashboard-header">
+    <h2 class="fw-bold" style="margin-bottom:8px;">프로필 수정</h2>
+    <p class="text-small" style="margin-bottom:16px;">멘토 프로필 정보를 수정할 수 있습니다.</p>
+  </div>
+
+  <!-- 상단 프로필 카드-->
+  <section class="card-custom" style="margin-bottom:16px;">
+    <div class="dashboard-profile">
+      <div class="dashboard-avatar-lg"></div>
+      <div style="flex:1;">
+        <div class="fw-bold" id="mentorName" style="margin-bottom:4px;">-</div>
+        <div class="text-small" id="mentorMeta">직무 / 상담 가능 분야</div>
+      </div>
+      <a class="btn-outline-custom" href="/mentor/profile">조회 화면</a>
+    </div>
+  </section>
+
+  <!-- 편집 폼 -->
+  <form class="card-custom" style="margin-bottom:16px;" onsubmit="return false;">
+    <div class="fw-bold" style="margin-bottom:10px;">자기소개</div>
+    <textarea id="bioInput" class="form-control-custom" rows="5"
+              placeholder="자기소개를 입력해 주세요."></textarea>
+
+    <div class="fw-bold" style="margin:16px 0 10px;">기술 스택</div>
+    <input id="skillsInput" class="form-control-custom" type="text"
+           placeholder="예: Spring, JPA, MySQL">
+
+    <div class="fw-bold" style="margin:16px 0 10px;">상담 가능 분야</div>
+    <input id="consultingsInput" class="form-control-custom" type="text"
+           placeholder="예: RESUME, CAREER">
+
+    <p class="text-small" style="margin-top:12px;">
+      ※ 기술스택/상담분야는 콤마(,)로 구분해서 입력해주세요.
+    </p>
+
+    <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:16px;">
+      <a class="btn-outline-custom" href="/mentor/profile">취소</a>
+      <button id="saveBtn" class="btn-primary-custom" type="button">저장</button>
+    </div>
+  </form>
+
+  <p id="profileError" style="color:#d33; margin-top:12px;"></p>
+
+</div>
+
+<th:block layout:fragment="script">
+  <script>
+    async function apiRequest(url, options = {}) {
+      const res = await fetch(url, {
+        credentials: 'same-origin',
+        headers: {
+          'accept': 'application/json',
+          ...(options.headers || {})
+        },
+        ...options
+      });
+
+      const json = await res.json().catch(() => null);
+      const code = json?.code ?? res.status;
+      const message = json?.message ?? `요청 실패(${res.status})`;
+
+      if (code === 401) {
+        alert('로그인이 필요합니다.');
+        location.href = '/auth/login';
+        throw new Error('UNAUTHORIZED');
+      }
+      if (code === 403) {
+        alert(message || '접근 권한이 없습니다.');
+        location.href = '/';
+        throw new Error('FORBIDDEN');
+      }
+
+      if (!res.ok || (typeof code === 'number' && code >= 400)) {
+        const err = new Error(message);
+        err.code = code;
+        err.payload = json;
+        throw err;
+      }
+      return json;
+    }
+
+    function toListByComma(input) {
+      return String(input ?? '')
+        .split(',')
+        .map(s => s.trim())
+        .filter(Boolean);
+    }
+
+    // 초기값 로딩
+    (async function () {
+      const err = document.getElementById('profileError');
+      try {
+        const res = await fetch('/api/mypage/mentor/profile', {credentials: 'same-origin'});
+        const json = await res.json().catch(() => null);
+        if (!res.ok) {
+          err.textContent = json?.message || '프로필 정보를 불러오지 못했습니다.';
+          return;
+        }
+
+        const data = json?.data || {};
+        document.getElementById('mentorName').textContent = data.nickname ? `${data.nickname} 멘토` : '멘토';
+
+        const job = data.job ?? '-';
+        const fields = (data.consultingTags && data.consultingTags.length)
+          ? data.consultingTags.join(', ')
+          : '-';
+        document.getElementById('mentorMeta').textContent = `${job} / ${fields}`;
+
+        document.getElementById('bioInput').value = data.intro ?? '';
+        document.getElementById('skillsInput').value =
+          (data.skillTags && data.skillTags.length) ? data.skillTags.join(', ') : '';
+        document.getElementById('consultingsInput').value =
+          (data.consultingTags && data.consultingTags.length) ? data.consultingTags.join(', ') : '';
+
+      } catch (e) {
+        console.error(e);
+        err.textContent = '서버와 통신할 수 없습니다.';
+      }
+    })();
+
+    // 저장
+    document.getElementById('saveBtn').addEventListener('click', async () => {
+      const err = document.getElementById('profileError');
+      err.textContent = '';
+
+      const payload = {
+        intro: document.getElementById('bioInput').value.trim(),
+        skillTags: toListByComma(document.getElementById('skillsInput').value),
+        consultingTags: toListByComma(document.getElementById('consultingsInput').value),
+      };
+
+      try {
+        await apiRequest('/api/mypage/mentor/profile', {
+          method: 'PATCH',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(payload)
+        });
+
+        alert('저장되었습니다.');
+        location.href = '/mentor/profile';
+      } catch (e) {
+        console.error(e);
+        err.textContent = e?.message ?? '저장 중 오류가 발생했습니다.';
+      }
+    });
+  </script>
+</th:block>
+
+</body>
+</html>

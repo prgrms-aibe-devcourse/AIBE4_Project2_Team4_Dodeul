@@ -1,0 +1,105 @@
+@charset "UTF-8";
+
+/* 추천 섹션 배경 및 레이아웃 */
+.recommendation-section {
+  background: linear-gradient(to bottom, #f8f9fa 0%, #ffffff 100%);
+  border-bottom: 1px solid var(--color-border);
+  padding: 3rem 0 5rem;
+  margin-bottom: 3rem;
+}
+
+/* 전체 컨테이너: 중앙 정렬을 위한 설정 */
+.recommendation-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+/* 1순위 상단 래퍼 스타일 */
+.top-recommendation-wrapper {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+/* 1순위 카드의 크기 조정 (이미지처럼 넓게) */
+.top-recommendation-wrapper .mentor-card-custom {
+  width: 100%;
+  max-width: 600px;
+  min-height: 380px;
+  border: 1px solid #dee2e6;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+/* 1순위 카드 내부 폰트/요소 크기 미세 조정 */
+.top-recommendation-wrapper .mentor-card-title {
+  font-size: 1.35rem;
+}
+
+.top-recommendation-wrapper .mentor-card-avatar {
+  width: 80px;
+  height: 80px;
+}
+
+
+/* 2,3순위 하단 그리드 스타일 */
+.sub-recommendation-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+  width: 100%;
+}
+
+/* 2,3순위 카드는 기본 크기 유지하되 높이 맞춤 */
+.sub-recommendation-grid .mentor-card-custom {
+  height: 100%;
+}
+
+
+/* 매칭 점수 배지 위치 */
+.match-score-badge {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background-color: var(--color-brand-primary);
+  color: var(--color-text-inverse);
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 20px;
+  box-shadow: var(--shadow-sm);
+  z-index: 1;
+}
+
+/* 프로필 버튼 숨김 */
+.recommendation-page-search .mentor-card-actions a.mentor-card-btn {
+  display: none !important;
+}
+
+/* 상담 신청 버튼을 가로로 꽉 채우기 */
+.recommendation-page-search .mentor-card-actions {
+  grid-template-columns: 1fr !important;
+}
+
+/* 반응형 처리 */
+@media (max-width: 768px) {
+  .sub-recommendation-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .recommendation-section {
+    padding: 3rem 0 4rem;
+  }
+}
+
+/* 로딩 스피너 영역 */
+.spinner-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  color: var(--color-text-secondary);
+}
