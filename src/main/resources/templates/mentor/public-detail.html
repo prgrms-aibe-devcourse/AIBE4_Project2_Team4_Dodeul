@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{common/layout/base}">
+
+<head>
+  <th:block layout:fragment="head">
+    <title>DODEUL | 멘토 프로필</title>
+    <link rel="stylesheet" href="/css/mypage/dashboard.css">
+  </th:block>
+</head>
+
+<body>
+<section layout:fragment="content">
+  <div class="container" style="padding: 24px 0;">
+
+    <div class="dashboard-header" style="margin-bottom: 16px;">
+      <h2 class="fw-bold" style="margin-bottom:8px;">멘토 프로필</h2>
+      <p class="text-small" style="margin-bottom:0;">
+        멘토 정보를 확인하고 상담을 신청할 수 있습니다.
+      </p>
+    </div>
+
+    <section class="card-custom" style="margin-bottom:16px;">
+      <div class="dashboard-profile">
+        <div class="dashboard-avatar-lg" id="mentorAvatar"></div>
+
+        <div style="flex:1;">
+          <div class="fw-bold" id="mentorName" style="margin-bottom:4px;">-</div>
+          <div class="text-small" id="mentorMeta">직무 / 경력 · 상담 분야</div>
+          <div class="text-small" id="mentorEnabled" style="margin-top:6px;"></div>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-end;">
+          <!-- 신청서 작성 URL에 맞춰 수정 -->
+          <a class="btn-primary-custom"
+             th:href="@{/consulting-applications/new(mentorId=${mentorId})}">
+            신청하기
+          </a>
+          <div class="text-small" style="text-align:right;">
+            신청서 작성 후 상담 신청이 완료됩니다.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card-custom" style="margin-bottom:16px;">
+      <div class="fw-bold" style="margin-bottom:10px;">자기소개</div>
+      <div id="mentorBio" class="text-small" style="white-space:pre-line;">불러오는 중…</div>
+    </section>
+
+    <section class="card-custom" style="margin-bottom:16px;">
+      <div class="fw-bold" style="margin-bottom:10px;">기술 스택</div>
+      <div id="mentorSkills"><span class="text-small">불러오는 중…</span></div>
+    </section>
+
+    <section class="card-custom" style="margin-bottom:16px;">
+      <div class="fw-bold" style="margin-bottom:10px;">상담 가능 분야</div>
+      <div id="mentorConsultings"><span class="text-small">불러오는 중…</span></div>
+    </section>
+
+    <p id="profileError" style="color:#d33; margin-top:12px;"></p>
+  </div>
+</section>
+
+<th:block layout:fragment="script">
+  <script th:inline="javascript">
+    async function apiRequest(url, options = {}) {
+      const res = await fetch(url, {
+        credentials: 'same-origin',
+        headers: {'accept': 'application/json', ...(options.headers || {})},
+        ...options
+      });
+
+      const json = await res.json().catch(() => null);
+      const code = json?.code ?? res.status;
+      const message = json?.message ?? `요청 실패(${res.status})`;
+
+      if (!res.ok || (typeof code === 'number' && code >= 400)) {
+        const err = new Error(message);
+        err.code = code;
+        err.payload = json;
+        throw err;
+      }
+      return json;
+    }
+
+    function escapeHtml(s) {
+      return String(s ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", "&#039;");
+    }
+
+    function renderTags(root, arr) {
+      if (!arr || arr.length === 0) {
+        root.innerHTML = `<span class="text-small">-</span>`;
+        return;
+      }
+      root.innerHTML = arr.map(t => `<span class="tag tag--read-only">${escapeHtml(t)}</span>`).join('');
+    }
+
+    const mentorId = /*[[${mentorId}]]*/ 0;
+
+    (async function () {
+      const errEl = document.getElementById('profileError');
+
+      if (!mentorId) {
+        errEl.textContent = '잘못된 접근입니다. (mentorId 누락)';
+        return;
+      }
+
+      try {
+        const json = await apiRequest(`/api/public/mentor/${mentorId}`);
+        const data = json.data || {};
+
+        document.getElementById('mentorName').textContent = data.nickname ?? '-';
+
+        const job = data.job ?? '-';
+        const years = (data.careerYears != null) ? `${data.careerYears}년차` : '-';
+        const fields = (data.consultingFields && data.consultingFields.length)
+          ? data.consultingFields.join(', ')
+          : '-';
+        document.getElementById('mentorMeta').textContent = `${job} / ${years} · ${fields}`;
+
+        if (data.consultationEnabled === false) {
+          document.getElementById('mentorEnabled').innerHTML =
+            `<span class="status-badge status-canceled">상담 비활성</span>`;
+        } else if (data.consultationEnabled === true) {
+          document.getElementById('mentorEnabled').innerHTML =
+            `<span class="status-badge status-completed">상담 가능</span>`;
+        } else {
+          document.getElementById('mentorEnabled').textContent = '';
+        }
+
+        document.getElementById('mentorBio').textContent =
+          data.intro ?? '자기소개가 아직 등록되지 않았습니다.';
+
+        renderTags(document.getElementById('mentorSkills'), data.skillTags ?? []);
+        renderTags(document.getElementById('mentorConsultings'), data.consultingFields ?? []);
+
+        if (data.profileUrl) {
+          document.getElementById('mentorAvatar').innerHTML =
+            `<img alt="profile" src="${escapeHtml(data.profileUrl)}" style="width:100%;height:100%;object-fit:cover;border-radius:999px;">`;
+        }
+
+      } catch (e) {
+        console.error(e);
+        errEl.textContent = e?.message ?? '프로필을 불러오지 못했습니다.';
+      }
+    })();
+  </script>
+</th:block>
+
+</body>
+</html>

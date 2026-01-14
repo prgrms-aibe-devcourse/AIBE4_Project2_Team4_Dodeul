@@ -14,15 +14,26 @@ public class MyPageDashboardResponse {
     private final String nickname;
 
     private final DashboardSummaryResponse summary;
+
     private final List<DashboardSessionItemResponse> upcomingSessions;
+
+    private final List<DashboardSessionItemResponse> completedRecentSessions;
 
     public static MyPageDashboardResponse of(
         Long memberId,
         String role,
         String nickname,
         DashboardSummaryResponse summary,
-        List<DashboardSessionItemResponse> upcomingSessions
+        List<DashboardSessionItemResponse> upcomingSessions,
+        List<DashboardSessionItemResponse> completedRecentSessions
     ) {
-        return new MyPageDashboardResponse(memberId, role, nickname, summary, upcomingSessions);
+        return new MyPageDashboardResponse(
+            memberId,
+            role,
+            nickname,
+            summary,
+            upcomingSessions,
+            completedRecentSessions
+        );
     }
 }

@@ -46,6 +46,7 @@ public class SecurityConfig {
                             "/images/**",
                             "/favicon.ico",
                             "/error",
+                            "/error/**",
                             "/h2-console/**",
                             "/swagger-ui.html",
                             "/swagger-ui/**",
@@ -90,6 +91,10 @@ public class SecurityConfig {
                         // 파일 업로드 API (인증 필요)
                         .requestMatchers(HttpMethod.POST, "/api/files")
                         .authenticated()
+
+                        // 공개 멘토 프로필
+                        .requestMatchers(HttpMethod.GET, "/mentor/public/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/public/**").permitAll()
 
                         // 멘토 전용 구간
                         .requestMatchers(

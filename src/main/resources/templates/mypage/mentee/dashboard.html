@@ -32,29 +32,32 @@
     </div>
   </section>
 
-  <!-- 상담 현황 요약 -->
+  <!-- 상담 현황 요약 (3칸 고정: 대기중/진행중/완료) -->
   <section style="margin-bottom:16px;">
     <div class="fw-bold" style="margin-bottom:10px;">상담 현황 요약</div>
 
     <div class="dashboard-summary-grid">
+      <!-- 대기중(신청중) -->
       <div class="card-custom" style="margin:0; position:relative;">
-        <div class="text-small">진행 예정 상담</div>
+        <div class="text-small">대기중 상담</div>
         <div class="dashboard-summary-value">
           <span id="sumScheduled">-</span><span class="dashboard-unit">건</span>
         </div>
-        <span class="status-badge status-pending">예정</span>
+        <span class="status-badge status-pending">대기중</span>
         <a class="text-small" style="position:absolute; right:16px; bottom:16px;" href="/mentee/sessions">상담 내역 보기 →</a>
       </div>
 
+      <!-- 진행중(승인됨=진행중) -->
       <div class="card-custom" style="margin:0; position:relative;">
         <div class="text-small">진행중 상담</div>
         <div class="dashboard-summary-value">
           <span id="sumOngoing">-</span><span class="dashboard-unit">건</span>
         </div>
-        <span class="status-badge status-approved">진행중</span>
+        <span class="status-badge status-approved">승인됨</span>
         <a class="text-small" style="position:absolute; right:16px; bottom:16px;" href="/mentee/sessions">상담 내역 보기 →</a>
       </div>
 
+      <!-- 완료 -->
       <div class="card-custom" style="margin:0; position:relative;">
         <div class="text-small">완료된 상담</div>
         <div class="dashboard-summary-value">
@@ -76,7 +79,7 @@
     </div>
   </section>
 
-  <!-- 최근 상담 내역 -->
+  <!-- 최근 상담 내역(= 완료된 상담 최근 3개로 바꿀 예정) -->
   <section style="margin-bottom:16px;">
     <div class="fw-bold" style="margin-bottom:10px;">최근 상담 내역</div>
     <div class="card-custom dashboard-list" id="recentList" style="margin:0;">
@@ -101,6 +104,42 @@
 
 <th:block layout:fragment="script">
   <script>
+    // =========================
+    // Team standard: CommonResponse + unified fetch
+    // =========================
+    async function apiRequest(url, options = {}) {
+      const res = await fetch(url, {
+        credentials: 'same-origin',
+        headers: {'accept': 'application/json', ...(options.headers || {})},
+        ...options
+      });
+
+      const json = await res.json().catch(() => null);
+
+      const code = json?.code ?? res.status;
+      const message = json?.message ?? `요청 실패(${res.status})`;
+
+      if (code === 401) {
+        alert('로그인이 필요합니다.');
+        location.href = '/';
+        throw new Error('UNAUTHORIZED');
+      }
+      if (code === 403) {
+        alert(message || '접근 권한이 없습니다.');
+        location.href = '/';
+        throw new Error('FORBIDDEN');
+      }
+
+      if (!res.ok || (typeof code === 'number' && code >= 400)) {
+        const err = new Error(message);
+        err.code = code;
+        err.payload = json;
+        throw err;
+      }
+
+      return json;
+    }
+
     function escapeHtml(s) {
       return String(s ?? '')
         .replaceAll('&', '&amp;')
@@ -110,9 +149,10 @@
         .replaceAll("'", "&#039;");
     }
 
-    function formatDateTime(iso) {
-      if (!iso) return '-';
-      return String(iso).replace('T', ' ').slice(0, 16);
+    function formatDateTime(v) {
+      if (!v) return '-';
+      const s = String(v).replace('T', ' ');
+      return s.slice(0, 16);
     }
 
     function renderRows(rootEl, items, emptyText, rightButtonLabel, rightButtonHrefBuilder) {
@@ -146,43 +186,41 @@
       const err = document.getElementById('dashboardError');
 
       try {
-        const res = await fetch('/api/mypage/dashboard', {credentials: 'same-origin'});
-        const json = await res.json();
-
-        if (!res.ok) {
-          err.textContent = json?.message || '대시보드 조회 중 오류가 발생했습니다.';
-          return;
-        }
-
+        const json = await apiRequest('/api/mypage/dashboard');
         const data = json.data || {};
+
         document.getElementById('menteeName').textContent = data.nickname ? `${data.nickname} 멘티` : '멘티';
+
+        // (선택) 아래 필드는 dashboard 응답에 없을 수 있으니 fallback 유지
         const desiredJob = data.desiredJobName ?? '-';
         const interests = (data.interestConsultings && data.interestConsultings.length)
           ? data.interestConsultings.join(', ')
           : '-';
         document.getElementById('menteeDesc').textContent = `${desiredJob} / ${interests}`;
 
-        document.getElementById('dashboardSubtitle').textContent = '멘티님의 상담 및 일정 현황을 확인해보세요.';
+        document.getElementById('dashboardSubtitle').textContent = '멘티님의 상담 현황을 확인해보세요.';
 
-        // summary
+        // summary: scheduled(=WAITING), ongoing(=MATCHED), completed(=COMPLETED)
         document.getElementById('sumScheduled').textContent = data.summary?.scheduled ?? '-';
         document.getElementById('sumOngoing').textContent = data.summary?.ongoing ?? '-';
         document.getElementById('sumCompleted').textContent = data.summary?.completed ?? '-';
 
-        const sessions = data.upcomingSessions || [];
+        const upcoming = data.upcomingSessions || [];
 
         renderRows(
           document.getElementById('ongoingList'),
-          sessions.slice(0, 2),
+          upcoming.slice(0, 2),
           '진행중인 상담이 없습니다.',
-          '상담 보기',
+          '상담 내역',
           () => `/mentee/sessions`
         );
 
+        const completedRecentSessions = data.completedRecentSessions || [];
+
         renderRows(
           document.getElementById('recentList'),
-          sessions.slice(0, 3),
-          '최근 상담 내역이 없습니다.',
+          completedRecentSessions,
+          '최근 완료된 상담 내역이 없습니다.',
           '상담 내역 조회',
           () => `/mentee/sessions`
         );
@@ -203,8 +241,8 @@
           </div>
         `;
       } catch (e) {
-        err.textContent = '서버와 통신할 수 없습니다.';
         console.error(e);
+        err.textContent = e?.message ?? '서버와 통신할 수 없습니다.';
       }
     })();
   </script>
