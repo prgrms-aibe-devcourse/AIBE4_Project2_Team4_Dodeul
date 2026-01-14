@@ -51,7 +51,7 @@ public class MentorDashboardViewController {
         setCommonModel(model, "reviews");
         Page<ReviewResponse> reviewResponses = reviewService.getReceivedReviews(user.getMemberId(), pageable);
         model.addAttribute("reviewResponses", reviewResponses);
-        return "mypage/mentee/reviews";
+        return "mypage/mentor/reviews";
     }
 
     @GetMapping("/scraps")
