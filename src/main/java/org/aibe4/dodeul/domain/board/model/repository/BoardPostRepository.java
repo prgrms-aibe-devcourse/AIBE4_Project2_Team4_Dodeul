@@ -1,3 +1,4 @@
+// src/main/java/org/aibe4/dodeul/domain/board/model/repository/BoardPostRepository.java
 package org.aibe4.dodeul.domain.board.model.repository;
 
 import org.aibe4.dodeul.domain.board.model.entity.BoardPost;
@@ -10,15 +11,12 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.Optional;
 
-public interface BoardPostRepository
-    extends JpaRepository<BoardPost, Long>, BoardPostRepositoryCustom {
+public interface BoardPostRepository extends JpaRepository<BoardPost, Long>, BoardPostRepositoryCustom {
 
-    @EntityGraph(
-        attributePaths = {
-            "boardPostTagRelations",
-            "boardPostTagRelations.skillTag"
-        })
+    @EntityGraph(attributePaths = {"boardPostTagRelations", "boardPostTagRelations.skillTag"})
     Optional<BoardPost> findDetailById(Long id);
+
+    Optional<BoardPost> findByIdAndPostStatusNot(Long id, PostStatus postStatus);
 
     @Query(
         "select ac.id "
@@ -32,6 +30,5 @@ public interface BoardPostRepository
         "update BoardPost p "
             + "set p.viewCount = p.viewCount + 1 "
             + "where p.id = :postId and p.postStatus <> :deletedStatus")
-    int increaseViewCount(
-        @Param("postId") Long postId, @Param("deletedStatus") PostStatus deletedStatus);
+    int increaseViewCount(@Param("postId") Long postId, @Param("deletedStatus") PostStatus deletedStatus);
 }

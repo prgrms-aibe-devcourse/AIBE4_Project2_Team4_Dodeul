@@ -3,6 +3,7 @@
 <html xmlns:th="http://www.thymeleaf.org" lang="ko">
 <head>
   <meta charset="UTF-8"/>
+  <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
   <title>게시글 상세</title>
   <link rel="stylesheet" href="/css/board/post-detail.css"/>
@@ -38,6 +39,25 @@
                 <span class="kpi__icon">👁</span>
                 <span id="viewCount">0</span>
               </span>
+            </div>
+
+            <div id="postMenuWrap" class="comment__menuWrap post-menu-wrap" style="display:none;">
+              <button id="postMenuBtn" class="comment__iconBtn" type="button" aria-label="게시글 메뉴">
+                <span class="comment__icon">⋮</span>
+              </button>
+
+              <div id="postMenu" class="comment__menu post-menu" style="display:none;">
+                <div class="comment__menuList">
+                  <button id="postEditBtn" type="button" class="comment__menuItem">수정</button>
+                  <button
+                    id="postDeleteBtn"
+                    type="button"
+                    class="comment__menuItem comment__menuItem--danger"
+                  >
+                    삭제
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -86,32 +106,29 @@
       </section>
     </article>
 
-    <!-- 첨부파일 섹션 -->
     <section class="attachments" id="attachmentsSection" style="display: none">
       <div class="attachments__head">
         <div class="attachments__title">첨부파일</div>
         <div class="attachments__count" id="attachmentsCount">0</div>
       </div>
 
-      <!-- 파일 카드 리스트 -->
       <div id="attachmentsList" class="attachments__list"></div>
 
-      <!-- 미리보기 영역(파일 타입별 렌더링) -->
-      <div id="attachmentsPreview" style="display:none; margin-top: 12px;">
-        <div style="display:flex; align-items:center; justify-content: space-between; gap: 8px; margin-bottom: 8px;">
-          <div id="previewTitle" style="font-weight: 700;">미리보기</div>
-          <button id="previewCloseBtn" type="button" class="btn" style="padding:8px 12px;">닫기</button>
+      <div id="attachmentsPreview" class="attachments__preview" style="display:none;">
+        <div class="attachments__previewHead">
+          <div id="previewTitle" class="attachments__previewTitle">미리보기</div>
+          <button id="previewCloseBtn" type="button" class="btn attachments__previewCloseBtn">닫기</button>
         </div>
-        <div id="previewBody"></div>
+        <div id="previewBody" class="attachments__previewBody"></div>
       </div>
     </section>
 
-    <!-- 댓글 섹션 -->
     <div th:replace="~{board/post-comment :: postCommentSection}"></div>
 
     <input type="hidden" id="postId" th:value="${postId}"/>
   </section>
 </main>
+
 <script>
   (function () {
     const postIdEl = document.getElementById("postId");
@@ -317,8 +334,7 @@
         const img = document.createElement("img");
         img.src = url;
         img.alt = file.fileName || "첨부파일";
-        img.style.maxWidth = "100%";
-        img.style.borderRadius = "12px";
+        img.className = "attachments__previewImage";
         body.appendChild(img);
         return;
       }
@@ -326,21 +342,14 @@
       if (type === "application/pdf" || file.ext === "pdf") {
         const iframe = document.createElement("iframe");
         iframe.src = url;
-        iframe.style.width = "100%";
-        iframe.style.height = "640px";
-        iframe.style.border = "0";
-        iframe.style.borderRadius = "12px";
+        iframe.className = "attachments__previewFrame";
         body.appendChild(iframe);
         return;
       }
 
       if (type.startsWith("text/") || file.ext === "txt" || file.ext === "md" || file.ext === "log") {
         const pre = document.createElement("pre");
-        pre.style.whiteSpace = "pre-wrap";
-        pre.style.wordBreak = "break-word";
-        pre.style.padding = "16px";
-        pre.style.borderRadius = "12px";
-        pre.style.border = "1px solid rgba(0,0,0,0.08)";
+        pre.className = "attachments__previewText";
         pre.textContent = "불러오는 중...";
         body.appendChild(pre);
 
@@ -356,15 +365,14 @@
       }
 
       const p = document.createElement("div");
-      p.style.padding = "12px 0";
+      p.className = "attachments__previewUnsupported";
       p.innerHTML = `
-        <div style="margin-bottom:8px;">브라우저에서 미리보기를 지원하지 않는 형식입니다.</div>
-        <a href="${url}" target="_blank" rel="noopener">파일 열기/다운로드</a>
+        <div class="attachments__previewUnsupportedText">브라우저에서 미리보기를 지원하지 않는 형식입니다.</div>
+        <a class="attachments__previewLink" href="${url}" target="_blank" rel="noopener">파일 열기/다운로드</a>
       `;
       body.appendChild(p);
     }
 
-    // ✅ 수정: BoardPostFileResponse 구조(files) + CommonResponse(data.files) 우선 대응
     function renderAttachments(payload) {
       const section = document.getElementById("attachmentsSection");
       const list = document.getElementById("attachmentsList");
@@ -404,8 +412,7 @@
 
       valid.forEach((a) => {
         const item = document.createElement("div");
-        item.className = "attachcard";
-        item.style.cursor = "pointer";
+        item.className = "attachcard attachcard--clickable";
 
         const icon =
           (a.contentType && a.contentType.toLowerCase().startsWith("image/")) ||
@@ -437,7 +444,7 @@
             <div class="attachcard__name">${a.fileName}</div>
             <div class="attachcard__meta">${meta}</div>
           </div>
-          <div class="attachcard__go">↗</div>
+          <div class="attachcard__go" role="button" aria-label="첨부파일 새창">↗</div>
         `;
 
         item.addEventListener("click", () => openPreview(a));
@@ -503,12 +510,16 @@
     }
 
     function closeAllMenus() {
-      document.querySelectorAll(".comment__menu").forEach((m) => (m.style.display = "none"));
+      document.querySelectorAll(".comment__menu, #postMenu").forEach((m) => (m.style.display = "none"));
     }
 
     document.addEventListener("click", (e) => {
       const t = e.target;
-      if (t && t.closest && t.closest(".comment__menuWrap")) {
+      if (
+        t &&
+        t.closest &&
+        (t.closest(".comment__menuWrap") || t.closest("#postMenuWrap"))
+      ) {
         return;
       }
       closeAllMenus();
@@ -553,10 +564,6 @@
 
     function toggleScrap() {
       const auth = buildAuthHeaders();
-      if (!auth || !auth.Authorization) {
-        alert("로그인이 필요합니다.");
-        return;
-      }
 
       fetchJson("/api/board/posts/" + postId + "/scrap", {
         method: "POST",
@@ -588,10 +595,15 @@
             nextScrapped != null ? !!nextScrapped : toggled
           );
         })
-        .catch(() => alert("스크랩 처리 중 오류가 발생했습니다."));
+        .catch((err) => {
+          if (err && (err.status === 401 || err.status === 403)) {
+            alert("로그인이 필요합니다.");
+            return;
+          }
+          alert("스크랩 처리 중 오류가 발생했습니다.");
+        });
     }
 
-    // ✅ 1) 게시글 상세 + files가 있으면 즉시 렌더링
     fetchJson("/api/board/posts/" + postId, {headers: {...buildAuthHeaders()}})
       .then((res) => {
         const post = getApiData(res);
@@ -604,7 +616,6 @@
         document.getElementById("title").innerText = pick(post, "title", "-");
         document.getElementById("content").innerText = pick(post, "content", "-");
 
-        // ✅ authorDisplayName까지 탐색
         const authorName =
           pick(post, "author.nickname", null) ??
           pick(post, "author.displayName", null) ??
@@ -647,23 +658,86 @@
         renderTags(post);
         window.__POST_DETAIL__.postStatus = String(status || "").toUpperCase();
 
-        // ✅ 상세 응답에 files가 있으면 우선 렌더링
+        const canEdit = pick(post, "canEdit", false) === true;
+        const canDelete = pick(post, "canDelete", false) === true;
+
+        const postMenuWrap = document.getElementById("postMenuWrap");
+        const postMenuBtn = document.getElementById("postMenuBtn");
+        const postMenu = document.getElementById("postMenu");
+        const postEditBtn = document.getElementById("postEditBtn");
+        const postDeleteBtn = document.getElementById("postDeleteBtn");
+
+        if (postMenuWrap && postMenuBtn && postMenu) {
+          if (canEdit || canDelete) {
+            postMenuWrap.style.display = "inline-flex";
+
+            if (!canEdit && postEditBtn) postEditBtn.style.display = "none";
+            if (!canDelete && postDeleteBtn) postDeleteBtn.style.display = "none";
+
+            postMenuBtn.addEventListener("click", (e) => {
+              e.stopPropagation();
+              const isOpen = postMenu.style.display === "block";
+              closeAllMenus();
+              postMenu.style.display = isOpen ? "none" : "block";
+
+              if (postMenu.style.display === "block") {
+                postMenu.style.top = "40px";
+                postMenu.style.bottom = "auto";
+                const rect = postMenu.getBoundingClientRect();
+                if (rect.bottom > window.innerHeight) {
+                  postMenu.style.top = "auto";
+                  postMenu.style.bottom = "40px";
+                }
+              }
+            });
+
+            if (postEditBtn) {
+              postEditBtn.addEventListener("click", () => {
+                closeAllMenus();
+                window.location.href = "/board/posts/" + postId + "/edit";
+              });
+            }
+
+            if (postDeleteBtn) {
+              postDeleteBtn.addEventListener("click", () => {
+                closeAllMenus();
+
+                if (!confirm("게시글을 삭제할까요?")) return;
+
+                const auth = buildAuthHeaders();
+
+                fetchJson("/api/board/posts/" + postId, {
+                  method: "DELETE",
+                  headers: {...auth},
+                })
+                  .then(() => (window.location.href = "/board/posts"))
+                  .catch((err) => {
+                    if (err && (err.status === 401 || err.status === 403)) {
+                      alert("로그인이 필요합니다.");
+                      return;
+                    }
+                    alert("게시글 삭제에 실패했습니다.");
+                  });
+              });
+            }
+          } else {
+            postMenuWrap.style.display = "none";
+          }
+        }
+
         const filesInDetail = pick(post, "files", null);
         if (filesInDetail && Array.isArray(filesInDetail) && filesInDetail.length > 0) {
           renderAttachments({files: filesInDetail});
         }
       })
-      // ✅ 2) 첨부파일 조회 엔드포인트 변경: /api/board/posts/{postId}/files
       .then(() =>
         fetchJson("/api/board/posts/" + postId + "/files", {
           headers: {...buildAuthHeaders()},
         })
           .then((res) => {
-            console.log("Files API Response:", res);
             renderAttachments(getApiData(res));
           })
-          .catch((err) => {
-            console.error("Files API Error:", err);
+          .catch(() => {
             renderAttachments({files: []});
           })
       )
