@@ -8,6 +8,14 @@
   <th:block layout:fragment="head">
     <title>DODEUL | 멘토 프로필</title>
     <link rel="stylesheet" href="/css/mypage/dashboard.css">
+    <style>
+      /* 혹시 기본 CSS가 background를 안 보이게 할 수 있어서 안전하게 보정 */
+      #profileAvatar {
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+      }
+    </style>
   </th:block>
 </head>
 
@@ -21,18 +29,11 @@
   <!-- 상단 프로필 카드 -->
   <section class="card-custom" style="margin-bottom:16px;">
     <div class="dashboard-profile">
-      <div class="dashboard-avatar-lg"></div>
+      <div class="dashboard-avatar-lg" id="profileAvatar"></div>
+
       <div style="flex:1;">
         <div class="fw-bold" id="mentorName" style="margin-bottom:4px;">-</div>
         <div class="text-small" id="mentorMeta">직무 / 상담 가능 분야</div>
-      </div>
-
-      <div style="display:flex; gap:10px; align-items:center;">
-        <div class="text-small" style="text-align:right;">
-          <div class="fw-medium">예약하기</div>
-          <div>이 멘토에게 상담을 신청할 수 있습니다.</div>
-        </div>
-        <a class="btn-primary-custom" href="/matchings/new" id="reserveBtn">예약하기</a>
       </div>
     </div>
   </section>
@@ -40,31 +41,25 @@
   <!-- 자기소개 -->
   <section class="card-custom" style="margin-bottom:16px;">
     <div class="fw-bold" style="margin-bottom:10px;">자기소개</div>
-    <div id="mentorBio" class="text-small" style="white-space:pre-line;">
-      불러오는 중…
-    </div>
+    <div id="mentorBio" class="text-small" style="white-space:pre-line;">불러오는 중…</div>
   </section>
 
   <!-- 기술 스택 -->
   <section class="card-custom" style="margin-bottom:16px;">
     <div class="fw-bold" style="margin-bottom:10px;">기술 스택</div>
-    <div id="mentorSkills">
-      <span class="text-small">불러오는 중…</span>
-    </div>
+    <div id="mentorSkills"><span class="text-small">불러오는 중…</span></div>
   </section>
 
   <!-- 상담 가능 분야 -->
   <section class="card-custom" style="margin-bottom:16px;">
     <div class="fw-bold" style="margin-bottom:10px;">상담 가능 분야</div>
-    <div id="mentorConsultings">
-      <span class="text-small">불러오는 중…</span>
-    </div>
+    <div id="mentorConsultings"><span class="text-small">불러오는 중…</span></div>
   </section>
 
   <div style="display:flex; justify-content:flex-end; margin-top:16px;">
     <a class="btn-outline-custom" href="/mentor/profile/edit">수정</a>
   </div>
-  
+
   <p id="profileError" style="color:#d33; margin-top:12px;"></p>
 </div>
 
@@ -87,39 +82,45 @@
       root.innerHTML = arr.map(t => `<span class="tag tag--read-only">${escapeHtml(t)}</span>`).join('');
     }
 
+    function setAvatar(url) {
+      const avatar = document.getElementById('profileAvatar');
+      if (!avatar) return;
+
+      if (url) {
+        // ✅ 캐시 때문에 안 바뀌는 현상 방지용 쿼리스트링
+        const cacheBusted = url + (url.includes('?') ? '&' : '?') + 't=' + Date.now();
+        avatar.style.backgroundImage = `url(${cacheBusted})`;
+      } else {
+        avatar.style.backgroundImage = 'none';
+      }
+    }
+
     (async function () {
       const err = document.getElementById('profileError');
 
       try {
-        // 임시로 dashboard API 재사용 (추후 /api/mypage/profile 같은 별도 API로 교체 추천)
-        const res = await fetch('/api/mypage/dashboard', {credentials: 'same-origin'});
-        const json = await res.json();
+        const res = await fetch('/api/mypage/mentor/profile', {credentials: 'same-origin'});
+        const json = await res.json().catch(() => null);
         if (!res.ok) {
           err.textContent = json?.message || '프로필 정보를 불러오지 못했습니다.';
           return;
         }
 
-        const data = json.data || {};
+        const data = json?.data || {};
         document.getElementById('mentorName').textContent = data.nickname ? `${data.nickname} 멘토` : '멘토';
 
-        // TODO: API에 mentor profile 필드 생기면 교체
-        const job = data.jobName ?? '-';
-        const consultings = (data.consultingFields && data.consultingFields.length) ? data.consultingFields : [];
+        const job = data.job ?? '-';
+        const consultings = (data.consultingTags && data.consultingTags.length) ? data.consultingTags : [];
         document.getElementById('mentorMeta').textContent =
           consultings.length ? `${job} / ${consultings.join(', ')}` : `${job} / -`;
 
         document.getElementById('mentorBio').textContent =
-          data.bio ?? '자기소개가 아직 등록되지 않았습니다.';
+          data.intro ?? '자기소개가 아직 등록되지 않았습니다.';
 
-        renderTags(
-          document.getElementById('mentorSkills'),
-          data.skillTags ?? ['Spring', 'JPA', 'MySQL'] // 임시
-        );
+        renderTags(document.getElementById('mentorSkills'), data.skillTags ?? []);
+        renderTags(document.getElementById('mentorConsultings'), data.consultingTags ?? []);
 
-        renderTags(
-          document.getElementById('mentorConsultings'),
-          data.consultingFields ?? ['이력서', '면접', '커리어'] // 임시
-        );
+        setAvatar(data.profileUrl);
 
       } catch (e) {
         err.textContent = '서버와 통신할 수 없습니다.';

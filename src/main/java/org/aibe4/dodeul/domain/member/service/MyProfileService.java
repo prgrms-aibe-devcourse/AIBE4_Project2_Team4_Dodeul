@@ -1,5 +1,6 @@
 package org.aibe4.dodeul.domain.member.service;
 
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.aibe4.dodeul.domain.common.model.entity.SkillTag;
 import org.aibe4.dodeul.domain.common.repository.SkillTagRepository;
@@ -16,12 +17,16 @@ import org.aibe4.dodeul.global.response.enums.ErrorCode;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
 @Transactional
 public class MyProfileService {
+
+    private static final int SKILL_TAG_MAX_LENGTH = 30;
 
     private final MemberRepository memberRepository;
     private final MentorProfileRepository mentorProfileRepository;
@@ -31,6 +36,11 @@ public class MyProfileService {
     private final MemberSkillTagRepository memberSkillTagRepository;
     private final MemberConsultingTagRepository memberConsultingTagRepository;
 
+    private final EntityManager em;
+
+    /* =========================
+       조회
+       ========================= */
 
     @Transactional(readOnly = true)
     public MentorMyProfileResponse getMentorMyProfile(Long memberId) {
@@ -94,6 +104,9 @@ public class MyProfileService {
             .build();
     }
 
+    /* =========================
+       수정
+       ========================= */
 
     public void updateMentorProfile(Long memberId, MentorProfileUpdateRequest req) {
         Member member = getMemberOrThrow(memberId);
@@ -102,20 +115,19 @@ public class MyProfileService {
         MentorProfile profile = mentorProfileRepository.findById(memberId)
             .orElseGet(() -> mentorProfileRepository.save(MentorProfile.create(member)));
 
-        // ull이면 기존값 유지
+        // null이면 기존값 유지
         boolean finalEnabled = (req.getConsultationEnabled() != null)
             ? req.getConsultationEnabled()
             : profile.isConsultationEnabled();
 
-        profile.updateProfile(
-            req.getProfileUrl(),
-            req.getIntro(),
-            req.getJob(),
-            req.getCareerYears(),
-            finalEnabled
-        );
+        String finalProfileUrl = (req.getProfileUrl() != null) ? req.getProfileUrl() : profile.getProfileUrl();
+        String finalIntro = (req.getIntro() != null) ? req.getIntro() : profile.getIntro();
+        String finalJob = (req.getJob() != null) ? req.getJob() : profile.getJob();
+        Integer finalCareerYears = (req.getCareerYears() != null) ? req.getCareerYears() : profile.getCareerYears();
 
-        replaceSkillTags(member, req.getSkillTags());
+        profile.updateProfile(finalProfileUrl, finalIntro, finalJob, finalCareerYears, finalEnabled);
+
+        replaceSkillTagsCreateIfMissing(member, req.getSkillTags());
         replaceConsultingTags(member, req.getConsultingTags());
     }
 
@@ -126,41 +138,63 @@ public class MyProfileService {
         MenteeProfile profile = menteeProfileRepository.findById(memberId)
             .orElseGet(() -> menteeProfileRepository.save(MenteeProfile.create(member)));
 
-        profile.updateProfile(req.getProfileUrl(), req.getIntro(), req.getJob());
+        // null이면 기존값 유지
+        String finalProfileUrl = (req.getProfileUrl() != null) ? req.getProfileUrl() : profile.getProfileUrl();
+        String finalIntro = (req.getIntro() != null) ? req.getIntro() : profile.getIntro();
+        String finalJob = (req.getJob() != null) ? req.getJob() : profile.getJob();
 
-        replaceSkillTags(member, req.getSkillTags());
+        profile.updateProfile(finalProfileUrl, finalIntro, finalJob);
+
+        replaceSkillTagsCreateIfMissing(member, req.getSkillTags());
         replaceConsultingTags(member, req.getConsultingTags());
     }
 
+    /* =========================
+       태그 교체 로직
+       ========================= */
 
-    private void replaceSkillTags(Member member, List<String> names) {
+    private void replaceSkillTagsCreateIfMissing(Member member, List<String> names) {
         memberSkillTagRepository.deleteAllByMemberId(member.getId());
+        em.flush();
+
         if (names == null) return;
 
+        Set<String> distinct = new HashSet<>();
         for (String raw : names) {
             if (raw == null) continue;
             String name = raw.trim();
             if (name.isBlank()) continue;
+            if (name.length() > SKILL_TAG_MAX_LENGTH) {
+                throw new BusinessException(
+                    ErrorCode.INVALID_INPUT_VALUE,
+                    "스킬 태그는 " + SKILL_TAG_MAX_LENGTH + "자를 초과할 수 없습니다: " + name
+                );
+            }
+            distinct.add(name);
+        }
 
+        for (String name : distinct) {
             SkillTag skillTag = skillTagRepository.findByName(name)
-                .orElseThrow(() -> new BusinessException(
-                    ErrorCode.RESOURCE_NOT_FOUND,
-                    "존재하지 않는 스킬 태그입니다: " + name
-                ));
-
+                .orElseGet(() -> skillTagRepository.save(new SkillTag(name)));
             memberSkillTagRepository.save(new MemberSkillTag(member, skillTag));
         }
     }
 
     private void replaceConsultingTags(Member member, List<String> names) {
-        memberConsultingTagRepository.deleteAllByMemberId(member.getId());
+        memberConsultingTagRepository.deleteAllByMember_Id(member.getId());
+        em.flush();
+
         if (names == null) return;
 
+        Set<String> distinct = new HashSet<>();
         for (String raw : names) {
             if (raw == null) continue;
-            String name = raw.trim();
+            String name = raw.trim().toUpperCase();
             if (name.isBlank()) continue;
+            distinct.add(name);
+        }
 
+        for (String name : distinct) {
             ConsultingTag tag;
             try {
                 tag = ConsultingTag.valueOf(name);
@@ -170,10 +204,13 @@ public class MyProfileService {
                     "상담 태그 형식이 올바르지 않습니다: " + name
                 );
             }
-
             memberConsultingTagRepository.save(new MemberConsultingTag(member, tag));
         }
     }
+
+    /* =========================
+       공통
+       ========================= */
 
     private Member getMemberOrThrow(Long memberId) {
         return memberRepository.findById(memberId)

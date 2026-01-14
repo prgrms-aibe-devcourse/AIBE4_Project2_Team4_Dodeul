@@ -8,6 +8,13 @@
   <th:block layout:fragment="head">
     <title>DODEUL | 멘티 대시보드</title>
     <link rel="stylesheet" href="/css/mypage/dashboard.css">
+    <style>
+      #profileAvatar {
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+      }
+    </style>
   </th:block>
 </head>
 
@@ -23,7 +30,7 @@
   <!-- 상단 프로필 카드 -->
   <section class="card-custom" style="margin-bottom:16px;">
     <div class="dashboard-profile">
-      <div class="dashboard-avatar-lg"></div>
+      <div class="dashboard-avatar-lg" id="profileAvatar"></div>
       <div style="flex:1;">
         <div class="fw-bold" id="menteeName" style="margin-bottom:4px;">-</div>
         <div class="text-small" id="menteeDesc">내 프로필 정보를 불러오는 중…</div>
@@ -32,12 +39,11 @@
     </div>
   </section>
 
-  <!-- 상담 현황 요약 (3칸 고정: 대기중/진행중/완료) -->
+  <!-- 상담 현황 요약 -->
   <section style="margin-bottom:16px;">
     <div class="fw-bold" style="margin-bottom:10px;">상담 현황 요약</div>
 
     <div class="dashboard-summary-grid">
-      <!-- 대기중(신청중) -->
       <div class="card-custom" style="margin:0; position:relative;">
         <div class="text-small">대기중 상담</div>
         <div class="dashboard-summary-value">
@@ -47,7 +53,6 @@
         <a class="text-small" style="position:absolute; right:16px; bottom:16px;" href="/mentee/sessions">상담 내역 보기 →</a>
       </div>
 
-      <!-- 진행중(승인됨=진행중) -->
       <div class="card-custom" style="margin:0; position:relative;">
         <div class="text-small">진행중 상담</div>
         <div class="dashboard-summary-value">
@@ -57,7 +62,6 @@
         <a class="text-small" style="position:absolute; right:16px; bottom:16px;" href="/mentee/sessions">상담 내역 보기 →</a>
       </div>
 
-      <!-- 완료 -->
       <div class="card-custom" style="margin:0; position:relative;">
         <div class="text-small">완료된 상담</div>
         <div class="dashboard-summary-value">
@@ -79,7 +83,7 @@
     </div>
   </section>
 
-  <!-- 최근 상담 내역(= 완료된 상담 최근 3개로 바꿀 예정) -->
+  <!-- 최근 상담 내역 -->
   <section style="margin-bottom:16px;">
     <div class="fw-bold" style="margin-bottom:10px;">최근 상담 내역</div>
     <div class="card-custom dashboard-list" id="recentList" style="margin:0;">
@@ -104,9 +108,6 @@
 
 <th:block layout:fragment="script">
   <script>
-    // =========================
-    // Team standard: CommonResponse + unified fetch
-    // =========================
     async function apiRequest(url, options = {}) {
       const res = await fetch(url, {
         credentials: 'same-origin',
@@ -115,7 +116,6 @@
       });
 
       const json = await res.json().catch(() => null);
-
       const code = json?.code ?? res.status;
       const message = json?.message ?? `요청 실패(${res.status})`;
 
@@ -129,14 +129,12 @@
         location.href = '/';
         throw new Error('FORBIDDEN');
       }
-
       if (!res.ok || (typeof code === 'number' && code >= 400)) {
         const err = new Error(message);
         err.code = code;
         err.payload = json;
         throw err;
       }
-
       return json;
     }
 
@@ -147,6 +145,18 @@
         .replaceAll('>', '&gt;')
         .replaceAll('"', '&quot;')
         .replaceAll("'", "&#039;");
+    }
+
+    function setAvatar(url) {
+      const el = document.getElementById('profileAvatar');
+      if (!el) return;
+
+      if (url) {
+        const cacheBusted = url + (url.includes('?') ? '&' : '?') + 't=' + Date.now();
+        el.style.backgroundImage = `url(${cacheBusted})`;
+      } else {
+        el.style.backgroundImage = 'none';
+      }
     }
 
     function formatDateTime(v) {
@@ -186,49 +196,23 @@
       const err = document.getElementById('dashboardError');
 
       try {
-        const json = await apiRequest('/api/mypage/dashboard');
-        const data = json.data || {};
-
-        document.getElementById('menteeName').textContent = data.nickname ? `${data.nickname} 멘티` : '멘티';
-
-        // (선택) 아래 필드는 dashboard 응답에 없을 수 있으니 fallback 유지
-        const desiredJob = data.desiredJobName ?? '-';
-        const interests = (data.interestConsultings && data.interestConsultings.length)
-          ? data.interestConsultings.join(', ')
-          : '-';
-        document.getElementById('menteeDesc').textContent = `${desiredJob} / ${interests}`;
+        const dashJson = await apiRequest('/api/mypage/dashboard');
+        const dash = dashJson.data || {};
 
         document.getElementById('dashboardSubtitle').textContent = '멘티님의 상담 현황을 확인해보세요.';
 
-        // summary: scheduled(=WAITING), ongoing(=MATCHED), completed(=COMPLETED)
-        document.getElementById('sumScheduled').textContent = data.summary?.scheduled ?? '-';
-        document.getElementById('sumOngoing').textContent = data.summary?.ongoing ?? '-';
-        document.getElementById('sumCompleted').textContent = data.summary?.completed ?? '-';
+        document.getElementById('sumScheduled').textContent = dash.summary?.scheduled ?? '-';
+        document.getElementById('sumOngoing').textContent = dash.summary?.ongoing ?? '-';
+        document.getElementById('sumCompleted').textContent = dash.summary?.completed ?? '-';
 
-        const upcoming = data.upcomingSessions || [];
+        const upcoming = dash.upcomingSessions || [];
+        renderRows(document.getElementById('ongoingList'), upcoming.slice(0, 2), '진행중인 상담이 없습니다.', '상담 내역', () => `/mentee/sessions`);
 
-        renderRows(
-          document.getElementById('ongoingList'),
-          upcoming.slice(0, 2),
-          '진행중인 상담이 없습니다.',
-          '상담 내역',
-          () => `/mentee/sessions`
-        );
+        const completedRecentSessions = dash.completedRecentSessions || [];
+        renderRows(document.getElementById('recentList'), completedRecentSessions, '최근 완료된 상담 내역이 없습니다.', '상담 내역 조회', () => `/mentee/sessions`);
 
-        const completedRecentSessions = data.completedRecentSessions || [];
-
-        renderRows(
-          document.getElementById('recentList'),
-          completedRecentSessions,
-          '최근 완료된 상담 내역이 없습니다.',
-          '상담 내역 조회',
-          () => `/mentee/sessions`
-        );
-
-        // 최근 스크랩 글: 현재는 mock 1개 (추후 API 필드로 교체)
         const scrapEl = document.getElementById('scrapBox');
         const mockScrap = {title: '멘토 추천 기능 정리 글', href: '/board/posts'};
-
         scrapEl.innerHTML = `
           <div class="dashboard-row">
             <div>
@@ -240,6 +224,19 @@
             </div>
           </div>
         `;
+
+        const profileRes = await fetch('/api/mypage/mentee/profile', {credentials: 'same-origin'});
+        const profileJson = await profileRes.json().catch(() => null);
+        if (profileRes.ok) {
+          const p = profileJson?.data || {};
+          document.getElementById('menteeName').textContent = p.nickname ? `${p.nickname} 멘티` : '멘티';
+
+          const job = p.job ?? '-';
+          const fields = (p.consultingTags && p.consultingTags.length) ? p.consultingTags.join(', ') : '-';
+          document.getElementById('menteeDesc').textContent = `${job} / ${fields}`;
+
+          setAvatar(p.profileUrl);
+        }
       } catch (e) {
         console.error(e);
         err.textContent = e?.message ?? '서버와 통신할 수 없습니다.';
