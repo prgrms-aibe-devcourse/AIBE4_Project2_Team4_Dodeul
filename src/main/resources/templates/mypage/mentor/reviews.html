@@ -2,11 +2,11 @@
 <html lang="ko"
       xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
-      layout:decorate="~{common/layout/mentee}">
+      layout:decorate="~{common/layout/mentor}">
 
 <head>
   <th:block layout:fragment="head">
-    <title>DODEUL | 내가 쓴 후기</title>
+    <title>DODEUL | 받은 후기 관리</title>
     <link rel="stylesheet" href="/css/mypage/dashboard.css">
     <style>
       .cursor-pointer {
@@ -37,8 +37,8 @@
 <div layout:fragment="page">
 
   <div class="dashboard-header">
-    <h2 class="fw-bold" style="margin-bottom:8px;">📝 내가 쓴 후기</h2>
-    <p class="text-small" style="margin-bottom:16px;">상담 후 작성한 소중한 후기 목록입니다.</p>
+    <h2 class="fw-bold" style="margin-bottom:8px;">🌟 받은 후기 관리</h2>
+    <p class="text-small" style="margin-bottom:16px;">멘티들이 남겨준 소중한 피드백과 응원입니다.</p>
   </div>
 
   <section class="card-custom" style="margin-bottom:16px;">
@@ -57,10 +57,10 @@
       <div th:each="review : ${reviewResponses.content}"
            class="dashboard-row cursor-pointer review-item"
            th:data-recommended="${review.isRecommended}"
-           th:onclick="showReviewModal([[${review.mentorNickname}]], [[${review.content}]], [[${review.isRecommended}]])">
+           th:onclick="showReviewModal([[${review.menteeNickname}]], [[${review.content}]], [[${review.isRecommended}]])">
         <div>
           <div class="dashboard-row-title" style="margin-bottom: 0;">
-            <span th:text="${review.mentorNickname} + ' 멘토님'">멘토이름</span>
+            <span th:text="${review.menteeNickname} + ' 멘티님'">멘티이름</span>
           </div>
         </div>
         <div class="dashboard-row-right">
@@ -73,7 +73,7 @@
       </div>
 
       <div th:if="${reviewResponses.isEmpty()}" class="dashboard-row">
-        <div class="text-small">작성한 후기가 없습니다.</div>
+        <div class="text-small">아직 도착한 후기가 없습니다.</div>
       </div>
     </div>
   </section>
@@ -82,20 +82,20 @@
     <ul class="pagination justify-content-center" style="gap: 5px;">
 
       <li class="page-item" th:classappend="${reviewResponses.first} ? 'disabled'">
-        <a class="page-link border-0" th:href="@{/mentee/reviews(page=${reviewResponses.number})}">&laquo;</a>
+        <a class="page-link border-0" th:href="@{/mentor/reviews(page=${reviewResponses.number})}">&laquo;</a>
       </li>
 
       <li th:each="pageNum : ${#numbers.sequence(0, reviewResponses.totalPages - 1)}"
           class="page-item"
-          th:classappend="${pageNum + 1 == reviewResponses.number} ? 'active'">
+          th:classappend="${pageNum == reviewResponses.number} ? 'active'">
         <a class="page-link border-0 rounded"
-           th:href="@{/mentee/reviews(page=${pageNum + 1})}"
+           th:href="@{/mentor/reviews(page=${pageNum + 1})}"
            th:text="${pageNum + 1}">1</a>
       </li>
 
       <li class="page-item" th:classappend="${reviewResponses.last} ? 'disabled'">
         <a class="page-link border-0"
-           th:href="@{/mentee/reviews(page=${reviewResponses.number + 2})}">&raquo;</a>
+           th:href="@{/mentor/reviews(page=${reviewResponses.number + 2})}">&raquo;</a>
       </li>
 
     </ul>
@@ -105,12 +105,12 @@
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content border-0 shadow">
         <div class="modal-header border-0 pb-0">
-          <h5 class="modal-title fw-bold">리뷰 상세</h5>
+          <h5 class="modal-title fw-bold">리뷰 상세 보기</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body py-4">
           <div class="mb-3">
-            <span class="text-secondary">대상 멘토: </span>
+            <span class="text-secondary">작성자: </span>
             <span id="mTarget" class="fw-bold"></span>
             <span id="mBadge" class="ms-2"></span>
           </div>
@@ -133,7 +133,7 @@
      * 상세 모달 표시
      */
     function showReviewModal(name, content, isRec) {
-      document.getElementById('mTarget').textContent = name;
+      document.getElementById('mTarget').textContent = name + " 멘티님";
       document.getElementById('mContent').textContent = content;
 
       const badgeArea = document.getElementById('mBadge');
@@ -148,7 +148,6 @@
      * 클라이언트 사이드 필터링 (현재 페이지 내 데이터 기준)
      */
     function filterReviews(type, btn) {
-      // 태그 활성화 상태 변경
       document.querySelectorAll('.tag--selectable').forEach(b => b.classList.remove('tag--active'));
       btn.classList.add('tag--active');
 
