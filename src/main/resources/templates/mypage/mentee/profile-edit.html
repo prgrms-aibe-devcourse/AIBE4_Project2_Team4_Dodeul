@@ -110,7 +110,7 @@
     (async function () {
       const err = document.getElementById('profileError');
       try {
-        const res = await fetch('/api/mypage/dashboard', {credentials: 'same-origin'});
+        const res = await fetch('/api/mypage/mentee/profile', {credentials: 'same-origin'});
         const json = await res.json().catch(() => null);
         if (!res.ok) {
           err.textContent = json?.message || '프로필 정보를 불러오지 못했습니다.';
@@ -120,18 +120,18 @@
         const data = json?.data || {};
         document.getElementById('menteeName').textContent = data.nickname ? `${data.nickname} 멘티` : '멘티';
 
-        const desiredJob = data.desiredJobName ?? data.job ?? '-';
-        const interests = (data.interestConsultings && data.interestConsultings.length)
-          ? data.interestConsultings.join(', ')
+        const desiredJob = data.job ?? '-';
+        const interests = (data.consultingTags && data.consultingTags.length)
+          ? data.consultingTags.join(', ')
           : '-';
         document.getElementById('menteeMeta').textContent = `희망 직무: ${desiredJob} · 관심 상담 분야: ${interests}`;
 
-        document.getElementById('desiredJobInput').value = data.desiredJobName ?? data.job ?? '';
-        document.getElementById('bioInput').value = data.bio ?? data.intro ?? '';
+        document.getElementById('desiredJobInput').value = data.job ?? '';
+        document.getElementById('bioInput').value = data.intro ?? '';
         document.getElementById('skillsInput').value =
           (data.skillTags && data.skillTags.length) ? data.skillTags.join(', ') : '';
         document.getElementById('interestsInput').value =
-          (data.interestConsultings && data.interestConsultings.length) ? data.interestConsultings.join(', ') : '';
+          (data.consultingTags && data.consultingTags.length) ? data.consultingTags.join(', ') : '';
 
       } catch (e) {
         console.error(e);

@@ -106,7 +106,7 @@
     (async function () {
       const err = document.getElementById('profileError');
       try {
-        const res = await fetch('/api/mypage/dashboard', {credentials: 'same-origin'});
+        const res = await fetch('/api/mypage/mentor/profile', {credentials: 'same-origin'});
         const json = await res.json().catch(() => null);
         if (!res.ok) {
           err.textContent = json?.message || '프로필 정보를 불러오지 못했습니다.';
@@ -116,17 +116,17 @@
         const data = json?.data || {};
         document.getElementById('mentorName').textContent = data.nickname ? `${data.nickname} 멘토` : '멘토';
 
-        const job = data.jobName ?? data.job ?? '-';
-        const fields = (data.consultingFields && data.consultingFields.length)
-          ? data.consultingFields.join(', ')
+        const job = data.job ?? '-';
+        const fields = (data.consultingTags && data.consultingTags.length)
+          ? data.consultingTags.join(', ')
           : '-';
         document.getElementById('mentorMeta').textContent = `${job} / ${fields}`;
 
-        document.getElementById('bioInput').value = data.bio ?? data.intro ?? '';
+        document.getElementById('bioInput').value = data.intro ?? '';
         document.getElementById('skillsInput').value =
           (data.skillTags && data.skillTags.length) ? data.skillTags.join(', ') : '';
         document.getElementById('consultingsInput').value =
-          (data.consultingFields && data.consultingFields.length) ? data.consultingFields.join(', ') : '';
+          (data.consultingTags && data.consultingTags.length) ? data.consultingTags.join(', ') : '';
 
       } catch (e) {
         console.error(e);
