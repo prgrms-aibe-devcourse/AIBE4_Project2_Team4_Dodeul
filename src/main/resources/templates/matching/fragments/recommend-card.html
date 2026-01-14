@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<div th:fragment="recommendCard(mentor)"
+     class="card-custom mentor-card-custom h-100 d-flex flex-column position-relative text-center">
+
+  <div class="match-score-badge">
+    매칭 적합도 <span th:text="${mentor.matchScore}">95</span>점
+  </div>
+
+  <div class="mentor-card-header mt-4 d-flex flex-column align-items-center justify-content-center w-100">
+    <img th:src="${mentor.profileUrl != null ? mentor.profileUrl : '/images/default-profile.png'}"
+         th:alt="${mentor.nickname}"
+         class="mentor-card-avatar mb-3"
+         style="margin-right: 0;">
+
+    <div style="min-width: 0;">
+      <h3 class="mentor-card-title justify-content-center d-flex"
+          th:title="${mentor.nickname}"
+          th:text="${mentor.nickname}">닉네임</h3>
+      <p class="mentor-card-info" th:text="|${mentor.job} · ${mentor.careerYears}년차|">직무 · N년차</p>
+    </div>
+  </div>
+
+  <div class="mentor-tags mb-3 flex-grow-1 justify-content-center w-100">
+        <span th:each="skill, iterStat : ${mentor.skillTags}"
+              th:if="${iterStat.index < 3}"
+              class="tag tag--read-only mentor-tag-small mb-1"
+              th:text="${skill}">Skill</span>
+  </div>
+
+  <div class="mentor-stats d-flex justify-content-center gap-3 mb-3 text-small w-100"
+       style="border-top: none; padding-top: 0.5rem;"> <span class="stat-item" title="추천 리뷰 수">
+            <i class="bi bi-chat-square-text me-1"></i>
+            <span th:text="${mentor.recommendedReviewCount}">0</span>
+        </span>
+    <span class="stat-item" title="진행한 상담">
+            <i class="bi bi-people me-1"></i>
+            <span th:text="${mentor.completedMatchingCount}">0</span>회
+        </span>
+    <span class="stat-item" title="응답률">
+            <i class="bi bi-lightning-charge me-1"></i>
+            <span th:text="${mentor.responseRate}">0</span>%
+        </span>
+  </div>
+
+  <button class="btn-primary-custom mentor-card-btn w-100 mt-auto"
+          th:onclick="|location.href='@{/consulting/request(mentorId=${mentor.mentorId})}'|">
+    이 멘토에게 상담 신청하기
+  </button>
+
+</div>
+</html>
