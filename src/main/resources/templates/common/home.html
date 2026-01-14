@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="ko"
-      xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{common/layout/base}">
 
@@ -20,11 +19,34 @@
     </p>
 
     <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-      <a class="btn-primary-custom" th:href="@{/consulting-applications/form}">상담 신청하기</a>
+      <button type="button" class="btn-primary-custom" onclick="checkAvailability()">
+        상담 신청하기
+      </button>
     </div>
 
   </div>
 </section>
+
+<th:block layout:fragment="script">
+  <script>
+    // 매칭 가능 여부 확인 후 상담신청서 작성 페이지로 리다이렉트
+    function checkAvailability() {
+      fetch(`/api/matchings/availability`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.code >= 200 && data.code < 300) {
+            location.href = `/consulting-applications/form`;
+          } else {
+            showCommonModal(data.message || '현재 상담 신청이 불가능합니다.');
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          showCommonModal('서버 통신 중 오류가 발생했습니다.');
+        });
+    }
+  </script>
+</th:block>
 </body>
 </html>
 <!--// 106번 재커밋-->

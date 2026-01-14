@@ -69,7 +69,7 @@
       </div>
     </div>
 
-    <form th:action="${formActionUrl}" th:object="${request}" method="post">
+    <form th:action="${formActionUrl}" th:object="${request}" method="post" enctype="multipart/form-data">
 
       <div class="mb-5">
         <h4 class="fw-bold mb-2">카테고리 선택</h4>
@@ -103,13 +103,13 @@
       </div>
 
       <div class="mb-4">
-        <label class="fw-bold mb-2">상담 제목</label>
+        <label class="fw-bold mb-2">상담 제목 （필수）</label>
         <input type="text" class="form-control p-3" th:field="*{title}"
                placeholder="멘토링 상담 제목을 입력하세요" required>
       </div>
 
       <div class="mb-4">
-        <label class="fw-bold mb-2">상담 내용</label>
+        <label class="fw-bold mb-2">상담 내용 （필수）</label>
         <textarea id="content" class="form-control p-3" th:field="*{content}" rows="6"
                   placeholder="상담 받고 싶은 내용과 목표를 상세하게 작성해주세요."
                   required oninput="updateCharCount(this)"></textarea>
@@ -117,15 +117,25 @@
       </div>
 
       <div class="mb-4">
-        <label class="fw-bold mb-2">스킬 태그</label>
+        <label class="fw-bold mb-2">스킬 태그 （필수）</label>
         <input type="text" class="form-control p-3" th:field="*{techTags}"
                placeholder="예: Java, React, PM (쉼표로 구분)">
       </div>
 
       <div class="mb-5">
-        <label class="fw-bold mb-2">첨부파일</label>
-        <input type="text" class="form-control" th:field="*{fileUrl}"
-               placeholder="파일 URL을 입력하세요">
+        <label class="fw-bold mb-2">첨부파일 （선택）</label>
+
+        <input type="file" id="file" name="file"
+               class="form-control"
+               th:classappend="${#fields.hasErrors('file')} ? 'is-invalid'"
+               accept=".jpg,.jpeg,.png,.gif,.pdf,.txt,.ppt,.pptx"
+               onchange="validateFile(this)">
+
+        <div class="form-text text-muted small">이미지, PDF, PPT 등 최대 10MB까지 첨부 가능합니다.</div>
+
+        <div class="invalid-feedback" th:if="${#fields.hasErrors('file')}" th:errors="*{file}">
+          파일 관련 에러 메시지가 여기에 표시됩니다.
+        </div>
       </div>
 
       <hr class="my-5">
@@ -180,10 +190,41 @@
   </div>
 
   <script th:inline="javascript">
+
+    /* [추가] 서버에서 보낸 에러 메시지가 있으면 경고창 띄우기 */
+    /*<![CDATA[*/
+    const errorMessage = [[${errorMessage}]];
+    if (errorMessage) {
+      alert(errorMessage);
+    }
+    /*]]>*/
+
     // 글자수 업데이트 함수
     function updateCharCount(textarea) {
       const currentLength = textarea.value.length;
       document.getElementById('charCount').textContent = currentLength + '/1000';
+    }
+
+    // [추가] 파일 유효성 검사 (크기 및 확장자)
+    function validateFile(input) {
+      const file = input.files[0];
+      if (!file) return; // 파일 선택 취소 시 중단
+
+      // 1. 용량 제한 (10MB) - 여기 수정됨
+      const maxSize = 10 * 1024 * 1024; // 10MB
+      if (file.size > maxSize) {
+        alert("파일 크기는 10MB를 초과할 수 없습니다.");
+        input.value = ""; // 선택된 파일 초기화
+        return;
+      }
+
+      // 2. 확장자 제한 (보안 강화)
+      const allowedExtensions = /(\.jpg|\.jpeg|\.png|\.gif|\.pdf|\.txt|\.ppt|\.pptx)$/i;
+      if (!allowedExtensions.exec(file.name)) {
+        alert("허용되지 않는 파일 형식입니다.\n(이미지, PDF, TXT, PPT 파일만 가능)");
+        input.value = ""; // 선택된 파일 초기화
+        return;
+      }
     }
 
     // 1. AI 생성 요청
@@ -260,4 +301,4 @@
 </section>
 </body>
 </html>
-<!--// 106번 재커밋-->
+

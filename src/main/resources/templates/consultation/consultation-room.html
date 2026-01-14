@@ -87,9 +87,53 @@
         </div>
       </div>
 
-      <div class="col-lg-4">...</div>
+      <div class="col-lg-4">
+      </div>
     </div>
   </th:block>
+
+  <div class="modal fade" id="exitModal" tabindex="-1" aria-labelledby="exitModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow">
+
+        <div class="modal-header border-0 pb-0">
+          <h5 class="modal-title fw-bold" id="exitModalLabel">상담을 종료하시겠습니까?</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <th:block th:if="${consultationRoomDto.currentMemberId == consultationRoomDto.menteeId}">
+          <div class="modal-body py-4">
+            <p class="text-secondary mb-0">
+              상담을 종료하면 더 이상 메시지를 보낼 수 없습니다.<br>
+              상담은 만족스러우셨나요? <strong>리뷰를 남겨주세요!</strong>
+            </p>
+          </div>
+          <div class="modal-footer border-0 pt-0">
+            <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">취소</button>
+            <button type="button" id="mentee-exit-btn" class="btn btn-primary-custom px-4">
+              종료 및 리뷰 작성하기
+            </button>
+          </div>
+        </th:block>
+
+        <th:block th:unless="${consultationRoomDto.currentMemberId == consultationRoomDto.menteeId}">
+          <div class="modal-body py-4">
+            <p class="text-secondary mb-0">
+              상담을 종료하면 대화가 중단됩니다.<br>
+              정말로 종료하시겠습니까?
+            </p>
+          </div>
+          <div class="modal-footer border-0 pt-0">
+            <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">취소</button>
+            <button type="button" id="mentor-exit-btn" class="btn btn-danger px-4">
+              상담 종료하기
+            </button>
+          </div>
+        </th:block>
+
+      </div>
+    </div>
+  </div>
 </div>
 
 <th:block layout:fragment="script">
@@ -101,10 +145,18 @@
       const chatMessages = document.getElementById('chatMessages');
       const textarea = document.querySelector('.chat-input');
       const sendBtn = document.getElementById('send-btn');
-      const exitBtn = document.getElementById('exit-btn');
+      const exitBtn = document.getElementById('exit-btn'); // 헤더의 나가기 버튼
       const loadingIndicator = document.getElementById('loadingIndicator');
 
+      // 모달 버튼 (멘티/멘토 분기)
+      const menteeExitBtn = document.getElementById('mentee-exit-btn');
+      const mentorExitBtn = document.getElementById('mentor-exit-btn');
+
+      const exitModalElement = document.getElementById('exitModal');
+      const exitModal = new bootstrap.Modal(exitModalElement);
+
       const roomId = [[${consultationRoomDto.consultationRoomId}]];
+      const matchingId = [[${consultationRoomDto.matchingId}]]; // 리뷰 페이지 이동용
       const currentMemberId = [[${consultationRoomDto.currentMemberId}]];
       const roomStatus = [[${consultationRoomDto.roomStatus.name()}]];
 
@@ -113,7 +165,7 @@
       let lastMessageId = null;
       let stompClient = null;
 
-      // 초기 UI 설정 및 소켓 연결
+      // 초기 설정
       if (roomStatus === 'CLOSED') {
         hideChatInput();
       } else {
@@ -125,20 +177,43 @@
         updateCursor();
       }
 
-      // 이벤트 리스너 등록
-      if (exitBtn) exitBtn.addEventListener('click', closeChat);
+      // 이벤트 핸들러 연결
+      if (exitBtn) exitBtn.addEventListener('click', () => exitModal.show());
       if (sendBtn) sendBtn.addEventListener('click', sendMessage);
+
       textarea.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
           e.preventDefault();
           sendMessage();
         }
       });
+
       chatMessages.addEventListener('scroll', () => {
         if (chatMessages.scrollTop === 0 && hasNext && !isFetching) fetchPreviousMessages();
       });
 
-      // --- 핵심 함수 정의 ---
+      // [핵심 로직] 멘티 버튼: 종료 후 리뷰 페이지 이동
+      if (menteeExitBtn) {
+        menteeExitBtn.addEventListener('click', async () => {
+          const success = await requestCloseRoom();
+          if (success) {
+            location.href = `/reviews/new/${matchingId}`;
+          }
+        });
+      }
+
+      // [핵심 로직] 멘토 버튼: 종료 후 목록 이동
+      if (mentorExitBtn) {
+        mentorExitBtn.addEventListener('click', async () => {
+          const success = await requestCloseRoom();
+          if (success) {
+            alert("상담이 종료되었습니다.");
+            location.href = '/mentor/dashboard';
+          }
+        });
+      }
+
+      // --- 기능 함수들 ---
 
       function connectWebSocket() {
         const socket = new SockJS('/ws');
@@ -147,21 +222,49 @@
           stompClient.subscribe('/topic/room/' + roomId, function (response) {
             const msg = JSON.parse(response.body);
             appendMessage(msg);
-            // 실시간 종료 메시지 수신 시 소켓 해제
             if (msg.type === 'SYSTEM' && msg.content.includes("종료")) handleRoomClosed();
           });
         });
       }
 
-      async function closeChat() {
-        if (!confirm("상담을 종료하시겠습니까?\n종료 후에는 메시지를 보낼 수 없습니다.")) return;
+// --- [수정된 함수] 종료 요청 처리 ---
+      async function requestCloseRoom() {
         try {
-          const response = await fetch(`/api/consultations/room/${roomId}/close`, { method: 'POST' });
+          const response = await fetch(`/api/consultations/room/${roomId}/close`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+          });
+
+          // 1. 정상 종료 (200 OK)
           if (response.ok) {
-            alert("상담이 종료되었습니다.");
             handleRoomClosed();
+            exitModal.hide();
+            return true;
           }
-        } catch (error) { console.error("종료 요청 실패:", error); }
+
+          // 2. 에러 응답 처리
+          const result = await response.json();
+
+          // [핵심] 409 Conflict (이미 종료됨) 에러가 발생했는지 확인
+          // 백엔드에서 설정한 HttpStatus.CONFLICT가 409입니다.
+          // result.code가 'RESOURCE_CONFLICT' 인지 확인 (CommonResponse 구조에 따라 다를 수 있음)
+          if (response.status === 409 || result.code === 'RESOURCE_CONFLICT' || result.message.includes('이미 종료')) {
+            console.log("이미 종료된 상담방입니다. (성공 처리)");
+
+            handleRoomClosed(); // 웹소켓 해제 및 입력창 숨기기
+            exitModal.hide();   // 모달 닫기
+            return true;        // ★ 성공(true)으로 반환하여 다음 페이지 이동 로직 실행
+          }
+
+          // 3. 그 외 진짜 에러 (500 등)
+          alert(result.message || "상담 종료 처리에 실패했습니다.");
+          return false;
+
+        } catch (error) {
+          console.error("종료 요청 실패:", error);
+          alert("오류가 발생했습니다.");
+          return false;
+        }
       }
 
       function handleRoomClosed() {
@@ -195,7 +298,6 @@
         return wrapper;
       }
 
-      // 메시지 추가 및 페이징 함수 (기존 로직 유지)
       function appendMessage(msg) { chatMessages.appendChild(createMessageElement(msg)); chatMessages.scrollTop = chatMessages.scrollHeight; }
       function prependMessage(msg) { chatMessages.insertBefore(createMessageElement(msg), chatMessages.firstChild); }
       function updateCursor() { const first = chatMessages.querySelector('[data-id]'); if (first) lastMessageId = first.getAttribute('data-id'); }

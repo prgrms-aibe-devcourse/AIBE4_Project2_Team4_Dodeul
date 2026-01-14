@@ -62,7 +62,7 @@ public class OAuth2LoginSuccessHandler extends SavedRequestAwareAuthenticationSu
                     new UsernamePasswordAuthenticationToken(userDetails, null, authorities);
 
                 SecurityContextHolder.getContext().setAuthentication(newAuth);
-                
+
                 HttpSession session = request.getSession(false);
                 if (session != null) {
                     session.removeAttribute(AuthSessionKeys.SELECTED_ROLE);

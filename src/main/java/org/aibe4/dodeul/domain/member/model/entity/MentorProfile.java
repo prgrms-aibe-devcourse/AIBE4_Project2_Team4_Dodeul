@@ -1,13 +1,14 @@
 package org.aibe4.dodeul.domain.member.model.entity;
 
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
+import java.time.LocalDateTime;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -28,12 +29,6 @@ public class MentorProfile implements Profile {
     @Column(name = "career_years")
     private Integer careerYears;
 
-    @Column(name = "consultation_enabled", nullable = false)
-    private boolean consultationEnabled;
-
-    @Column(name = "response_rate", nullable = false)
-    private Double responseRate = 0.0;
-
     @Column(name = "profile_url", columnDefinition = "TEXT")
     private String profileUrl;
 
@@ -42,6 +37,18 @@ public class MentorProfile implements Profile {
 
     @Column(name = "job", length = 50)
     private String job;
+
+    @Column(name = "consultation_enabled", nullable = false)
+    private boolean consultationEnabled;
+
+    @Column(name = "response_rate", nullable = false)
+    private Double responseRate = 0.0;
+
+    @Column(name = "recommend_count", nullable = false)
+    private Long recommendCount = 0L;
+
+    @Column(name = "completed_matching_count", nullable = false)
+    private Long completedMatchingCount = 0L;
 
     @CreatedDate
     @Column(name = "created_at", updatable = false)
@@ -55,15 +62,17 @@ public class MentorProfile implements Profile {
         MentorProfile profile = new MentorProfile();
         profile.member = member;
         profile.consultationEnabled = false;
+        profile.recommendCount = 0L;
+        profile.completedMatchingCount = 0L;
         return profile;
     }
 
     public void updateProfile(
-            String profileUrl,
-            String intro,
-            String job,
-            Integer careerYears,
-            boolean consultationEnabled) {
+        String profileUrl,
+        String intro,
+        String job,
+        Integer careerYears,
+        boolean consultationEnabled) {
         this.profileUrl = profileUrl;
         this.intro = intro;
         this.job = job;
@@ -73,5 +82,13 @@ public class MentorProfile implements Profile {
 
     public void updateResponseRate(double responseRate) {
         this.responseRate = responseRate;
+    }
+
+    public void increaseRecommendCount() {
+        this.recommendCount++;
+    }
+
+    public void increaseCompletedMatchingCount() {
+        this.completedMatchingCount++;
     }
 }

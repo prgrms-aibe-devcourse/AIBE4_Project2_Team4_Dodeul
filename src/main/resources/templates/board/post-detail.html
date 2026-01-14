@@ -3,6 +3,7 @@
 <html xmlns:th="http://www.thymeleaf.org" lang="ko">
 <head>
   <meta charset="UTF-8"/>
+  <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
   <title>게시글 상세</title>
   <link rel="stylesheet" href="/css/board/post-detail.css"/>
@@ -22,7 +23,13 @@
           <div class="header__spacer"></div>
 
           <div class="header__actions">
-            <button id="scrapBtn" class="iconbtn" type="button" aria-label="스크랩" aria-pressed="false">
+            <button
+              id="scrapBtn"
+              class="iconbtn"
+              type="button"
+              aria-label="스크랩"
+              aria-pressed="false"
+            >
               <span class="iconbtn__icon">🔖</span>
               <span id="scrapBtnCount" class="iconbtn__count">0</span>
             </button>
@@ -32,6 +39,25 @@
                 <span class="kpi__icon">👁</span>
                 <span id="viewCount">0</span>
               </span>
+            </div>
+
+            <div id="postMenuWrap" class="comment__menuWrap post-menu-wrap" style="display:none;">
+              <button id="postMenuBtn" class="comment__iconBtn" type="button" aria-label="게시글 메뉴">
+                <span class="comment__icon">⋮</span>
+              </button>
+
+              <div id="postMenu" class="comment__menu post-menu" style="display:none;">
+                <div class="comment__menuList">
+                  <button id="postEditBtn" type="button" class="comment__menuItem">수정</button>
+                  <button
+                    id="postDeleteBtn"
+                    type="button"
+                    class="comment__menuItem comment__menuItem--danger"
+                  >
+                    삭제
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -80,6 +106,23 @@
       </section>
     </article>
 
+    <section class="attachments" id="attachmentsSection" style="display: none">
+      <div class="attachments__head">
+        <div class="attachments__title">첨부파일</div>
+        <div class="attachments__count" id="attachmentsCount">0</div>
+      </div>
+
+      <div id="attachmentsList" class="attachments__list"></div>
+
+      <div id="attachmentsPreview" class="attachments__preview" style="display:none;">
+        <div class="attachments__previewHead">
+          <div id="previewTitle" class="attachments__previewTitle">미리보기</div>
+          <button id="previewCloseBtn" type="button" class="btn attachments__previewCloseBtn">닫기</button>
+        </div>
+        <div id="previewBody" class="attachments__previewBody"></div>
+      </div>
+    </section>
+
     <div th:replace="~{board/post-comment :: postCommentSection}"></div>
 
     <input type="hidden" id="postId" th:value="${postId}"/>
@@ -91,13 +134,26 @@
     const postIdEl = document.getElementById("postId");
     const postId = postIdEl ? postIdEl.value : "";
 
+    const SUPABASE_PUBLIC_BASE = "https://dnpcfxbsyccwbfnmlaaq.supabase.co/storage/v1/object/public";
+    const SUPABASE_BUCKET = "files";
+
     function pick(obj, path, fallback) {
       try {
-        const v = path.split(".").reduce((acc, key) => (acc == null ? null : acc[key]), obj);
+        const v = path
+          .split(".")
+          .reduce((acc, key) => (acc == null ? null : acc[key]), obj);
         return v ?? fallback;
       } catch (e) {
         return fallback;
       }
+    }
+
+    function firstArrayValue(post, paths) {
+      for (const p of paths) {
+        const v = pick(post, p, null);
+        if (Array.isArray(v)) return v;
+      }
+      return [];
     }
 
     function formatDate(value) {
@@ -175,6 +231,233 @@
       }
     }
 
+    function getExtFromName(name) {
+      if (!name) return "";
+      const i = String(name).lastIndexOf(".");
+      return i >= 0 ? String(name).slice(i + 1).toLowerCase() : "";
+    }
+
+    function guessTypeByExt(ext) {
+      if (!ext) return "";
+      if (ext === "pdf") return "application/pdf";
+      if (ext === "txt" || ext === "log" || ext === "md") return "text/plain";
+      if (ext === "png") return "image/png";
+      if (ext === "jpg" || ext === "jpeg") return "image/jpeg";
+      if (ext === "gif") return "image/gif";
+      if (ext === "webp") return "image/webp";
+      return "";
+    }
+
+    function buildPublicUrlFromPath(path) {
+      if (!path) return "";
+      const p = String(path).replace(/^\/+/, "");
+      if (p.startsWith("http://") || p.startsWith("https://")) return p;
+
+      const normalized = p.startsWith(SUPABASE_BUCKET + "/")
+        ? p.substring((SUPABASE_BUCKET + "/").length)
+        : p;
+
+      return SUPABASE_PUBLIC_BASE + "/" + SUPABASE_BUCKET + "/" + normalized;
+    }
+
+    function normalizeFile(a) {
+      const obj = a && typeof a === "object" ? a : {};
+
+      const rawUrl =
+        obj.fileUrl ??
+        obj.url ??
+        obj.downloadUrl ??
+        obj.publicUrl ??
+        obj.presignedUrl ??
+        obj.s3Url ??
+        "";
+
+      const rawPath =
+        obj.path ??
+        obj.filePath ??
+        obj.storagePath ??
+        obj.key ??
+        obj.objectKey ??
+        "";
+
+      const fileName =
+        obj.fileName ??
+        obj.originFileName ??
+        obj.originalName ??
+        obj.name ??
+        "첨부파일";
+
+      const contentTypeRaw = (obj.fileType ?? obj.contentType ?? obj.mimeType ?? "").toString();
+      const ext = getExtFromName(fileName);
+      const guessed = guessTypeByExt(ext);
+
+      const fileUrl = rawUrl
+        ? buildPublicUrlFromPath(rawUrl)
+        : rawPath
+          ? buildPublicUrlFromPath(rawPath)
+          : "";
+
+      const contentType = contentTypeRaw || guessed || "";
+
+      const fileSizeRaw = obj.fileSize ?? obj.size ?? obj.bytes ?? null;
+      const fileSize = fileSizeRaw == null ? null : Number(fileSizeRaw);
+
+      return {
+        fileUrl: String(fileUrl || ""),
+        fileName: String(fileName || "첨부파일"),
+        contentType: String(contentType || ""),
+        fileSize: Number.isFinite(fileSize) ? fileSize : null,
+        ext: ext,
+      };
+    }
+
+    function openPreview(file) {
+      const wrap = document.getElementById("attachmentsPreview");
+      const title = document.getElementById("previewTitle");
+      const body = document.getElementById("previewBody");
+      const closeBtn = document.getElementById("previewCloseBtn");
+      if (!wrap || !title || !body || !closeBtn) return;
+
+      title.textContent = "미리보기 · " + (file.fileName || "첨부파일");
+      body.innerHTML = "";
+      wrap.style.display = "block";
+
+      closeBtn.onclick = () => {
+        wrap.style.display = "none";
+        body.innerHTML = "";
+      };
+
+      const url = file.fileUrl;
+      const type = (file.contentType || guessTypeByExt(file.ext) || "").toLowerCase();
+
+      if (type.startsWith("image/")) {
+        const img = document.createElement("img");
+        img.src = url;
+        img.alt = file.fileName || "첨부파일";
+        img.className = "attachments__previewImage";
+        body.appendChild(img);
+        return;
+      }
+
+      if (type === "application/pdf" || file.ext === "pdf") {
+        const iframe = document.createElement("iframe");
+        iframe.src = url;
+        iframe.className = "attachments__previewFrame";
+        body.appendChild(iframe);
+        return;
+      }
+
+      if (type.startsWith("text/") || file.ext === "txt" || file.ext === "md" || file.ext === "log") {
+        const pre = document.createElement("pre");
+        pre.className = "attachments__previewText";
+        pre.textContent = "불러오는 중...";
+        body.appendChild(pre);
+
+        fetch(url, {method: "GET"})
+          .then((r) => (r.ok ? r.text() : Promise.reject(r)))
+          .then((text) => {
+            pre.textContent = text;
+          })
+          .catch(() => {
+            pre.textContent = "텍스트를 불러오지 못했습니다. (다운로드로 확인해주세요)";
+          });
+        return;
+      }
+
+      const p = document.createElement("div");
+      p.className = "attachments__previewUnsupported";
+      p.innerHTML = `
+        <div class="attachments__previewUnsupportedText">브라우저에서 미리보기를 지원하지 않는 형식입니다.</div>
+        <a class="attachments__previewLink" href="${url}" target="_blank" rel="noopener">파일 열기/다운로드</a>
+      `;
+      body.appendChild(p);
+    }
+
+    function renderAttachments(payload) {
+      const section = document.getElementById("attachmentsSection");
+      const list = document.getElementById("attachmentsList");
+      const countEl = document.getElementById("attachmentsCount");
+      const previewWrap = document.getElementById("attachmentsPreview");
+      const previewBody = document.getElementById("previewBody");
+      if (!section || !list || !countEl) return;
+
+      if (previewWrap && previewBody) {
+        previewWrap.style.display = "none";
+        previewBody.innerHTML = "";
+      }
+
+      const atts = firstArrayValue(payload, [
+        "files",
+        "data.files",
+        "attachments",
+        "commonFiles",
+        "boardAttachments",
+        "data.attachments",
+        "data.commonFiles",
+        "data.boardAttachments",
+      ]).map(normalizeFile);
+
+      const valid = atts.filter((x) => x.fileUrl);
+
+      if (valid.length === 0) {
+        section.style.display = "none";
+        list.innerHTML = "";
+        countEl.innerText = "0";
+        return;
+      }
+
+      section.style.display = "block";
+      countEl.innerText = String(valid.length);
+      list.innerHTML = "";
+
+      valid.forEach((a) => {
+        const item = document.createElement("div");
+        item.className = "attachcard attachcard--clickable";
+
+        const icon =
+          (a.contentType && a.contentType.toLowerCase().startsWith("image/")) ||
+          a.ext === "png" ||
+          a.ext === "jpg" ||
+          a.ext === "jpeg" ||
+          a.ext === "gif" ||
+          a.ext === "webp"
+            ? "🖼"
+            : a.ext === "pdf"
+              ? "📕"
+              : a.ext === "txt" || a.ext === "md" || a.ext === "log"
+                ? "📝"
+                : "📄";
+
+        const sizeLabel =
+          a.fileSize == null
+            ? ""
+            : a.fileSize < 1024 * 1024
+              ? Math.round(a.fileSize / 1024) + "KB"
+              : (a.fileSize / (1024 * 1024)).toFixed(1) + "MB";
+
+        const meta =
+          (a.contentType ? a.contentType : "file") + (sizeLabel ? " · " + sizeLabel : "");
+
+        item.innerHTML = `
+          <div class="attachcard__icon">${icon}</div>
+          <div class="attachcard__body">
+            <div class="attachcard__name">${a.fileName}</div>
+            <div class="attachcard__meta">${meta}</div>
+          </div>
+          <div class="attachcard__go" role="button" aria-label="첨부파일 새창">↗</div>
+        `;
+
+        item.addEventListener("click", () => openPreview(a));
+
+        item.querySelector(".attachcard__go")?.addEventListener("click", (e) => {
+          e.stopPropagation();
+          window.open(a.fileUrl, "_blank", "noopener");
+        });
+
+        list.appendChild(item);
+      });
+    }
+
     function getApiData(res) {
       if (res && res.data != null) return res.data;
       return res;
@@ -190,7 +473,6 @@
         "Authorization",
         "authorization",
       ];
-
       for (const k of candidates) {
         const v1 = localStorage.getItem(k);
         if (v1) return v1;
@@ -208,25 +490,36 @@
       const token = String(raw).trim();
       if (!token) return headers;
 
-      headers["Authorization"] = token.toLowerCase().startsWith("bearer ") ? token : "Bearer " + token;
+      headers["Authorization"] = token.toLowerCase().startsWith("bearer ")
+        ? token
+        : "Bearer " + token;
       return headers;
     }
 
     function fetchJson(url, options) {
       const base = {
         credentials: "include",
-        headers: {Accept: "application/json", ...(options && options.headers ? options.headers : {})},
+        headers: {
+          Accept: "application/json",
+          ...(options && options.headers ? options.headers : {}),
+        },
       };
-      return fetch(url, {...base, ...(options || {})}).then((r) => (r.ok ? r.json() : Promise.reject(r)));
+      return fetch(url, {...base, ...(options || {})}).then((r) =>
+        r.ok ? r.json() : Promise.reject(r)
+      );
     }
 
     function closeAllMenus() {
-      document.querySelectorAll(".comment__menu").forEach((m) => (m.style.display = "none"));
+      document.querySelectorAll(".comment__menu, #postMenu").forEach((m) => (m.style.display = "none"));
     }
 
     document.addEventListener("click", (e) => {
       const t = e.target;
-      if (t && t.closest && t.closest(".comment__menuWrap")) {
+      if (
+        t &&
+        t.closest &&
+        (t.closest(".comment__menuWrap") || t.closest("#postMenuWrap"))
+      ) {
         return;
       }
       closeAllMenus();
@@ -271,17 +564,10 @@
 
     function toggleScrap() {
       const auth = buildAuthHeaders();
-      if (!auth || !auth.Authorization) {
-        alert("로그인이 필요합니다.");
-        return;
-      }
 
       fetchJson("/api/board/posts/" + postId + "/scrap", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...auth,
-        },
+        headers: {"Content-Type": "application/json", ...auth},
         body: JSON.stringify({}),
       })
         .then((res) => {
@@ -303,20 +589,22 @@
           setScrapUi(
             nextCount != null
               ? Number(nextCount)
-              : (toggled ? fallbackCount + 1 : Math.max(0, fallbackCount - 1)),
+              : toggled
+                ? fallbackCount + 1
+                : Math.max(0, fallbackCount - 1),
             nextScrapped != null ? !!nextScrapped : toggled
           );
         })
-        .catch(() => {
+        .catch((err) => {
+          if (err && (err.status === 401 || err.status === 403)) {
+            alert("로그인이 필요합니다.");
+            return;
+          }
           alert("스크랩 처리 중 오류가 발생했습니다.");
         });
     }
 
-    fetchJson("/api/board/posts/" + postId, {
-      headers: {
-        ...buildAuthHeaders(),
-      },
-    })
+    fetchJson("/api/board/posts/" + postId, {headers: {...buildAuthHeaders()}})
       .then((res) => {
         const post = getApiData(res);
 
@@ -333,13 +621,17 @@
           pick(post, "author.displayName", null) ??
           pick(post, "authorName", null) ??
           pick(post, "authorNickname", null) ??
+          pick(post, "authorDisplayName", null) ??
           pick(post, "nickname", null) ??
           "-";
         document.getElementById("author").innerText = authorName;
 
-        const consultingObj = pick(post, "consultingTagSummary", null) ?? pick(post, "consultingTag", null);
+        const consultingObj =
+          pick(post, "consultingTagSummary", null) ?? pick(post, "consultingTag", null);
         const consultingName =
-          (consultingObj && typeof consultingObj === "object" && (consultingObj.name ?? consultingObj.code)) ||
+          (consultingObj &&
+            typeof consultingObj === "object" &&
+            (consultingObj.name ?? consultingObj.code)) ||
           (typeof consultingObj === "string" ? consultingObj : "-");
         document.getElementById("consulting").innerText = consultingName;
 
@@ -365,18 +657,97 @@
 
         renderTags(post);
         window.__POST_DETAIL__.postStatus = String(status || "").toUpperCase();
+
+        const canEdit = pick(post, "canEdit", false) === true;
+        const canDelete = pick(post, "canDelete", false) === true;
+
+        const postMenuWrap = document.getElementById("postMenuWrap");
+        const postMenuBtn = document.getElementById("postMenuBtn");
+        const postMenu = document.getElementById("postMenu");
+        const postEditBtn = document.getElementById("postEditBtn");
+        const postDeleteBtn = document.getElementById("postDeleteBtn");
+
+        if (postMenuWrap && postMenuBtn && postMenu) {
+          if (canEdit || canDelete) {
+            postMenuWrap.style.display = "inline-flex";
+
+            if (!canEdit && postEditBtn) postEditBtn.style.display = "none";
+            if (!canDelete && postDeleteBtn) postDeleteBtn.style.display = "none";
+
+            postMenuBtn.addEventListener("click", (e) => {
+              e.stopPropagation();
+              const isOpen = postMenu.style.display === "block";
+              closeAllMenus();
+              postMenu.style.display = isOpen ? "none" : "block";
+
+              if (postMenu.style.display === "block") {
+                postMenu.style.top = "40px";
+                postMenu.style.bottom = "auto";
+                const rect = postMenu.getBoundingClientRect();
+                if (rect.bottom > window.innerHeight) {
+                  postMenu.style.top = "auto";
+                  postMenu.style.bottom = "40px";
+                }
+              }
+            });
+
+            if (postEditBtn) {
+              postEditBtn.addEventListener("click", () => {
+                closeAllMenus();
+                window.location.href = "/board/posts/" + postId + "/edit";
+              });
+            }
+
+            if (postDeleteBtn) {
+              postDeleteBtn.addEventListener("click", () => {
+                closeAllMenus();
+
+                if (!confirm("게시글을 삭제할까요?")) return;
+
+                const auth = buildAuthHeaders();
+
+                fetchJson("/api/board/posts/" + postId, {
+                  method: "DELETE",
+                  headers: {...auth},
+                })
+                  .then(() => (window.location.href = "/board/posts"))
+                  .catch((err) => {
+                    if (err && (err.status === 401 || err.status === 403)) {
+                      alert("로그인이 필요합니다.");
+                      return;
+                    }
+                    alert("게시글 삭제에 실패했습니다.");
+                  });
+              });
+            }
+          } else {
+            postMenuWrap.style.display = "none";
+          }
+        }
+
+        const filesInDetail = pick(post, "files", null);
+        if (filesInDetail && Array.isArray(filesInDetail) && filesInDetail.length > 0) {
+          renderAttachments({files: filesInDetail});
+        }
       })
+      .then(() =>
+        fetchJson("/api/board/posts/" + postId + "/files", {
+          headers: {...buildAuthHeaders()},
+        })
+          .then((res) => {
+            renderAttachments(getApiData(res));
+          })
+          .catch(() => {
+            renderAttachments({files: []});
+          })
+      )
       .then(() => loadComments())
       .catch(() => {
         document.getElementById("title").innerText = "상세 조회 중 오류가 발생했습니다.";
       });
 
     function loadComments() {
-      return fetchJson("/api/board/posts/" + postId + "/comments", {
-        headers: {
-          ...buildAuthHeaders(),
-        },
-      })
+      return fetchJson("/api/board/posts/" + postId + "/comments", {headers: {...buildAuthHeaders()}})
         .then((res) => {
           const data = getApiData(res);
           const acceptedId = pick(data, "acceptedCommentId", null);
@@ -439,9 +810,7 @@
 
       const item = document.createElement("article");
       item.className = "comment";
-      if (isAccepted) {
-        item.classList.add("comment--accepted");
-      }
+      if (isAccepted) item.classList.add("comment--accepted");
       item.dataset.commentId = String(commentId || "");
 
       const header = document.createElement("div");
@@ -452,7 +821,7 @@
 
       const avatar = document.createElement("div");
       avatar.className = "comment__avatar";
-      avatar.textContent = (authorName && authorName.length > 0 ? authorName[0] : "👤");
+      avatar.textContent = authorName && authorName.length > 0 ? authorName[0] : "👤";
 
       const meta = document.createElement("div");
       meta.className = "comment__meta";
@@ -500,9 +869,7 @@
       likeBtn.addEventListener("click", () => {
         fetchJson("/api/board/comments/" + commentId + "/likes/toggle", {
           method: "POST",
-          headers: {
-            ...buildAuthHeaders(),
-          },
+          headers: {...buildAuthHeaders()},
         })
           .then(() => loadComments())
           .catch(() => alert("좋아요 처리 중 오류가 발생했습니다."));
@@ -623,7 +990,6 @@
     function openEdit(commentEl, commentId, currentContent) {
       const body = commentEl.querySelector(".comment__body");
       if (!body) return;
-
       if (commentEl.querySelector(".comment__editor")) return;
 
       const editor = document.createElement("div");
@@ -659,10 +1025,7 @@
 
         fetchJson("/api/board/comments/" + commentId, {
           method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            ...buildAuthHeaders(),
-          },
+          headers: {"Content-Type": "application/json", ...buildAuthHeaders()},
           body: JSON.stringify({content: next}),
         })
           .then(() => loadComments())
@@ -710,10 +1073,7 @@
 
         fetchJson("/api/board/posts/" + postId + "/comments", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...buildAuthHeaders(),
-          },
+          headers: {"Content-Type": "application/json", ...buildAuthHeaders()},
           body: JSON.stringify({content: content, parentCommentId: parentCommentId}),
         })
           .then(() => loadComments())
@@ -733,9 +1093,7 @@
 
       fetchJson("/api/board/comments/" + commentId, {
         method: "DELETE",
-        headers: {
-          ...buildAuthHeaders(),
-        },
+        headers: {...buildAuthHeaders()},
       })
         .then(() => loadComments())
         .catch(() => alert("댓글 삭제에 실패했습니다."));
@@ -753,19 +1111,14 @@
 
       fetchJson("/api/board/posts/" + postId + "/comments", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...buildAuthHeaders(),
-        },
+        headers: {"Content-Type": "application/json", ...buildAuthHeaders()},
         body: JSON.stringify({content: content, parentCommentId: null}),
       })
         .then(() => {
           textarea.value = "";
           return loadComments();
         })
-        .catch(() => {
-          alert("댓글 작성에 실패했습니다.");
-        });
+        .catch(() => alert("댓글 작성에 실패했습니다."));
     }
 
     function acceptComment(commentId) {
@@ -773,10 +1126,7 @@
 
       fetchJson("/api/board/posts/" + postId + "/accept", {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          ...buildAuthHeaders(),
-        },
+        headers: {"Content-Type": "application/json", ...buildAuthHeaders()},
         body: JSON.stringify({commentId: commentId}),
       })
         .then((res) => {
@@ -784,14 +1134,12 @@
 
           window.__POST_DETAIL__.postStatus = "CLOSED";
           window.__POST_DETAIL__.acceptedCommentId =
-            (data && data.acceptedCommentId != null) ? data.acceptedCommentId : commentId;
+            data && data.acceptedCommentId != null ? data.acceptedCommentId : commentId;
 
           setStatusBadge("CLOSED");
           return loadComments();
         })
-        .catch(() => {
-          alert("채택 처리 중 오류가 발생했습니다.");
-        });
+        .catch(() => alert("채택 처리 중 오류가 발생했습니다."));
     }
   })();
 </script>

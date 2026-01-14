@@ -1,104 +1,78 @@
 // src/main/java/org/aibe4/dodeul/domain/board/model/dto/response/BoardPostDetailResponse.java
 package org.aibe4.dodeul.domain.board.model.dto.response;
 
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.Builder;
 import org.aibe4.dodeul.domain.board.model.entity.BoardPost;
-import org.aibe4.dodeul.domain.common.model.entity.SkillTag;
+import org.aibe4.dodeul.domain.board.model.enums.PostStatus;
+import org.aibe4.dodeul.domain.common.model.entity.CommonFile;
 import org.aibe4.dodeul.domain.consulting.model.enums.ConsultingTag;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Getter
-@AllArgsConstructor(access = AccessLevel.PRIVATE)
-public class BoardPostDetailResponse {
+@Builder
+public record BoardPostDetailResponse(
+    Long postId,
+    String title,
+    String content,
+    String authorDisplayName,
+    ConsultingTag consultingTag,
+    PostStatus status,
+    Boolean scrappedByMe,
+    Integer viewCount,
+    Integer scrapCount,
+    Integer commentCount,
+    LocalDateTime createdAt,
+    LocalDateTime updatedAt,
+    Boolean mine,
+    Boolean canEdit,
+    Boolean canDelete,
+    List<BoardPostFileResponse> files) {
 
-    private Long postId;
-    private Author author;
-    private ConsultingTagSummary consultingTag;
-
-    private String title;
-    private String content;
-    private String postStatus;
-
-    private long viewCount;
-    private long scrapCount;
-    private long commentCount;
-
-    private LocalDateTime lastCommentedAt;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
-
-    private boolean scrappedByMe;
-
-    private List<SkillTagSummary> skillTags;
-    private List<AttachmentSummary> attachments;
+    @Builder
+    public record BoardPostFileResponse(String fileName, String fileUrl, String contentType, Long size) {
+    }
 
     public static BoardPostDetailResponse from(
-        BoardPost post, String authorDisplayName, boolean scrappedByMe) {
-        ConsultingTag consulting = post.getBoardConsulting();
-        String consultingCode = consulting != null ? consulting.name() : null;
-        String consultingName = consulting != null ? consulting.name() : null;
+        BoardPost post,
+        String authorDisplayName,
+        boolean scrappedByMe,
+        boolean mine,
+        List<CommonFile> files) {
 
-        List<SkillTagSummary> tags = post.getSkillTags().stream().map(SkillTagSummary::from).toList();
+        List<BoardPostFileResponse> fileResponses =
+            files == null
+                ? List.of()
+                : files.stream()
+                .map(
+                    f ->
+                        BoardPostFileResponse.builder()
+                            .fileName(f.getOriginFileName())
+                            .fileUrl(f.getFileUrl())
+                            .contentType(f.getContentType())
+                            .size(f.getFileSize())
+                            .build())
+                .toList();
 
-        String displayName = (authorDisplayName == null || authorDisplayName.isBlank())
-            ? "작성자"
-            : authorDisplayName;
+        boolean deleted = post.getPostStatus() == PostStatus.DELETED;
 
-        return new BoardPostDetailResponse(
-            post.getId(),
-            new Author(displayName),
-            new ConsultingTagSummary(consultingCode, consultingName),
-            post.getTitle(),
-            post.getContent(),
-            post.getPostStatus().name(),
-            post.getViewCount() != null ? post.getViewCount().longValue() : 0L,
-            post.getScrapCount() != null ? post.getScrapCount().longValue() : 0L,
-            post.getCommentCount() != null ? post.getCommentCount().longValue() : 0L,
-            post.getLastCommentedAt(),
-            post.getCreatedAt(),
-            post.getUpdatedAt(),
-            scrappedByMe,
-            tags,
-            List.of() // 첨부파일은 후순위
-        );
-    }
-
-    @Getter
-    @AllArgsConstructor(access = AccessLevel.PRIVATE)
-    public static class Author {
-        private String displayName;
-    }
-
-    @Getter
-    @AllArgsConstructor(access = AccessLevel.PRIVATE)
-    public static class ConsultingTagSummary {
-        private String code;
-        private String name;
-    }
-
-    @Getter
-    @AllArgsConstructor(access = AccessLevel.PRIVATE)
-    public static class SkillTagSummary {
-        private Long id;
-        private String name;
-
-        public static SkillTagSummary from(SkillTag tag) {
-            return new SkillTagSummary(tag.getId(), tag.getName());
-        }
-    }
-
-    @Getter
-    @AllArgsConstructor(access = AccessLevel.PRIVATE)
-    public static class AttachmentSummary {
-        private Long id;
-        private String fileUrl;
-        private String fileName;
-        private String fileType;
-        private Long fileSize;
-        private LocalDateTime createdAt;
+        return BoardPostDetailResponse.builder()
+            .postId(post.getId())
+            .title(post.getTitle())
+            .content(post.getContent())
+            .authorDisplayName(authorDisplayName)
+            .consultingTag(post.getBoardConsulting())
+            .status(post.getPostStatus())
+            .scrappedByMe(scrappedByMe)
+            .viewCount(post.getViewCount())
+            .scrapCount(post.getScrapCount())
+            .commentCount(post.getCommentCount())
+            .createdAt(post.getCreatedAt())
+            .updatedAt(post.getUpdatedAt())
+            .mine(mine)
+            .canEdit(mine && !deleted)
+            .canDelete(mine && !deleted)
+            .files(fileResponses)
+            .build();
     }
 }

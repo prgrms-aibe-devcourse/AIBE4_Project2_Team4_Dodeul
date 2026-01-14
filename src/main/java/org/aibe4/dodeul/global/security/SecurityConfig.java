@@ -1,4 +1,4 @@
-// src/main/java/org/aibe4_dodeul/global/security/SecurityConfig.java
+// src/main/java/org/aibe4/dodeul/global/security/SecurityConfig.java
 package org.aibe4.dodeul.global.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -32,141 +32,154 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.cors(Customizer.withDefaults())
-            .csrf(csrf -> csrf.ignoringRequestMatchers(
-                "/api/**", "/h2-console/**", "/consulting-applications/**"
-            ))
-            .authorizeHttpRequests(auth -> auth
+            .csrf(
+                csrf ->
+                    csrf.ignoringRequestMatchers(
+                        "/api/**", "/h2-console/**", "/consulting-applications/**"))
+            .authorizeHttpRequests(
+                auth ->
+                    auth
+                        // 정적 리소스 및 인프라
+                        .requestMatchers(
+                            "/css/**",
+                            "/js/**",
+                            "/images/**",
+                            "/favicon.ico",
+                            "/error",
+                            "/error/**",
+                            "/h2-console/**",
+                            "/swagger-ui.html",
+                            "/swagger-ui/**",
+                            "/v3/api-docs/**",
+                            "/demo/**")
+                        .permitAll()
 
-                // 정적 리소스 및 인프라
-                .requestMatchers(
-                    "/css/**",
-                    "/js/**",
-                    "/images/**",
-                    "/favicon.ico",
-                    "/error", "/error/**",
-                    "/h2-console/**",
-                    "/swagger-ui.html",
-                    "/swagger-ui/**",
-                    "/v3/api-docs/**",
-                    "/demo/**"
-                ).permitAll()
+                        // 권한 우선 확인 구간 (permitAll보다 먼저 선언)
+                        .requestMatchers("/onboarding/nickname/**")
+                        .authenticated()
+                        .requestMatchers("/post-login")
+                        .authenticated()
 
-                // 권한 우선 확인
-                .requestMatchers("/onboarding/nickname/**").authenticated()
-                .requestMatchers("/post-login").authenticated()
+                        // 공개 비즈니스 로직
+                        .requestMatchers(
+                            "/",
+                            "/auth/**",
+                            "/oauth2/**",
+                            "/login/oauth2/**",
+                            "/api/auth/**",
+                            "/onboarding/**",
+                            "/api/onboarding/**",
+                            "/search/mentors/**",
+                            "/api/search/mentors/**")
+                        .permitAll()
 
-                // 공개 비즈니스 로직
-                .requestMatchers(
-                    "/",
-                    "/auth/**",
-                    "/oauth2/**",
-                    "/login/oauth2/**",
-                    "/api/auth/**",
-                    "/onboarding/**",
-                    "/api/onboarding/**",
-                    "/search/mentors/**",
-                    "/api/search/mentors/**"
-                ).permitAll()
+                        // 게시판 조회(GET) 공개 (목록/상세/댓글조회/첨부파일조회)
+                        .requestMatchers(
+                            HttpMethod.GET,
+                            "/api/board/posts",
+                            "/api/board/posts/*",
+                            "/api/board/posts/*/comments",
+                            "/api/board/posts/*/files",
+                            "/board/posts",
+                            "/board/posts/*")
+                        .permitAll()
 
-                // 공개 멘토 프로필
-                .requestMatchers(HttpMethod.GET, "/mentor/public/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/public/**").permitAll()
+                        // 파일 조회(GET) 공개: 상세 화면에서 /api/files?domain=... 으로 조회하는 경우 대응
+                        .requestMatchers(HttpMethod.GET, "/api/files")
+                        .permitAll()
 
-                // 게시판 조회(GET) 공개
-                .requestMatchers(
-                    HttpMethod.GET,
-                    "/api/board/posts",
-                    "/api/board/posts/*",
-                    "/api/board/posts/*/comments",
-                    "/api/board/posts/*/files",
-                    "/board/posts",
-                    "/board/posts/*"
-                ).permitAll()
+                        // 파일 업로드 API (인증 필요)
+                        .requestMatchers(HttpMethod.POST, "/api/files")
+                        .authenticated()
 
-                // 파일 조회(GET) 공개
-                .requestMatchers(HttpMethod.GET, "/api/files").permitAll()
+                        // 공개 멘토 프로필
+                        .requestMatchers(HttpMethod.GET, "/mentor/public/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/public/**").permitAll()
 
-                // 파일 업로드 API (인증 필요)
-                .requestMatchers(HttpMethod.POST, "/api/files").authenticated()
+                        // 멘토 전용 구간
+                        .requestMatchers(
+                            "/mentor/**",
+                            "/mypage/mentor/**",
+                            "/api/demo/role/mentor",
+                            "/api/mentor/**")
+                        .hasRole("MENTOR")
 
-                // 멘토 전용 구간
-                .requestMatchers(
-                    "/mentor/**",
-                    "/mypage/mentor/**",
-                    "/api/demo/role/mentor",
-                    "/api/mentor/**"
-                ).hasRole("MENTOR")
+                        // 상담 신청 관련 (상세조회, 수정, 삭제 포함)
+                        .requestMatchers("/consulting-applications/**")
+                        .authenticated()
 
-                // 상담 신청 관련
-                .requestMatchers("/consulting-applications/**").authenticated()
+                        // AI 초안 생성 API
+                        .requestMatchers("/api/ai/**")
+                        .authenticated()
 
-                // AI 초안 생성 API
-                .requestMatchers("/api/ai/**").authenticated()
+                        // 멘티 전용 구간
+                        .requestMatchers(
+                            "/mentee/**",
+                            "/mypage/mentee/**",
+                            "/matchings/**",
+                            "/api/demo/role/mentee",
+                            "/api/mentee/**")
+                        .hasRole("MENTEE")
 
-                // 멘티 전용 구간
-                .requestMatchers(
-                    "/mentee/**",
-                    "/mypage/mentee/**",
-                    "/matchings/**",
-                    "/api/demo/role/mentee",
-                    "/api/mentee/**"
-                ).hasRole("MENTEE")
+                        .anyRequest()
+                        .authenticated())
+            .sessionManagement(
+                session ->
+                    session
+                        .sessionFixation(sessionFixation -> sessionFixation.migrateSession())
+                        .invalidSessionUrl("/auth/login?expired"))
+            .formLogin(
+                form ->
+                    form.loginPage("/auth/login")
+                        .loginProcessingUrl("/auth/login")
+                        .usernameParameter("email")
+                        .passwordParameter("password")
+                        .defaultSuccessUrl("/post-login")
+                        .failureUrl("/auth/login?error")
+                        .permitAll())
+            .oauth2Login(
+                oauth ->
+                    oauth.loginPage("/auth/login")
+                        .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
+                        .successHandler(oAuth2LoginSuccessHandler))
+            .logout(
+                logout ->
+                    logout
+                        .logoutUrl("/logout")
+                        .invalidateHttpSession(true)
+                        .deleteCookies("JSESSIONID")
+                        .logoutSuccessUrl("/auth/login"))
+            .exceptionHandling(
+                handler ->
+                    handler
+                        .authenticationEntryPoint(
+                            (request, response, authException) -> {
+                                if (request.getRequestURI().startsWith("/api/")) {
+                                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                                    response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                                    response.setCharacterEncoding("UTF-8");
 
-                .anyRequest().authenticated()
-            )
-            .sessionManagement(session ->
-                session.sessionFixation(sessionFixation -> sessionFixation.migrateSession())
-                    .invalidSessionUrl("/auth/login?expired")
-            )
-            .formLogin(form ->
-                form.loginPage("/auth/login")
-                    .loginProcessingUrl("/auth/login")
-                    .usernameParameter("email")
-                    .passwordParameter("password")
-                    .defaultSuccessUrl("/post-login")
-                    .failureUrl("/auth/login?error")
-                    .permitAll()
-            )
+                                    CommonResponse<Void> errorResponse =
+                                        CommonResponse.fail(ErrorCode.UNAUTHORIZED_ACCESS);
+                                    response.getWriter().write(objectMapper.writeValueAsString(errorResponse));
+                                } else {
+                                    response.sendRedirect("/auth/login");
+                                }
+                            })
+                        .accessDeniedHandler(
+                            (request, response, accessDeniedException) -> {
+                                if (request.getRequestURI().startsWith("/api/")) {
+                                    response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                                    response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                                    response.setCharacterEncoding("UTF-8");
 
-            .oauth2Login(oauth ->
-                oauth.loginPage("/auth/login")
-                    .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
-                    .successHandler(oAuth2LoginSuccessHandler)
-            )
-            .logout(logout ->
-                logout.logoutUrl("/logout")
-                    .invalidateHttpSession(true)
-                    .deleteCookies("JSESSIONID")
-                    .logoutSuccessUrl("/auth/login")
-            )
-            .exceptionHandling(handler -> handler
-                .authenticationEntryPoint((request, response, authException) -> {
-                    if (request.getRequestURI().startsWith("/api/")) {
-                        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-                        response.setCharacterEncoding("UTF-8");
-
-                        CommonResponse<Void> errorResponse =
-                            CommonResponse.fail(ErrorCode.UNAUTHORIZED_ACCESS);
-                        response.getWriter().write(objectMapper.writeValueAsString(errorResponse));
-                    } else {
-                        response.sendRedirect("/auth/login");
-                    }
-                })
-                .accessDeniedHandler((request, response, accessDeniedException) -> {
-                    if (request.getRequestURI().startsWith("/api/")) {
-                        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-                        response.setCharacterEncoding("UTF-8");
-
-                        CommonResponse<Void> errorResponse =
-                            CommonResponse.fail(ErrorCode.ACCESS_DENIED);
-                        response.getWriter().write(objectMapper.writeValueAsString(errorResponse));
-                    } else {
-                        response.sendRedirect("/error/403");
-                    }
-                })
-            );
+                                    CommonResponse<Void> errorResponse =
+                                        CommonResponse.fail(ErrorCode.ACCESS_DENIED);
+                                    response.getWriter().write(objectMapper.writeValueAsString(errorResponse));
+                                } else {
+                                    response.sendRedirect("/error/403");
+                                }
+                            }));
 
         http.headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()));
         return http.build();
