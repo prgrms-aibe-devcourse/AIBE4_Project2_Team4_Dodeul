@@ -16,7 +16,10 @@
        th:classappend="${active=='dashboard'} ? 'active' : ''">대시보드</a>
 
     <a th:href="@{/mentor/sessions}"
-       th:classappend="${active=='sessions'} ? 'active' : ''">상담내역</a>
+       th:classappend="${active=='sessions'} ? 'active' : ''">상담 내역</a>
+
+    <a th:href="@{/mentor/reviews}"
+       th:classappend="${active=='reviews'} ? 'active' : ''">후기 내역</a>
 
     <a th:href="@{/mentor/scraps}"
        th:classappend="${active=='scraps'} ? 'active' : ''">나의 스크랩</a>
@@ -33,10 +36,10 @@
        th:classappend="${active=='dashboard'} ? 'active' : ''">대시보드</a>
 
     <a th:href="@{/mentee/sessions}"
-       th:classappend="${active=='sessions'} ? 'active' : ''">상담내역</a>
+       th:classappend="${active=='sessions'} ? 'active' : ''">상담 내역</a>
 
     <a th:href="@{/mentee/reviews}"
-       th:classappend="${active=='reviews'} ? 'active' : ''">후기관리</a>
+       th:classappend="${active=='reviews'} ? 'active' : ''">후기 관리</a>
 
     <a th:href="@{/mentee/scraps}"
        th:classappend="${active=='scraps'} ? 'active' : ''">나의 스크랩</a>
