@@ -19,7 +19,7 @@ public class ReviewApiController {
 
     @PostMapping("/{matchingId}")
     @PreAuthorize("@consultationGuard.isMenteeOfMatching(#matchingId, #userDetails.memberId)")
-    public CommonResponse<Void> saveReview(@PathVariable Long matchingId, @ModelAttribute ReviewRequest request, @AuthenticationPrincipal CustomUserDetails userDetails) {
+    public CommonResponse<Void> saveReview(@PathVariable Long matchingId, @RequestBody ReviewRequest request, @AuthenticationPrincipal CustomUserDetails userDetails) {
         reviewService.saveReview(matchingId, request);
 
         return CommonResponse.success(SuccessCode.CREATE_SUCCESS, null);

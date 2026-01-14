@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<div th:fragment="mentorSearch">
+
+  <link rel="stylesheet" th:href="@{/css/search/mentor-search.css}">
+
+  <div class="search-input-wrapper">
+    <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="11" cy="11" r="8"></circle>
+      <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+    </svg>
+    <input type="text" id="keyword" class="form-control-custom search-input"
+           placeholder="멘토 닉네임을 검색하세요"
+           onkeyup="if(event.key === 'Enter') searchMentors()">
+  </div>
+
+  <div class="filter-bar">
+    <div class="custom-dropdown" id="jobDropdown">
+      <button class="dropdown-btn" onclick="toggleDropdown('jobDropdown')">직무 (전체)</button>
+      <div class="dropdown-content">
+        <div class="chip-grid" id="jobOptions">
+          <button th:each="job : ${jobTags}" class="filter-chip" type="button" th:data-value="${job.name}"
+                  th:text="${job.name}" onclick="toggleFilter('jobs', this.getAttribute('data-value'))"></button>
+        </div>
+        <div class="dropdown-footer">한 직무 중복 선택 가능</div>
+      </div>
+    </div>
+
+    <div class="custom-dropdown" id="skillDropdown">
+      <button class="dropdown-btn" onclick="toggleDropdown('skillDropdown')">기술 스택 (전체)</button>
+      <div class="dropdown-content">
+        <div style="margin-bottom: 12px;">
+          <input type="text" placeholder="기술 스택 검색..." class="form-control-custom"
+                 style="width: 100%; height: 40px; font-size: 0.9rem;"
+                 onkeyup="filterChipsInDropdown(this, 'skillOptions')">
+        </div>
+        <div class="chip-grid" id="skillOptions">
+          <button th:each="skill : ${skillTags}" class="filter-chip" type="button" th:data-value="${skill}"
+                  th:text="${skill}" onclick="toggleFilter('skillTags', this.getAttribute('data-value'))"></button>
+        </div>
+        <div class="dropdown-footer">중복 선택 가능</div>
+      </div>
+    </div>
+
+    <div class="custom-dropdown" id="consultingDropdown">
+      <button class="dropdown-btn" onclick="toggleDropdown('consultingDropdown')">상담 유형 (전체)</button>
+      <div class="dropdown-content" style="min-width: 320px;">
+        <div class="chip-grid" id="consultingOptions">
+          <button th:each="tag : ${consultingTags}" class="filter-chip" type="button" th:data-value="${tag.name()}"
+                  th:text="${tag.name()}"
+                  onclick="toggleFilter('consultingTags', this.getAttribute('data-value'))"></button>
+        </div>
+      </div>
+    </div>
+
+    <label class="filter-checkbox-wrapper ms-2 d-flex align-items-center">
+      <input type="checkbox" id="onlyAvailable" onchange="searchMentors()">
+      <span class="fw-medium ms-2" style="font-size: 0.95rem;">바로 상담 가능한 멘토 보기</span>
+    </label>
+
+    <button class="btn-outline-custom d-flex align-items-center gap-2 ms-auto" onclick="resetFilters()"
+            style="padding: 0.5rem 1rem; color: var(--color-text-secondary); border-color: var(--color-border);">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+        <path d="M3 3v5h5"/>
+      </svg>
+      초기화
+    </button>
+  </div>
+
+  <div id="activeFilters" class="active-filters-area"></div>
+
+  <div class="list-header">
+    <h3 class="fw-bold" style="font-size: 1.25rem; margin: 0;">
+      전체 멘토 <span id="totalCount" style="color: var(--color-brand-primary);">0</span>명
+    </h3>
+    <div style="margin-left: auto;">
+      <label for="sortType" class="me-2 text-small">정렬:</label>
+      <select id="sortType" class="form-control-custom"
+              style="min-width: 120px; padding: 0.4rem 2rem 0.4rem 1rem; font-size: 0.9rem; display: inline-block;"
+              onchange="searchMentors()">
+        <option value="LATEST">최신순</option>
+        <option value="RECOMMEND">추천순</option>
+        <option value="MATCHING">상담 많은순</option>
+        <option value="RESPONSE">응답 빠른순</option>
+      </select>
+    </div>
+  </div>
+
+  <div id="loadingContainer" class="loading-container">
+    <div class="loading-spinner"></div>
+    <p class="text-small">멘토 리스트를 불러오고 있습니다...</p>
+  </div>
+
+  <div id="searchResultContainer">
+    <th:block th:if="${mentors != null}">
+      <th:block th:replace="~{search/fragments/mentor-list :: mentorList(${mentors})}"></th:block>
+    </th:block>
+  </div>
+
+  <script>
+    let currentFilters = {
+      keyword: '',
+      jobs: [],
+      skillTags: [],
+      consultingTags: [],
+      onlyAvailable: false,
+      sortType: 'LATEST',
+      page: 0,
+      size: 10
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // 결과 컨테이너가 비어있으면(SSR 데이터 없음) 첫 로딩 실행
+      const container = document.getElementById('searchResultContainer');
+      if (!container.children.length || container.innerHTML.trim() === "") {
+        searchMentors();
+      }
+
+      window.onclick = function (event) {
+        if (!event.target.matches('.dropdown-btn') && !event.target.closest('.dropdown-content')) {
+          closeAllDropdowns();
+        }
+      }
+    });
+
+    function toggleDropdown(id) {
+      const dropdownContent = document.getElementById(id).querySelector('.dropdown-content');
+      const isVisible = dropdownContent.classList.contains('show');
+      closeAllDropdowns();
+      if (!isVisible) dropdownContent.classList.add('show');
+    }
+
+    function closeAllDropdowns() {
+      document.querySelectorAll('.dropdown-content').forEach(el => el.classList.remove('show'));
+    }
+
+    function filterChipsInDropdown(input, containerId) {
+      const filter = input.value.toUpperCase();
+      const container = document.getElementById(containerId);
+      const buttons = container.getElementsByTagName('button');
+      for (let i = 0; i < buttons.length; i++) {
+        const txtValue = buttons[i].textContent || buttons[i].innerText;
+        buttons[i].style.display = txtValue.toUpperCase().indexOf(filter) > -1 ? "" : "none";
+      }
+    }
+
+    function toggleFilter(type, value) {
+      let list = getFilterList(type);
+      const index = list.indexOf(value);
+      if (index > -1) list.splice(index, 1);
+      else list.push(value);
+      syncVisuals();
+      searchMentors();
+    }
+
+    function removeFilter(type, value) {
+      let list = getFilterList(type);
+      const index = list.indexOf(value);
+      if (index > -1) {
+        list.splice(index, 1);
+        syncVisuals();
+        searchMentors();
+      }
+    }
+
+    function resetFilters() {
+      currentFilters = {
+        keyword: '', jobs: [], skillTags: [], consultingTags: [],
+        onlyAvailable: false, sortType: 'LATEST', page: 0, size: 10
+      };
+      document.getElementById('keyword').value = '';
+      document.getElementById('onlyAvailable').checked = false;
+      document.getElementById('sortType').value = 'LATEST';
+      syncVisuals();
+      searchMentors();
+    }
+
+    function getFilterList(type) {
+      if (type === 'jobs') return currentFilters.jobs;
+      if (type === 'skillTags') return currentFilters.skillTags;
+      if (type === 'consultingTags') return currentFilters.consultingTags;
+      return [];
+    }
+
+    function syncVisuals() {
+      document.querySelectorAll('.filter-chip').forEach(btn => btn.classList.remove('selected'));
+      currentFilters.jobs.forEach(v => highlightChip('jobOptions', v));
+      currentFilters.skillTags.forEach(v => highlightChip('skillOptions', v));
+      currentFilters.consultingTags.forEach(v => highlightChip('consultingOptions', v));
+      renderActiveTags();
+    }
+
+    function highlightChip(containerId, value) {
+      const container = document.getElementById(containerId);
+      const btn = container.querySelector(`button[data-value="${value}"]`);
+      if (btn) btn.classList.add('selected');
+    }
+
+    function renderActiveTags() {
+      const container = document.getElementById('activeFilters');
+      let html = '';
+      const createTag = (type, val) => `
+                <span class="tag tag--selectable tag--active" onclick="removeFilter('${type}', '${val}')">
+                  ${val}
+                </span>`;
+      currentFilters.jobs.forEach(v => html += createTag('jobs', v));
+      currentFilters.skillTags.forEach(v => html += createTag('skillTags', v));
+      currentFilters.consultingTags.forEach(v => html += createTag('consultingTags', v));
+      container.innerHTML = html;
+    }
+
+    /* 멘토 조회 및 HTML 반환 */
+    async function searchMentors(page = 0) {
+      currentFilters.page = page;
+      currentFilters.keyword = document.getElementById('keyword').value;
+      currentFilters.onlyAvailable = document.getElementById('onlyAvailable').checked;
+      currentFilters.sortType = document.getElementById('sortType').value;
+
+      const loadingEl = document.getElementById('loadingContainer');
+      const resultEl = document.getElementById('searchResultContainer');
+
+      loadingEl.style.display = 'block';
+      resultEl.style.opacity = '0.3';
+
+      const params = new URLSearchParams();
+      if (currentFilters.keyword) params.append('keyword', currentFilters.keyword);
+      if (currentFilters.onlyAvailable) params.append('onlyAvailable', 'true');
+      params.append('sortType', currentFilters.sortType);
+      params.append('page', currentFilters.page);
+      params.append('size', currentFilters.size);
+
+      currentFilters.jobs.forEach(j => params.append('jobs', j));
+      currentFilters.skillTags.forEach(s => params.append('skillTags', s));
+      currentFilters.consultingTags.forEach(c => params.append('consultingTags', c));
+
+      try {
+        const response = await fetch(`/search/mentors/fragment?${params.toString()}`);
+        if (!response.ok) throw new Error('Network error');
+
+        const html = await response.text();
+
+        resultEl.innerHTML = html;
+
+        const totalCountInput = document.getElementById('serverTotalCount');
+        if (totalCountInput) {
+          document.getElementById('totalCount').innerText = totalCountInput.value;
+        } else {
+          document.getElementById('totalCount').innerText = '0';
+        }
+
+      } catch (error) {
+        console.error(error);
+        resultEl.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--color-text-secondary);">데이터를 불러오지 못했습니다.</div>';
+      } finally {
+        loadingEl.style.display = 'none';
+        resultEl.style.opacity = '1';
+      }
+    }
+  </script>
+</div>
+</html>

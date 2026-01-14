@@ -1,4 +1,3 @@
-// src/main/java/org/aibe4/dodeul/global/file/service/SupabaseStorageClient.java
 package org.aibe4.dodeul.global.file.service;
 
 import lombok.RequiredArgsConstructor;
@@ -29,13 +28,15 @@ public class SupabaseStorageClient {
         String safeContentType = normalizeContentType(contentType);
 
         try {
+            String encodedObjectKey = encodeObjectKey(objectKey);
+
             ResponseEntity<String> response =
                 supabaseRestClient
                     .post()
                     .uri(
                         uriBuilder ->
                             uriBuilder
-                                .path("/storage/v1/object/" + bucket + "/" + objectKey)
+                                .path("/storage/v1/object/" + bucket + "/" + encodedObjectKey)
                                 .queryParam("upsert", "true")
                                 .build())
                     .contentType(MediaType.parseMediaType(safeContentType))
