@@ -82,20 +82,20 @@
     <ul class="pagination justify-content-center" style="gap: 5px;">
 
       <li class="page-item" th:classappend="${reviewResponses.first} ? 'disabled'">
-        <a class="page-link border-0" th:href="@{/mentee/reviews(page=${reviewResponses.number})}">&laquo;</a>
+        <a class="page-link border-0" th:href="@{/mentee/reviews(page=${reviewResponses.number - 1})}">&laquo;</a>
       </li>
 
       <li th:each="pageNum : ${#numbers.sequence(0, reviewResponses.totalPages - 1)}"
           class="page-item"
-          th:classappend="${pageNum + 1 == reviewResponses.number} ? 'active'">
+          th:classappend="${pageNum == reviewResponses.number} ? 'active'">
         <a class="page-link border-0 rounded"
-           th:href="@{/mentee/reviews(page=${pageNum + 1})}"
+           th:href="@{/mentee/reviews(page=${pageNum})}"
            th:text="${pageNum + 1}">1</a>
       </li>
 
       <li class="page-item" th:classappend="${reviewResponses.last} ? 'disabled'">
         <a class="page-link border-0"
-           th:href="@{/mentee/reviews(page=${reviewResponses.number + 2})}">&raquo;</a>
+           th:href="@{/mentee/reviews(page=${reviewResponses.number + 1})}">&raquo;</a>
       </li>
 
     </ul>
