@@ -129,6 +129,7 @@ public class ConsultingApplicationService {
                 log.info("CommonFile 저장 성공");
             } catch (Exception e) {
                 log.error("CommonFile 저장 실패", e);
+                throw new RuntimeException(e);
             }
         }
 
