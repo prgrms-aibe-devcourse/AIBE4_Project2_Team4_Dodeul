@@ -87,7 +87,7 @@
 
       <li th:each="pageNum : ${#numbers.sequence(0, reviewResponses.totalPages - 1)}"
           class="page-item"
-          th:classappend="${pageNum == reviewResponses.number} ? 'active'">
+          th:classappend="${pageNum + 1 == reviewResponses.number} ? 'active'">
         <a class="page-link border-0 rounded"
            th:href="@{/mentor/reviews(page=${pageNum + 1})}"
            th:text="${pageNum + 1}">1</a>
