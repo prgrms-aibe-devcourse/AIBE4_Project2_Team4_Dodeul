@@ -68,12 +68,23 @@ public class SecurityConfig {
                             "/api/auth/**",
                             "/onboarding/**",
                             "/api/onboarding/**",
-                            "/search/mentors",
-                            "/api/search/mentors")
+                            "/search/mentors/**",
+                            "/api/search/mentors/**")
                         .permitAll()
 
-                        // 게시판 조회(GET)만 공개
-                        .requestMatchers(HttpMethod.GET, "/api/board/posts", "/board/posts")
+                        // 게시판 조회(GET) 공개 (목록/상세/댓글조회/첨부파일조회)
+                        .requestMatchers(
+                            HttpMethod.GET,
+                            "/api/board/posts",
+                            "/api/board/posts/*",
+                            "/api/board/posts/*/comments",
+                            "/api/board/posts/*/files",
+                            "/board/posts",
+                            "/board/posts/*")
+                        .permitAll()
+
+                        // 파일 조회(GET) 공개: 상세 화면에서 /api/files?domain=... 으로 조회하는 경우 대응
+                        .requestMatchers(HttpMethod.GET, "/api/files")
                         .permitAll()
 
                         // 파일 업로드 API (인증 필요)
@@ -124,12 +135,12 @@ public class SecurityConfig {
             .oauth2Login(
                 oauth ->
                     oauth.loginPage("/auth/login")
-                        .userInfoEndpoint(
-                            userInfo -> userInfo.userService(customOAuth2UserService))
+                        .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
                         .successHandler(oAuth2LoginSuccessHandler))
             .logout(
                 logout ->
-                    logout.logoutUrl("/logout")
+                    logout
+                        .logoutUrl("/logout")
                         .invalidateHttpSession(true)
                         .deleteCookies("JSESSIONID")
                         .logoutSuccessUrl("/auth/login"))
@@ -145,9 +156,7 @@ public class SecurityConfig {
 
                                     CommonResponse<Void> errorResponse =
                                         CommonResponse.fail(ErrorCode.UNAUTHORIZED_ACCESS);
-                                    response
-                                        .getWriter()
-                                        .write(objectMapper.writeValueAsString(errorResponse));
+                                    response.getWriter().write(objectMapper.writeValueAsString(errorResponse));
                                 } else {
                                     response.sendRedirect("/auth/login");
                                 }
@@ -161,9 +170,7 @@ public class SecurityConfig {
 
                                     CommonResponse<Void> errorResponse =
                                         CommonResponse.fail(ErrorCode.ACCESS_DENIED);
-                                    response
-                                        .getWriter()
-                                        .write(objectMapper.writeValueAsString(errorResponse));
+                                    response.getWriter().write(objectMapper.writeValueAsString(errorResponse));
                                 } else {
                                     response.sendRedirect("/error/403");
                                 }

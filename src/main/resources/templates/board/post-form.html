@@ -1,135 +1,297 @@
 <!-- src/main/resources/templates/board/post-form.html -->
-<!DOCTYPE html>
-<html
-  lang="ko"
-  xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
-  xmlns:th="http://www.thymeleaf.org"
-  layout:decorate="~{common/layout/base}"
->
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
-  <th:block layout:fragment="head">
-    <link rel="stylesheet" th:href="@{/css/board/board-post.css}"/>
-  </th:block>
+  <meta charset="utf-8"/>
+  <meta http-equiv="x-ua-compatible" content="ie=edge"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>질문 작성하기</title>
+
+  <!-- 기존 common/board.css는 유지하되, 게시판 폼 전용 CSS를 추가 -->
+  <link rel="stylesheet" th:href="@{/css/common.css}"/>
+  <link rel="stylesheet" th:href="@{/css/board.css}"/>
+  <link rel="stylesheet" th:href="@{/css/board/board-post.css}"/>
 </head>
 
 <body>
-<section layout:fragment="content">
-  <div class="board-post-form-wrap">
-    <div class="board-post-form-card card-custom">
-      <div class="board-post-form-header">
-        <h2 class="board-post-form-title">질문 작성하기</h2>
-        <p class="board-post-form-subtitle">궁금한 점을 자세히 작성해주세요.</p>
-      </div>
-
-      <div th:if="${msg != null}" class="alert alert-info py-2" th:text="${msg}"></div>
-
-      <!-- 컨트롤러에서 reject("create.fail", ...) 한 글로벌 에러 표시 -->
-      <div
-        th:if="${#fields.hasGlobalErrors()}"
-        class="alert alert-danger py-2"
-        th:each="err : ${#fields.globalErrors()}"
-        th:text="${err}"
-      ></div>
+<main class="page">
+  <div class="shell board-post-form-wrap">
+    <div class="card board-post-form-card">
+      <header class="board-post-form-header">
+        <h1 class="board-post-form-title">질문 작성하기</h1>
+        <p class="board-post-form-subtitle">질문을 구체적으로 작성하면 더 좋은 답변을 받을 수 있어요.</p>
+      </header>
 
       <form
         th:action="@{/board/posts}"
         th:object="${form}"
         method="post"
-        class="board-post-form"
-      >
-        <div class="mb-4">
-          <label class="form-label board-post-label" for="title">제목</label>
+        enctype="multipart/form-data">
+
+        <!-- 제목 -->
+        <div class="group">
+          <label class="board-post-label" for="title">제목</label>
           <input
             id="title"
             type="text"
-            class="form-control board-post-input"
             th:field="*{title}"
             placeholder="제목을 입력하세요"
-            maxlength="100"
-          />
+            class="board-post-input"/>
           <div
-            class="board-post-error"
             th:if="${#fields.hasErrors('title')}"
             th:errors="*{title}"
-          ></div>
+            class="board-post-error">
+          </div>
         </div>
 
-        <div class="mb-3">
-          <label class="form-label board-post-label" for="consultingTag">분야</label>
+        <!-- 분야 -->
+        <div class="group">
+          <label class="board-post-label" for="consultingTag">분야</label>
           <select
             id="consultingTag"
-            class="form-select board-post-select"
             th:field="*{consultingTag}"
-          >
-            <option value="" disabled selected>분야를 선택하세요</option>
-            <option th:each="tag : ${consultingTags}" th:value="${tag}" th:text="${tag}"></option>
+            class="board-post-select">
+            <option value="" disabled selected>선택하세요</option>
+            <option
+              th:each="tag : ${consultingTags}"
+              th:value="${tag}"
+              th:text="${tag}">
+            </option>
           </select>
-          <div class="board-post-hint">예: 개발, 프론트엔드, 백엔드</div>
           <div
-            class="board-post-error"
             th:if="${#fields.hasErrors('consultingTag')}"
             th:errors="*{consultingTag}"
-          ></div>
+            class="board-post-error">
+          </div>
         </div>
 
-        <div class="mb-4">
-          <label class="form-label board-post-label">기술 스택</label>
+        <!-- 기술 스택 -->
+        <div class="group">
+          <div class="row-head">
+            <label class="board-post-label">기술 스택</label>
+          </div>
 
           <div class="board-post-tag-box">
             <div class="board-post-tag-list">
-              <label class="board-post-tag-item" th:each="tag : ${skillTags}">
+              <label th:each="tag : ${skillTags}" class="board-post-tag-item">
                 <input
-                  class="board-post-tag-checkbox"
                   type="checkbox"
+                  name="skillTagIds"
                   th:value="${tag.id}"
-                  th:field="*{skillTagIds}"
-                />
-                <span class="board-post-tag-name" th:text="${tag.name}">Tag</span>
+                  class="board-post-tag-checkbox"/>
+                <span th:text="${tag.name}" class="board-post-tag-name">JAVA</span>
               </label>
             </div>
           </div>
-
-          <div class="mt-3">
-            <input
-              type="text"
-              class="form-control board-post-input"
-              name="skillTagIdString"
-              th:value="${skillTagIdString}"
-              placeholder="태그 추가(쉼표로 구분)  예: Java, Spring, Docker 또는 1,2,3"
-            />
-            <div class="board-post-hint">예: Java, Spring, JPA (또는 태그 ID를 쉼표로 입력)</div>
-          </div>
-
-          <div
-            class="board-post-error"
-            th:if="${#fields.hasErrors('skillTagIds')}"
-            th:errors="*{skillTagIds}"
-          ></div>
         </div>
 
-        <div class="mb-4">
-          <label class="form-label board-post-label" for="content">본문</label>
+        <!-- 태그 추가 -->
+        <div class="group">
+          <label class="board-post-label" for="skillTagIdString">태그 추가(쉼표로 구분)</label>
+          <input
+            id="skillTagIdString"
+            type="text"
+            name="skillTagIdString"
+            th:value="${skillTagIdString}"
+            placeholder="예: Java, Spring, Docker 또는 1,2,3"
+            class="board-post-input"/>
+          <div class="board-post-hint">
+            예: Java, Spring, JPA (또는 태그 ID를 쉼표로 입력)
+          </div>
+        </div>
+
+        <!-- 본문 -->
+        <div class="group">
+          <label class="board-post-label" for="content">본문</label>
           <textarea
             id="content"
-            class="form-control board-post-textarea"
             th:field="*{content}"
             rows="10"
-            placeholder="질문 내용을 작성하세요 (코드, 이미지 첨부는 후순위)"
-          ></textarea>
+            placeholder="질문 내용을 자세히 작성해주세요"
+            class="board-post-textarea"></textarea>
           <div
-            class="board-post-error"
             th:if="${#fields.hasErrors('content')}"
             th:errors="*{content}"
-          ></div>
+            class="board-post-error">
+          </div>
         </div>
 
+        <!-- 첨부파일 (상세 첨부파일 UI와 유사하게) -->
+        <div class="group">
+          <label class="board-post-label">첨부파일</label>
+
+          <div id="uploadBox" class="board-upload">
+            <input
+              type="file"
+              id="files"
+              name="files"
+              multiple
+              accept=".jpg,.jpeg,.png,.gif,.pdf,.txt,.ppt,.pptx"
+              class="board-upload__input"
+              onchange="onFilesChanged(this)"/>
+
+            <div class="board-upload__inner" onclick="document.getElementById('files').click()">
+              <div class="board-upload__icon">📎</div>
+              <div class="board-upload__text">파일 선택</div>
+              <div class="board-upload__sub">최대 5개, 각 10MB 이하 (이미지/PDF/TXT/PPT)</div>
+            </div>
+
+            <div id="fileList" class="board-upload__list" aria-live="polite"></div>
+          </div>
+
+          <div class="board-post-hint">
+            드래그 앤 드롭도 지원합니다.
+          </div>
+        </div>
+
+        <!-- 액션 -->
         <div class="board-post-actions">
-          <a class="btn btn-outline-custom" th:href="@{/board/posts}">취소</a>
-          <button type="submit" class="btn btn-primary-custom">등록</button>
+          <a th:href="@{/board/posts}" class="btn btn--ghost">취소</a>
+          <button type="submit" class="btn btn--primary">등록</button>
         </div>
       </form>
     </div>
   </div>
-</section>
+</main>
+
+<script>
+  // ===== 업로드 검증 + 미리보기 리스트(칩) =====
+  const MAX_FILES = 5;
+  const MAX_SIZE = 10 * 1024 * 1024; // 10MB
+  const ALLOWED_EXT = /(\.jpg|\.jpeg|\.png|\.gif|\.pdf|\.txt|\.ppt|\.pptx)$/i;
+
+  function formatBytes(bytes) {
+    if (!bytes && bytes !== 0) return "";
+    const units = ["B", "KB", "MB", "GB"];
+    let b = bytes;
+    let i = 0;
+    while (b >= 1024 && i < units.length - 1) {
+      b /= 1024;
+      i += 1;
+    }
+    return (i === 0 ? b : b.toFixed(1)) + units[i];
+  }
+
+  function validateFiles(input) {
+    const files = input.files;
+    if (!files || files.length === 0) return true;
+
+    if (files.length > MAX_FILES) {
+      alert("첨부파일은 최대 5개까지 가능합니다.");
+      input.value = "";
+      return false;
+    }
+
+    for (const file of files) {
+      if (file.size > MAX_SIZE) {
+        alert("파일 크기는 10MB를 초과할 수 없습니다.");
+        input.value = "";
+        return false;
+      }
+      if (!ALLOWED_EXT.exec(file.name)) {
+        alert("허용되지 않는 파일 형식입니다.\n(이미지, PDF, TXT, PPT 파일만 가능)");
+        input.value = "";
+        return false;
+      }
+    }
+    return true;
+  }
+
+  function renderFileList(input) {
+    const list = document.getElementById("fileList");
+    list.innerHTML = "";
+
+    const files = input.files;
+    if (!files || files.length === 0) return;
+
+    Array.from(files).forEach((f, idx) => {
+      const chip = document.createElement("div");
+      chip.className = "filechip";
+      chip.innerHTML = `
+        <div class="filechip__left">
+          <div class="filechip__name">${escapeHtml(f.name)}</div>
+          <div class="filechip__meta">${escapeHtml(f.type || "file")} · ${formatBytes(f.size)}</div>
+        </div>
+        <button type="button" class="filechip__remove" aria-label="파일 제거" data-idx="${idx}">×</button>
+      `;
+      list.appendChild(chip);
+    });
+
+    // 제거 버튼: DataTransfer로 재구성
+    list.querySelectorAll(".filechip__remove").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const removeIdx = Number(btn.getAttribute("data-idx"));
+        const dt = new DataTransfer();
+        Array.from(input.files).forEach((f, i) => {
+          if (i !== removeIdx) dt.items.add(f);
+        });
+        input.files = dt.files;
+        renderFileList(input);
+      });
+    });
+  }
+
+  function escapeHtml(s) {
+    return String(s)
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  function onFilesChanged(input) {
+    if (!validateFiles(input)) return;
+    renderFileList(input);
+  }
+
+  // ===== Drag & Drop =====
+  (function initDnD() {
+    const box = document.getElementById("uploadBox");
+    const input = document.getElementById("files");
+    if (!box || !input) return;
+
+    box.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      box.classList.add("is-dragover");
+    });
+
+    box.addEventListener("dragleave", () => {
+      box.classList.remove("is-dragover");
+    });
+
+    box.addEventListener("drop", (e) => {
+      e.preventDefault();
+      box.classList.remove("is-dragover");
+
+      const dropped = e.dataTransfer && e.dataTransfer.files ? Array.from(e.dataTransfer.files) : [];
+      if (dropped.length === 0) return;
+
+      const dt = new DataTransfer();
+      const current = input.files ? Array.from(input.files) : [];
+      const merged = current.concat(dropped);
+
+      if (merged.length > MAX_FILES) {
+        alert("첨부파일은 최대 5개까지 가능합니다.");
+        return;
+      }
+
+      for (const f of merged) {
+        if (f.size > MAX_SIZE) {
+          alert("파일 크기는 10MB를 초과할 수 없습니다.");
+          return;
+        }
+        if (!ALLOWED_EXT.exec(f.name)) {
+          alert("허용되지 않는 파일 형식입니다.\n(이미지, PDF, TXT, PPT 파일만 가능)");
+          return;
+        }
+      }
+
+      merged.forEach((f) => dt.items.add(f));
+      input.files = dt.files;
+      renderFileList(input);
+    });
+  })();
+</script>
 </body>
 </html>

@@ -2,8 +2,8 @@
 <!DOCTYPE html>
 <html
   lang="ko"
-  xmlns:th="http://www.thymeleaf.org"
   xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+  xmlns:th="http://www.thymeleaf.org"
   layout:decorate="~{common/layout/base}"
 >
 <head>
@@ -14,137 +14,126 @@
 
 <body>
 <section layout:fragment="content">
-  <main class="board-page">
-    <div class="board-shell">
-      <header class="board-header">
-        <h1 class="board-title">공개 게시판</h1>
-        <p class="board-subtitle">멘토와 멘티가 함께 답변을 나누는 질문 공간</p>
-      </header>
-
-      <div class="board-top">
-        <a class="btn-write" th:href="@{/board/posts/new}">
-          <span class="btn-write__icon">+</span>
-          <span>질문 작성하기</span>
-        </a>
-
-        <div class="board-controls">
-          <div class="select-wrap">
-            <label class="select-label" for="sortSelect">정렬</label>
-            <select id="sortSelect" class="select">
-              <option value="LATEST" selected>최신순</option>
-              <option value="SCRAPS">스크랩순</option>
-            </select>
-          </div>
-
-          <div class="select-wrap">
-            <label class="select-label" for="statusSelect">상태</label>
-            <select id="statusSelect" class="select">
-              <option value="" selected>전체</option>
-              <option value="OPEN">OPEN</option>
-              <option value="CLOSED">CLOSED</option>
-            </select>
-          </div>
-        </div>
+  <main class="board-list">
+    <header class="board-list__header">
+      <div class="board-list__titlebox">
+        <h1 class="board-list__title">공개 게시판</h1>
+        <p class="board-list__desc">질문을 올리고 답변을 받아보세요.</p>
       </div>
 
-      <nav class="board-tabs" aria-label="카테고리 탭">
-        <button class="tab active" type="button" data-consulting="">
-          전체
-        </button>
-        <button class="tab" type="button" data-consulting="CAREER">
-          커리어
-        </button>
-        <button class="tab" type="button" data-consulting="RESUME">
-          이력서
-        </button>
-        <button class="tab" type="button" data-consulting="INTERVIEW">
-          면접
-        </button>
-        <button class="tab" type="button" data-consulting="PORTFOLIO">
-          포트폴리오
-        </button>
-        <button class="tab" type="button" data-consulting="TECH">
-          기술
-        </button>
-        <button class="tab" type="button" data-consulting="ETC">
-          기타
-        </button>
-      </nav>
+      <div class="board-list__actions">
+        <a class="btn btn--primary" href="/board/posts/new">질문 작성</a>
+      </div>
+    </header>
 
-      <section class="board-grid">
-        <div class="post-area">
-          <div id="postGrid" class="post-grid" aria-live="polite"></div>
-
-          <div class="paging">
-            <button id="prevBtn" class="paging-btn" type="button" disabled>
-              이전
-            </button>
-            <div id="pageNums" class="paging-nums"></div>
-            <button id="nextBtn" class="paging-btn" type="button" disabled>
-              다음
-            </button>
-          </div>
+    <section class="board-filters card">
+      <div class="board-filters__row">
+        <div class="field">
+          <label class="field__label" for="keyword">검색</label>
+          <input id="keyword" class="field__input" type="text" placeholder="제목/본문 키워드"/>
         </div>
 
-        <aside class="filter-card">
-          <h2 class="filter-title">필터</h2>
-          <div id="tagList" class="filter-list">
-            <!-- 스킬태그 목록 API 연동 전까지는 임시 표시 -->
-            <label class="filter-item">
-              <input type="checkbox" value="1"/>
-              <span>Java</span>
-            </label>
-            <label class="filter-item">
-              <input type="checkbox" value="2"/>
-              <span>Spring</span>
-            </label>
-            <label class="filter-item">
-              <input type="checkbox" value="3"/>
-              <span>React</span>
-            </label>
-            <label class="filter-item">
-              <input type="checkbox" value="4"/>
-              <span>Python</span>
-            </label>
-            <label class="filter-item">
-              <input type="checkbox" value="5"/>
-              <span>JavaScript</span>
-            </label>
-          </div>
+        <div class="field">
+          <label class="field__label" for="status">상태</label>
+          <select id="status" class="field__select">
+            <option value="">전체</option>
+            <option value="OPEN">OPEN</option>
+            <option value="CLOSED">CLOSED</option>
+          </select>
+        </div>
 
-          <button id="applyFilterBtn" class="filter-apply" type="button">
-            필터 적용
-          </button>
-        </aside>
-      </section>
-    </div>
+        <div class="field">
+          <label class="field__label" for="sort">정렬</label>
+          <select id="sort" class="field__select">
+            <option value="LATEST">최신순</option>
+            <option value="VIEW">조회수순</option>
+            <option value="SCRAP">스크랩순</option>
+            <option value="COMMENTED">최근댓글순</option>
+          </select>
+        </div>
 
-    <input type="hidden" id="pageSize" value="6"/>
+        <button id="applyBtn" class="btn" type="button">적용</button>
+        <button id="resetBtn" class="btn btn--ghost" type="button">초기화</button>
+      </div>
+
+      <div class="board-filters__hint">
+        검색/필터 사용 시 로그인 정책이 적용될 수 있습니다.
+      </div>
+    </section>
+
+    <section class="board-cards" aria-live="polite">
+      <div id="emptyState" class="empty" style="display:none;">
+        <div class="empty__title">게시글이 없습니다.</div>
+        <div class="empty__desc">첫 질문을 작성해보세요.</div>
+      </div>
+
+      <div id="cardList" class="board-cards__grid"></div>
+    </section>
+
+    <nav class="pager" aria-label="페이지네이션">
+      <button id="prevBtn" class="btn btn--ghost" type="button">이전</button>
+      <div class="pager__info">
+        <span id="pageInfo">1 / 1</span>
+      </div>
+      <button id="nextBtn" class="btn btn--ghost" type="button">다음</button>
+    </nav>
   </main>
 
   <script>
     (function () {
-      const postGrid = document.getElementById("postGrid");
-      const sortSelect = document.getElementById("sortSelect");
-      const statusSelect = document.getElementById("statusSelect");
-      const applyFilterBtn = document.getElementById("applyFilterBtn");
-      const tagList = document.getElementById("tagList");
-      const pageNums = document.getElementById("pageNums");
-      const prevBtn = document.getElementById("prevBtn");
-      const nextBtn = document.getElementById("nextBtn");
-      const pageSize = Number(document.getElementById("pageSize").value || 6);
+      const $ = (id) => document.getElementById(id);
 
-      let state = {
-        consultingTag: "",
-        sort: "LATEST",
-        status: "",
-        tagIds: [],
+      const state = {
         page: 0,
-        size: pageSize,
+        size: 12,
+        totalPages: 1,
+        keyword: "",
+        status: "",
+        sort: "LATEST",
       };
 
+      function fetchJson(url, options) {
+        const base = {
+          credentials: "include",
+          headers: {Accept: "application/json"},
+        };
+        return fetch(url, {...base, ...(options || {})}).then((r) => (r.ok ? r.json() : Promise.reject(r)));
+      }
+
+      function getApiData(res) {
+        return (res && res.data != null) ? res.data : res;
+      }
+
+      function buildQuery() {
+        const params = new URLSearchParams();
+        params.set("page", String(state.page));
+        params.set("size", String(state.size));
+
+        if (state.keyword) params.set("keyword", state.keyword);
+        if (state.status) params.set("status", state.status);
+        if (state.sort) params.set("sort", state.sort);
+
+        return params.toString();
+      }
+
+      function badgeClass(status) {
+        const s = String(status || "").toUpperCase();
+        if (s === "OPEN") return "badge badge--blue";
+        if (s === "CLOSED") return "badge badge--gray";
+        if (s === "DELETED") return "badge badge--red";
+        return "badge badge--gray";
+      }
+
+      function formatDate(value) {
+        if (!value) return "-";
+        const d = new Date(value);
+        if (isNaN(d.getTime())) return String(value);
+        const pad = (n) => String(n).padStart(2, "0");
+        return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+      }
+
       function escapeHtml(s) {
-        return String(s || "")
+        return String(s)
           .replaceAll("&", "&amp;")
           .replaceAll("<", "&lt;")
           .replaceAll(">", "&gt;")
@@ -152,167 +141,115 @@
           .replaceAll("'", "&#039;");
       }
 
-      function buildQuery() {
-        const p = new URLSearchParams();
-        if (state.consultingTag) p.set("consultingTag", state.consultingTag);
-        if (state.sort) p.set("sort", state.sort);
-        if (state.status) p.set("status", state.status);
-        if (state.tagIds && state.tagIds.length > 0) {
-          state.tagIds.forEach((id) => p.append("tagIds", id));
+      function renderCards(items) {
+        const list = $("cardList");
+        const empty = $("emptyState");
+        list.innerHTML = "";
+
+        if (!items || items.length === 0) {
+          empty.style.display = "block";
+          return;
         }
-        p.set("page", String(state.page));
-        p.set("size", String(state.size));
-        return p.toString();
+        empty.style.display = "none";
+
+        items.forEach((p) => {
+          const postId = p.postId ?? p.id;
+          const title = p.title ?? "-";
+          const status = p.postStatus ?? p.status ?? "-";
+          const viewCount = p.viewCount ?? 0;
+          const scrapCount = p.scrapCount ?? 0;
+          const commentCount = p.commentCount ?? 0;
+          const createdAt = formatDate(p.createdAt);
+
+          const tags = Array.isArray(p.skillTags) ? p.skillTags : [];
+          const tagHtml = tags.slice(0, 6).map((t) => {
+            const name = (t && typeof t === "object") ? (t.name ?? t.tagName ?? "") : String(t);
+            if (!name) return "";
+            return `<span class="chip">${escapeHtml(name)}</span>`;
+          }).join("");
+
+          const card = document.createElement("a");
+          card.className = "postcard";
+          card.href = "/board/posts/" + postId;
+
+          card.innerHTML = `
+            <div class="postcard__top">
+              <span class="${badgeClass(status)}">${escapeHtml(String(status).toUpperCase())}</span>
+              <span class="postcard__date">${createdAt}</span>
+            </div>
+            <div class="postcard__title">${escapeHtml(title)}</div>
+            <div class="postcard__meta">
+              <span class="meta__item">👁 <b>${viewCount}</b></span>
+              <span class="meta__dot">·</span>
+              <span class="meta__item">🔖 <b>${scrapCount}</b></span>
+              <span class="meta__dot">·</span>
+              <span class="meta__item">💬 <b>${commentCount}</b></span>
+            </div>
+            <div class="postcard__tags">${tagHtml}</div>
+          `;
+
+          list.appendChild(card);
+        });
       }
 
-      function statusBadge(status) {
-        const s = String(status || "").toUpperCase();
-        if (s === "OPEN") return '<span class="badge badge--open">OPEN</span>';
-        if (s === "CLOSED") return '<span class="badge badge--closed">CLOSED</span>';
-        return '<span class="badge badge--closed">-</span>';
-      }
-
-      function renderCard(item) {
-        const postId = item.postId;
-        const title = escapeHtml(item.title);
-        const status = statusBadge(item.postStatus);
-        const viewCount = item.viewCount ?? 0;
-        const commentCount = item.commentCount ?? 0;
-        const scrapCount = item.scrapCount ?? 0;
-        const tags = Array.isArray(item.skillTags) ? item.skillTags : [];
-        const tagHtml = tags
-          .slice(0, 5)
-          .map((t) => `<span class="chip">${escapeHtml(t)}</span>`)
-          .join("");
-
-        return `
-              <a class="post-card" href="/board/posts/${postId}">
-                <div class="post-card__top">
-                  ${status}
-                </div>
-                <h3 class="post-card__title">${title}</h3>
-
-                <div class="post-card__kpi">
-                  <span class="kpi"><span class="kpi__icon">👁</span>${viewCount}</span>
-                  <span class="kpi"><span class="kpi__icon">💬</span>${commentCount}</span>
-                  <span class="kpi"><span class="kpi__icon">🔖</span>${scrapCount}</span>
-                </div>
-
-                <div class="post-card__tags">
-                  ${tagHtml}
-                </div>
-              </a>
-            `;
-      }
-
-      function renderPaging(page, totalPages) {
-        pageNums.innerHTML = "";
-        const max = Math.min(totalPages, 5);
-        const start = Math.max(0, Math.min(page - 2, totalPages - max));
-
-        for (let i = 0; i < max; i++) {
-          const p = start + i;
-          const btn = document.createElement("button");
-          btn.type = "button";
-          btn.className = "paging-num" + (p === page ? " active" : "");
-          btn.textContent = String(p + 1);
-          btn.addEventListener("click", () => {
-            state.page = p;
-            load();
-          });
-          pageNums.appendChild(btn);
-        }
-
-        prevBtn.disabled = page <= 0;
-        nextBtn.disabled = page >= totalPages - 1;
-      }
-
-      function renderEmpty() {
-        postGrid.innerHTML = `
-              <div class="empty">
-                <div class="empty__title">게시글이 없습니다.</div>
-                <div class="empty__desc">필터를 해제하거나 첫 질문을 작성해보세요.</div>
-              </div>
-            `;
-        renderPaging(0, 1);
+      function updatePager() {
+        $("pageInfo").innerText = String(state.page + 1) + " / " + String(state.totalPages);
+        $("prevBtn").disabled = state.page <= 0;
+        $("nextBtn").disabled = state.page >= state.totalPages - 1;
       }
 
       function load() {
-        postGrid.innerHTML = `
-              <div class="loading">
-                <div class="loading__dot"></div>
-                <div class="loading__text">목록을 불러오는 중...</div>
-              </div>
-            `;
-
-        const qs = buildQuery();
-        fetch("/api/board/posts?" + qs, {headers: {Accept: "application/json"}})
-          .then((r) => (r.ok ? r.json() : Promise.reject(r)))
+        const url = "/api/board/posts?" + buildQuery();
+        return fetchJson(url)
           .then((res) => {
-            const dto = res && res.data != null ? res.data : res;
-            const content = dto && dto.content ? dto.content : [];
+            const data = getApiData(res) || {};
+            const content = data.content ?? data.posts ?? data.items ?? [];
+            const totalPages = data.totalPages ?? data.pageInfo?.totalPages ?? 1;
 
-            if (!Array.isArray(content) || content.length === 0) {
-              renderEmpty();
-              return;
-            }
-
-            postGrid.innerHTML = content.map(renderCard).join("");
-
-            const page = Number(dto.page ?? 0);
-            const totalPages = Number(dto.totalPages ?? 1);
-            renderPaging(page, totalPages);
+            state.totalPages = Number(totalPages || 1);
+            renderCards(Array.isArray(content) ? content : []);
+            updatePager();
           })
-          .catch(() => {
-            postGrid.innerHTML = `
-                  <div class="empty">
-                    <div class="empty__title">목록 조회 중 오류가 발생했습니다.</div>
-                    <div class="empty__desc">잠시 후 다시 시도해주세요.</div>
-                  </div>
-                `;
-            renderPaging(0, 1);
+          .catch(async (r) => {
+            // 로그인/정책 위반(예: 401/403/409)으로 목록이 막힌 경우 UI를 비우고 끝냄
+            renderCards([]);
+            state.totalPages = 1;
+            updatePager();
+            try {
+              await r.text();
+            } catch (e) {
+            }
           });
       }
 
-      document.querySelectorAll(".tab").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          document.querySelectorAll(".tab").forEach((b) => b.classList.remove("active"));
-          btn.classList.add("active");
-          state.consultingTag = btn.dataset.consulting || "";
-          state.page = 0;
-          load();
-        });
-      });
-
-      sortSelect.addEventListener("change", () => {
-        state.sort = sortSelect.value || "LATEST";
+      $("applyBtn").addEventListener("click", () => {
+        state.keyword = String($("keyword").value || "").trim();
+        state.status = String($("status").value || "").trim();
+        state.sort = String($("sort").value || "LATEST").trim();
         state.page = 0;
         load();
       });
 
-      statusSelect.addEventListener("change", () => {
-        state.status = statusSelect.value || "";
+      $("resetBtn").addEventListener("click", () => {
+        $("keyword").value = "";
+        $("status").value = "";
+        $("sort").value = "LATEST";
+
+        state.keyword = "";
+        state.status = "";
+        state.sort = "LATEST";
         state.page = 0;
         load();
       });
 
-      applyFilterBtn.addEventListener("click", () => {
-        const ids = [];
-        tagList.querySelectorAll("input[type='checkbox']:checked").forEach((c) => {
-          ids.push(String(c.value));
-        });
-        state.tagIds = ids;
-        state.page = 0;
-        load();
-      });
-
-      prevBtn.addEventListener("click", () => {
+      $("prevBtn").addEventListener("click", () => {
         if (state.page <= 0) return;
         state.page -= 1;
         load();
       });
 
-      nextBtn.addEventListener("click", () => {
+      $("nextBtn").addEventListener("click", () => {
+        if (state.page >= state.totalPages - 1) return;
         state.page += 1;
         load();
       });
