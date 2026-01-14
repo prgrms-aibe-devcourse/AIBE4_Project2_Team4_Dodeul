@@ -17,17 +17,30 @@
         cursor: pointer;
         border: none;
         outline: none;
+        background-color: #f8f9fa; /* 기본 배경색 추가 */
+        color: #666;
+      }
+
+      .tag--active {
+        background-color: var(--color-primary, #0d6efd); /* 활성화 색상 */
+        color: white;
       }
 
       /* 추천 상태별 뱃지 스타일 커스텀 */
       .status-badge.recommended {
         background-color: #e8f5e9;
         color: #2e7d32;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
       }
 
       .status-badge.not-recommended {
         background-color: #f5f5f5;
         color: #757575;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
       }
     </style>
   </th:block>
@@ -54,15 +67,20 @@
     <div class="fw-bold" style="margin-bottom:10px;">후기 목록</div>
 
     <div class="card-custom dashboard-list" style="margin:0;">
+
       <div th:each="review : ${reviewResponses.content}"
            class="dashboard-row cursor-pointer review-item"
-           th:data-recommended="${review.isRecommended}"
-           th:onclick="showReviewModal([[${review.mentorNickname}]], [[${review.content}]], [[${review.isRecommended}]])">
+           th:data-rec="${review.isRecommended}"
+           th:data-mentor="${review.mentorNickname}"
+           th:data-content="${review.content}"
+           onclick="openModal(this)">
+
         <div>
           <div class="dashboard-row-title" style="margin-bottom: 0;">
             <span th:text="${review.mentorNickname} + ' 멘토님'">멘토이름</span>
           </div>
         </div>
+
         <div class="dashboard-row-right">
           <span th:if="${review.isRecommended}" class="status-badge recommended">👍 추천함</span>
           <span th:unless="${review.isRecommended}" class="status-badge not-recommended">아쉬워요</span>
@@ -72,8 +90,11 @@
         </div>
       </div>
 
-      <div th:if="${reviewResponses.isEmpty()}" class="dashboard-row">
-        <div class="text-small">작성한 후기가 없습니다.</div>
+      <div th:if="${reviewResponses.isEmpty()}" class="dashboard-row justify-content-center py-5">
+        <div class="text-center text-secondary">
+          <i class="bi bi-chat-square-text fs-1 mb-3 d-block"></i>
+          작성한 후기가 없습니다.
+        </div>
       </div>
     </div>
   </section>
@@ -115,7 +136,7 @@
             <span id="mBadge" class="ms-2"></span>
           </div>
           <div class="p-3 bg-light rounded-3 shadow-sm">
-            <p id="mContent" class="mb-0" style="white-space: pre-wrap; line-height: 1.6;"></p>
+            <p id="mContent" class="mb-0" style="white-space: pre-wrap; line-height: 1.6; word-break: break-all;"></p>
           </div>
         </div>
         <div class="modal-footer border-0">
@@ -130,9 +151,15 @@
 <th:block layout:fragment="script">
   <script th:inline="javascript">
     /**
-     * 상세 모달 표시
+     * 상세 모달 표시 (수정됨: 요소의 dataset에서 값을 가져옴)
      */
-    function showReviewModal(name, content, isRec) {
+    function openModal(element) {
+      // data-속성에서 값 추출
+      const name = element.getAttribute('data-mentor');
+      const content = element.getAttribute('data-content');
+      const isRec = element.getAttribute('data-rec') === 'true'; // 문자열 'true' 비교
+
+      // 모달 내용 채우기
       document.getElementById('mTarget').textContent = name;
       document.getElementById('mContent').textContent = content;
 
@@ -141,11 +168,12 @@
         ? '<span class="status-badge recommended" style="font-size:11px;">👍 추천함</span>'
         : '<span class="status-badge not-recommended" style="font-size:11px;">아쉬워요</span>';
 
+      // 모달 띄우기
       new bootstrap.Modal(document.getElementById('reviewDetailModal')).show();
     }
 
     /**
-     * 클라이언트 사이드 필터링 (현재 페이지 내 데이터 기준)
+     * 클라이언트 사이드 필터링
      */
     function filterReviews(type, btn) {
       // 태그 활성화 상태 변경
@@ -154,7 +182,7 @@
 
       const items = document.querySelectorAll('.review-item');
       items.forEach(item => {
-        const isRec = item.getAttribute('data-recommended');
+        const isRec = item.getAttribute('data-rec'); // data-rec 속성 사용
         if (type === 'all' || isRec === type) {
           item.style.display = 'flex';
         } else {
@@ -162,6 +190,16 @@
         }
       });
     }
+
+    /*<![CDATA[*/
+    document.addEventListener('DOMContentLoaded', function() {
+      // Controller에서 RedirectAttributes로 보낸 메시지 처리
+      const errorMessage = /*[[${errorMessage}]]*/ null;
+      if (errorMessage) {
+        alert(errorMessage);
+      }
+    });
+    /*]]>*/
   </script>
 </th:block>
 
