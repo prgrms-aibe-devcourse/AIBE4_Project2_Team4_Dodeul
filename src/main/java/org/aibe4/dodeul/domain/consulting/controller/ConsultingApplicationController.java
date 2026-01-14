@@ -75,12 +75,20 @@ public class ConsultingApplicationController {
         return "consulting/application-detail";
     }
 
-    // 4. 수정 폼 (✅ 서비스 로직 분리로 매우 깔끔해진 부분!)
+    // 4. 수정 폼
     @GetMapping("/{applicationId}/edit")
-    public String editForm(@PathVariable Long applicationId, Model model) {
-
-        // [수정 포인트] 복잡한 가공 로직을 서비스 메서드 하나로 대체
+    public String editForm(
+        @PathVariable Long applicationId,
+        Model model,
+        @AuthenticationPrincipal CustomUserDetails user // [수정] 이 부분이 추가되어야 빨간 줄이 사라집니다!
+    ) {
+        // 서비스에서 수정용 폼 데이터 가져오기
         ConsultingApplicationRequest form = consultingApplicationService.getRegistrationForm(applicationId);
+
+        // [보안 검사] 이제 user 변수를 사용할 수 있습니다.
+        if (!form.getMenteeId().equals(user.getMemberId())) {
+            throw new IllegalStateException("수정 권한이 없습니다.");
+        }
 
         model.addAttribute("request", form);
         model.addAttribute("consultingTags", ConsultingTag.values());
