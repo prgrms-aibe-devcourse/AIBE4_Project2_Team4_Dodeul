@@ -9,7 +9,8 @@
 </head>
 
 <div layout:fragment="content">
-  <th:block th:with="opponent=${consultationRoomDto.participants.get(0).memberId == consultationRoomDto.currentMemberId ? consultationRoomDto.participants.get(1) : consultationRoomDto.participants.get(0)}">
+  <th:block
+    th:with="opponent=${consultationRoomDto.participants.get(0).memberId == consultationRoomDto.currentMemberId ? consultationRoomDto.participants.get(1) : consultationRoomDto.participants.get(0)}">
 
     <div class="mb-4">
       <h2 class="fw-bold">💬 상담 채팅방</h2>
@@ -24,8 +25,11 @@
           <div class="chat-header">
             <div class="d-flex align-items-center">
               <div class="me-3">
-                <img th:if="${opponent.profileUrl != null}" th:src="${opponent.profileUrl}" class="rounded-circle" style="width: 40px; height: 40px; border: 1px solid var(--color-border); object-fit: cover;">
-                <div th:unless="${opponent.profileUrl != null}" class="bg-light rounded-circle d-flex align-items-center justify-content-center border" style="width: 40px; height: 40px;">
+                <img th:if="${opponent.profileUrl != null}" th:src="${opponent.profileUrl}" class="rounded-circle"
+                     style="width: 40px; height: 40px; border: 1px solid var(--color-border); object-fit: cover;">
+                <div th:unless="${opponent.profileUrl != null}"
+                     class="bg-light rounded-circle d-flex align-items-center justify-content-center border"
+                     style="width: 40px; height: 40px;">
                   <i class="bi bi-person-fill text-secondary fs-5"></i>
                 </div>
               </div>
@@ -52,18 +56,26 @@
             </div>
 
             <th:block th:each="message : ${consultationRoomDto.messageDtoList}">
-              <div th:if="${message.type.name() == 'SYSTEM'}" class="d-flex justify-content-center my-3 w-100" th:attr="data-id=${message.id}">
-                <span class="badge bg-light text-secondary fw-normal border px-3 py-2 rounded-pill" th:text="${message.content}">시스템</span>
+              <div th:if="${message.type.name() == 'SYSTEM'}" class="d-flex justify-content-center my-3 w-100"
+                   th:attr="data-id=${message.id}">
+                <span class="badge bg-light text-secondary fw-normal border px-3 py-2 rounded-pill"
+                      th:text="${message.content}">시스템</span>
               </div>
 
-              <div th:unless="${message.type.name() == 'SYSTEM'}" class="d-flex flex-column mb-2" th:attr="data-id=${message.id}" th:classappend="${message.senderId == consultationRoomDto.currentMemberId} ? 'align-items-end' : 'align-items-start'">
-                <span th:if="${message.senderId != consultationRoomDto.currentMemberId}" th:text="${message.senderNickname}" class="text-secondary ms-1 mb-1" style="font-size: 0.75rem;">닉네임</span>
-                <div class="message" th:classappend="${message.senderId == consultationRoomDto.currentMemberId} ? 'sent' : 'received'">
+              <div th:unless="${message.type.name() == 'SYSTEM'}" class="d-flex flex-column mb-2"
+                   th:attr="data-id=${message.id}"
+                   th:classappend="${message.senderId == consultationRoomDto.currentMemberId} ? 'align-items-end' : 'align-items-start'">
+                <span th:if="${message.senderId != consultationRoomDto.currentMemberId}"
+                      th:text="${message.senderNickname}" class="text-secondary ms-1 mb-1" style="font-size: 0.75rem;">닉네임</span>
+                <div class="message"
+                     th:classappend="${message.senderId == consultationRoomDto.currentMemberId} ? 'sent' : 'received'">
                   <div th:if="${message.type.name() == 'IMAGE'}">
-                    <img th:src="${message.content}" alt="이미지" style="max-width: 250px; border-radius: 8px; cursor: pointer;" onclick="window.open(this.src)">
+                    <img th:src="${message.content}" alt="이미지"
+                         style="max-width: 250px; border-radius: 8px; cursor: pointer;" onclick="window.open(this.src)">
                   </div>
                   <div th:if="${message.type.name() == 'FILE'}">
-                    <a th:href="${message.content}" target="_blank" class="text-decoration-none d-flex align-items-center p-1" style="color: inherit;">
+                    <a th:href="${message.content}" target="_blank"
+                       class="text-decoration-none d-flex align-items-center p-1" style="color: inherit;">
                       <i class="bi bi-file-earmark-arrow-down fs-4 me-2"></i>
                       <div class="text-truncate" style="max-width: 150px;">
                         <small class="d-block" style="font-size: 0.7rem;">파일 다운로드</small>
@@ -82,12 +94,67 @@
               <i class="bi bi-paperclip fs-5"></i>
             </button>
             <textarea class="chat-input" placeholder="메시지를 입력하세요..." rows="1"></textarea>
-            <button id="send-btn" class="btn btn-primary-custom" style="height: 48px; padding-left: 1.5rem; padding-right: 1.5rem;">전송</button>
+            <button id="send-btn" class="btn btn-primary-custom"
+                    style="height: 48px; padding-left: 1.5rem; padding-right: 1.5rem;">전송
+            </button>
           </div>
         </div>
       </div>
 
       <div class="col-lg-4">
+        <div class="card-custom shadow-sm sticky-top"
+             style="top: 20px; border: 1px solid var(--color-border) !important;">
+          <div class="p-3 border-bottom bg-light rounded-top-4">
+            <h5 class="fw-bold mb-0" style="font-size: 1.1rem;">📋 상담 신청 정보</h5>
+          </div>
+          <div class="card-body p-4">
+            <div class="mb-4">
+              <label class="text-secondary small fw-bold mb-1">상담 제목</label>
+              <div class="fw-bold text-dark" th:text="${consultationRoomDto.consultingApplicationDetailResponse.title}">
+                제목
+              </div>
+            </div>
+
+            <div class="mb-4">
+              <label class="text-secondary small fw-bold mb-1">카테고리</label>
+              <div>
+                <span class="badge bg-primary-custom text-dark fw-bold border"
+                      style="background-color: #e7f1ff !important; color: #0d6efd !important;"
+                      th:text="${consultationRoomDto.consultingApplicationDetailResponse.category}">
+                  카테고리
+                </span>
+              </div>
+            </div>
+
+            <div class="mb-4"
+                 th:if="${not #lists.isEmpty(consultationRoomDto.consultingApplicationDetailResponse.skillTags)}">
+              <label class="text-secondary small fw-bold mb-1">기술 스택</label>
+              <div class="d-flex flex-wrap gap-1">
+          <span th:each="skill : ${consultationRoomDto.consultingApplicationDetailResponse.skillTags}"
+                class="badge bg-light text-dark border"
+                th:text="${skill}">Java</span>
+              </div>
+            </div>
+
+            <div class="mb-4">
+              <label class="text-secondary small fw-bold mb-1">고민 내용</label>
+              <div class="bg-light p-3 rounded-3 small text-muted"
+                   style="white-space: pre-wrap; max-height: 250px; overflow-y: auto; line-height: 1.6;"
+                   th:text="${consultationRoomDto.consultingApplicationDetailResponse.content}">
+                내용
+              </div>
+            </div>
+
+            <div th:if="${consultationRoomDto.consultingApplicationDetailResponse.fileUrl != null}">
+              <label class="text-secondary small fw-bold mb-2">참고 자료</label>
+              <a th:href="${consultationRoomDto.consultingApplicationDetailResponse.fileUrl}"
+                 target="_blank"
+                 class="btn btn-sm btn-outline-secondary w-100 d-flex align-items-center justify-content-center">
+                <i class="bi bi-file-earmark-text me-2"></i>첨부파일 열기
+              </a>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </th:block>
@@ -232,7 +299,7 @@
         try {
           const response = await fetch(`/api/consultations/room/${roomId}/close`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
+            headers: {'Content-Type': 'application/json'}
           });
 
           // 1. 정상 종료 (200 OK)
@@ -298,9 +365,19 @@
         return wrapper;
       }
 
-      function appendMessage(msg) { chatMessages.appendChild(createMessageElement(msg)); chatMessages.scrollTop = chatMessages.scrollHeight; }
-      function prependMessage(msg) { chatMessages.insertBefore(createMessageElement(msg), chatMessages.firstChild); }
-      function updateCursor() { const first = chatMessages.querySelector('[data-id]'); if (first) lastMessageId = first.getAttribute('data-id'); }
+      function appendMessage(msg) {
+        chatMessages.appendChild(createMessageElement(msg));
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      }
+
+      function prependMessage(msg) {
+        chatMessages.insertBefore(createMessageElement(msg), chatMessages.firstChild);
+      }
+
+      function updateCursor() {
+        const first = chatMessages.querySelector('[data-id]');
+        if (first) lastMessageId = first.getAttribute('data-id');
+      }
 
       async function fetchPreviousMessages() {
         if (!lastMessageId) return;
@@ -317,13 +394,20 @@
             hasNext = !data.last;
             chatMessages.scrollTop = chatMessages.scrollHeight - prevHeight;
           } else hasNext = false;
-        } finally { isFetching = false; loadingIndicator.classList.add('d-none'); }
+        } finally {
+          isFetching = false;
+          loadingIndicator.classList.add('d-none');
+        }
       }
 
       function sendMessage() {
         const content = textarea.value.trim();
         if (content && stompClient && stompClient.connected) {
-          stompClient.send("/app/chat/send", {}, JSON.stringify({ 'roomId': roomId, 'senderId': currentMemberId, 'content': content }));
+          stompClient.send("/app/chat/send", {}, JSON.stringify({
+            'roomId': roomId,
+            'senderId': currentMemberId,
+            'content': content
+          }));
           textarea.value = '';
         }
       }
