@@ -31,9 +31,8 @@
     <div class="custom-dropdown" id="skillDropdown">
       <button class="dropdown-btn" onclick="toggleDropdown('skillDropdown')">기술 스택 (전체)</button>
       <div class="dropdown-content">
-        <div style="margin-bottom: 12px;">
-          <input type="text" placeholder="기술 스택 검색..." class="form-control-custom"
-                 style="width: 100%; height: 40px; font-size: 0.9rem;"
+        <div class="dropdown-search-container">
+          <input type="text" placeholder="기술 스택 검색..." class="form-control-custom dropdown-search-input"
                  onkeyup="filterChipsInDropdown(this, 'skillOptions')">
         </div>
         <div class="chip-grid" id="skillOptions">
@@ -46,7 +45,7 @@
 
     <div class="custom-dropdown" id="consultingDropdown">
       <button class="dropdown-btn" onclick="toggleDropdown('consultingDropdown')">상담 유형 (전체)</button>
-      <div class="dropdown-content" style="min-width: 320px;">
+      <div class="dropdown-content dropdown-wide">
         <div class="chip-grid" id="consultingOptions">
           <button th:each="tag : ${consultingTags}" class="filter-chip" type="button" th:data-value="${tag.name()}"
                   th:text="${tag.name()}"
@@ -60,8 +59,7 @@
       <span class="fw-medium ms-2" style="font-size: 0.95rem;">바로 상담 가능한 멘토 보기</span>
     </label>
 
-    <button class="btn-outline-custom d-flex align-items-center gap-2 ms-auto" onclick="resetFilters()"
-            style="padding: 0.5rem 1rem; color: var(--color-text-secondary); border-color: var(--color-border);">
+    <button class="btn-outline-custom d-flex align-items-center gap-2 ms-auto btn-reset" onclick="resetFilters()">
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
@@ -79,9 +77,7 @@
     </h3>
     <div style="margin-left: auto;">
       <label for="sortType" class="me-2 text-small">정렬:</label>
-      <select id="sortType" class="form-control-custom"
-              style="min-width: 120px; padding: 0.4rem 2rem 0.4rem 1rem; font-size: 0.9rem; display: inline-block;"
-              onchange="searchMentors()">
+      <select id="sortType" class="form-control-custom sort-select" onchange="searchMentors()">
         <option value="LATEST">최신순</option>
         <option value="RECOMMEND">추천순</option>
         <option value="MATCHING">상담 많은순</option>
