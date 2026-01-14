@@ -59,4 +59,10 @@ public class MenteeDashboardViewController {
         setCommonModel(model, "scraps");
         return "mypage/mentee/scraps";
     }
+
+    @GetMapping("/profile/edit")
+    public String editProfile(@AuthenticationPrincipal CustomUserDetails user, Model model) {
+        setCommonModel(model, "profile");
+        return "mypage/mentee/profile-edit";
+    }
 }

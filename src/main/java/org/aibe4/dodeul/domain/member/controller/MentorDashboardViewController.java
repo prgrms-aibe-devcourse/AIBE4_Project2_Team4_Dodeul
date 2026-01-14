@@ -59,4 +59,10 @@ public class MentorDashboardViewController {
         setCommonModel(model, "scraps");
         return "mypage/mentor/scraps";
     }
+
+    @GetMapping("/profile/edit")
+    public String editProfile(@AuthenticationPrincipal CustomUserDetails user, Model model) {
+        setCommonModel(model, "profile");
+        return "mypage/mentor/profile-edit";
+    }
 }
