@@ -82,6 +82,6 @@ public class ChatService {
 
         messageRepository.save(systemMessage);
 
-        messagingTemplate.convertAndSend("/topic/room" + roomId, MessageDto.of(systemMessage));
+        messagingTemplate.convertAndSend("/topic/room/" + roomId, MessageDto.of(systemMessage));
     }
 }
