@@ -19,7 +19,7 @@ public class BoardPostCreateRequest {
     private ConsultingTag consultingTag;
 
     @NotBlank(message = "제목은 공백일 수 없습니다.")
-    @Size(min = 2, max = 100, message = "제목은 2자 이상 100자 이하여야 합니다.")
+    @Size(min = 2, max = 20, message = "제목은 2자 이상 30자 이하여야 합니다.")
     private String title;
 
     @NotBlank(message = "내용은 공백일 수 없습니다.")

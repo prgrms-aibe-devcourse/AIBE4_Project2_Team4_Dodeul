@@ -24,6 +24,9 @@ public record BoardPostDetailResponse(
     Integer commentCount,
     LocalDateTime createdAt,
     LocalDateTime updatedAt,
+    Boolean mine,
+    Boolean canEdit,
+    Boolean canDelete,
     List<BoardPostFileResponse> files) {
 
     @Builder
@@ -31,7 +34,12 @@ public record BoardPostDetailResponse(
     }
 
     public static BoardPostDetailResponse from(
-        BoardPost post, String authorDisplayName, boolean scrappedByMe, List<CommonFile> files) {
+        BoardPost post,
+        String authorDisplayName,
+        boolean scrappedByMe,
+        boolean mine,
+        List<CommonFile> files) {
+
         List<BoardPostFileResponse> fileResponses =
             files == null
                 ? List.of()
@@ -46,6 +54,8 @@ public record BoardPostDetailResponse(
                             .build())
                 .toList();
 
+        boolean deleted = post.getPostStatus() == PostStatus.DELETED;
+
         return BoardPostDetailResponse.builder()
             .postId(post.getId())
             .title(post.getTitle())
@@ -59,6 +69,9 @@ public record BoardPostDetailResponse(
             .commentCount(post.getCommentCount())
             .createdAt(post.getCreatedAt())
             .updatedAt(post.getUpdatedAt())
+            .mine(mine)
+            .canEdit(mine && !deleted)
+            .canDelete(mine && !deleted)
             .files(fileResponses)
             .build();
     }

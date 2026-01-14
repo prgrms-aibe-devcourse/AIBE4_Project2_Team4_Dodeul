@@ -646,9 +646,49 @@ body {
   white-space: nowrap;
 }
 
-/* src/main/resources/static/css/board/post-detail.css */
-/* 기존 스타일 유지 + 첨부파일 섹션/카드 추가 */
+/* ===== 게시글 메뉴(점 세개) ===== */
+.post__menuWrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
 
+.post__menu {
+  position: absolute;
+  right: 0;
+  top: 40px;
+  min-width: 160px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  padding: 8px;
+  z-index: 60;
+}
+
+.post__menuList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.post__menuItem {
+  width: 100%;
+  text-align: left;
+  border: 1px solid transparent;
+  background: #fff;
+  padding: 10px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.post__menuItem:hover {
+  background: rgba(17, 24, 39, 0.04);
+}
+
+/* ===== 첨부파일 섹션/카드 ===== */
 .attachments {
   margin-top: 12px;
   background: var(--card);
@@ -695,6 +735,10 @@ body {
   background: #fff;
   border-radius: 14px;
   padding: 12px 12px;
+}
+
+.attachcard--clickable {
+  cursor: pointer;
 }
 
 .attachcard:hover {
@@ -744,4 +788,58 @@ body {
   justify-content: center;
   color: var(--muted);
   background: #fff;
+}
+
+/* ===== 첨부파일 미리보기 ===== */
+.attachments__preview {
+  display: none;
+  margin-top: 12px;
+}
+
+.attachments__previewHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.attachments__previewTitle {
+  font-weight: 700;
+}
+
+.attachments__previewCloseBtn {
+  padding: 8px 12px;
+}
+
+.attachments__previewImage {
+  max-width: 100%;
+  border-radius: 12px;
+}
+
+.attachments__previewFrame {
+  width: 100%;
+  height: 640px;
+  border: 0;
+  border-radius: 12px;
+}
+
+.attachments__previewText {
+  white-space: pre-wrap;
+  word-break: break-word;
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.attachments__previewUnsupported {
+  padding: 12px 0;
+}
+
+.attachments__previewUnsupportedText {
+  margin-bottom: 8px;
+}
+
+.attachments__previewLink {
+  text-decoration: underline;
 }
