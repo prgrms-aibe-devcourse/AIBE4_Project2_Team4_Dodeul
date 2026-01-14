@@ -6,9 +6,12 @@ import org.aibe4.dodeul.domain.matching.model.repository.MatchingRepository;
 import org.aibe4.dodeul.domain.member.model.entity.Member;
 import org.aibe4.dodeul.domain.review.model.dto.ReviewFormDataDto;
 import org.aibe4.dodeul.domain.review.model.dto.ReviewRequest;
+import org.aibe4.dodeul.domain.review.model.dto.ReviewResponse;
 import org.aibe4.dodeul.domain.review.model.entity.Review;
 import org.aibe4.dodeul.domain.review.model.repository.ReviewRepository;
 import org.aibe4.dodeul.global.response.enums.ErrorCode;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -46,6 +49,16 @@ public class ReviewService {
             .build();
 
         reviewRepository.save(review);
+    }
+
+    public Page<ReviewResponse> getWrittenReviews(Long menteeId, Pageable pageable) {
+        return reviewRepository.findAllByMenteeId(menteeId, pageable)
+            .map(ReviewResponse::of);
+    }
+
+    public Page<ReviewResponse> getReceivedReviews(Long mentorId, Pageable pageable) {
+        return reviewRepository.findAllByMentorId(mentorId, pageable)
+            .map(ReviewResponse::of);
     }
 
     public Map<Long, Long> getRecommendedReviewCounts(List<Long> mentorIds) {
