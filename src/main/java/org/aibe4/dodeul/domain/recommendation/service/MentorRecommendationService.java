@@ -4,18 +4,14 @@ import lombok.RequiredArgsConstructor;
 import org.aibe4.dodeul.domain.consulting.model.entity.ConsultingApplication;
 import org.aibe4.dodeul.domain.consulting.model.enums.ConsultingTag;
 import org.aibe4.dodeul.domain.consulting.service.ConsultingApplicationService;
-import org.aibe4.dodeul.domain.matching.service.MatchingService;
-import org.aibe4.dodeul.domain.member.model.entity.Member;
-import org.aibe4.dodeul.domain.member.model.entity.MemberConsultingTag;
+import org.aibe4.dodeul.domain.member.model.dto.MentorCandidateDto;
 import org.aibe4.dodeul.domain.member.service.MemberQueryService;
 import org.aibe4.dodeul.domain.recommendation.model.dto.MentorRecommendationResponse;
-import org.aibe4.dodeul.domain.review.service.ReviewService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -25,8 +21,6 @@ public class MentorRecommendationService {
 
     private final MemberQueryService memberQueryService;
     private final ConsultingApplicationService applicationService;
-    private final MatchingService matchingService;
-    private final ReviewService reviewService;
 
     private static final int RECOMMEND_NUM = 3;
 
@@ -56,37 +50,29 @@ public class MentorRecommendationService {
             .toList();
 
         // 후보군 필터링 (상담 가능 ON, 진행 중 매칭 < 3)
-        List<Member> candidates = memberQueryService.findCandidateMentors();
+        List<MentorCandidateDto> candidates = memberQueryService.findCandidateMentorsDto();
 
         if (candidates.isEmpty() || candidates.size() < RECOMMEND_NUM) {
             throw new IllegalStateException("등록된 멘토 수가 적어 추천할 수 없습니다.");
         }
 
-        // 후보가 되는 member의 id 리스트 추출
-        // N+1 문제 방지를 위해 각 후보의 review, matching 데이터를 한 번에 가져옴
-        List<Long> candidateIds = candidates.stream().map(Member::getId).toList();
-        Map<Long, Long> reviewCounts = reviewService.getRecommendedReviewCounts(candidateIds);
-        Map<Long, Long> matchingCounts = matchingService.getCompletedMatchingCounts(candidateIds);
-
         // review, matching는 후보군 내 최대값을 벤치마크로 산정
         // 최소 벤치마크 점수를 두어 과대 평가 보정
-        long maxReviewVal = reviewCounts.values().stream().mapToLong(Long::longValue).max().orElse(0);
-        long maxMatchingVal = matchingCounts.values().stream().mapToLong(Long::longValue).max().orElse(0);
+        long maxReviewVal = candidates.stream()
+            .mapToLong(MentorCandidateDto::getRecommendCount)
+            .max().orElse(0);
+        long maxMatchingVal = candidates.stream()
+            .mapToLong(MentorCandidateDto::getCompletedMatchingCount)
+            .max().orElse(0);
         double benchmarkReview = Math.max(maxReviewVal, MIN_BENCHMARK_REVIEW);
         double benchmarkMatching = Math.max(maxMatchingVal, MIN_BENCHMARK_MATCHING);
 
-        // 점수 산정
+        // 점수 산정 및 정렬
         return candidates.stream()
-            .map(mentor -> {
-                long rCount = reviewCounts.getOrDefault(mentor.getId(), 0L);
-                long mCount = matchingCounts.getOrDefault(mentor.getId(), 0L);
-
-                return calculateNormalizedScore(
-                    mentor, targetConsultingTag, targetSkillTags,
-                    rCount, mCount,
-                    benchmarkReview, benchmarkMatching
-                );
-            })
+            .map(mentor -> calculateNormalizedScore(
+                mentor, targetConsultingTag, targetSkillTags,
+                benchmarkReview, benchmarkMatching
+            ))
             .sorted(Comparator.comparingDouble(MentorRecommendationResponse::getMatchScore).reversed())
             .limit(RECOMMEND_NUM)
             .collect(Collectors.toList());
@@ -97,37 +83,32 @@ public class MentorRecommendationService {
      * 소수점 첫째 자리까지 표현된 100점 만점 기준의 매칭 적합도 점수를 산출
      */
     private MentorRecommendationResponse calculateNormalizedScore(
-        Member mentor,
+        MentorCandidateDto mentor,
         ConsultingTag targetTag,
         List<String> targetSkills,
-        long reviewCnt,
-        long matchingCnt,
         double benchmarkReview,
         double benchmarkMatching) {
 
-        boolean isConsultingMatched = mentor.getConsultingTags().stream()
-            .map(MemberConsultingTag::getConsultingTag)
-            .anyMatch(tag -> tag == targetTag);
+        // 상담 유형 & 기술 스택 점수
+        boolean isConsultingMatched = mentor.getConsultingTags().contains(targetTag);
         double normConsulting = isConsultingMatched ? 1.0 : 0.0;
 
-        double normSkill = 1.0;
+        double normSkill = 0.0;
         if (targetSkills != null && !targetSkills.isEmpty()) {
-            List<String> mentorSkills = mentor.getSkillTags().stream()
-                .map(mst -> mst.getSkillTag().getName())
-                .toList();
-
             long matchCount = targetSkills.stream()
-                .filter(mentorSkills::contains)
+                .filter(mentor.getSkillTags()::contains)
                 .count();
-
             normSkill = (double) matchCount / targetSkills.size();
+        } else if (targetSkills == null || targetSkills.isEmpty()) {
+            normSkill = 1.0;
         }
 
-        double normReview = Math.min(reviewCnt / benchmarkReview, 1.0);
-        double normMatching = Math.min(matchingCnt / benchmarkMatching, 1.0);
-        double responseRate = mentor.getMentorProfile().getResponseRate();
-        double normResponse = responseRate / 100.0;
+        // 멘토 활동 지표 점수
+        double normReview = Math.min(mentor.getRecommendCount() / benchmarkReview, 1.0);
+        double normMatching = Math.min(mentor.getCompletedMatchingCount() / benchmarkMatching, 1.0);
+        double normResponse = mentor.getResponseRate() / 100.0;
 
+        // 최종 점수
         double weightedSum = (normConsulting * WEIGHT_CONSULTING)
             + (normSkill * WEIGHT_SKILL)
             + (normReview * WEIGHT_REVIEW_RECOMMEND)
@@ -138,15 +119,13 @@ public class MentorRecommendationService {
         return MentorRecommendationResponse.builder()
             .mentorId(mentor.getId())
             .nickname(mentor.getNickname())
-            .profileUrl(mentor.getMentorProfile().getProfileUrl())
-            .job(mentor.getMentorProfile().getJob())
-            .careerYears(mentor.getMentorProfile().getCareerYears())
-            .skillTags(mentor.getSkillTags().stream()
-                .map(mst -> mst.getSkillTag().getName())
-                .collect(Collectors.toList()))
-            .recommendedReviewCount(reviewCnt)
-            .completedMatchingCount(matchingCnt)
-            .responseRate(responseRate)
+            .profileUrl(mentor.getProfileUrl())
+            .job(mentor.getJob())
+            .careerYears(mentor.getCareerYears())
+            .skillTags(mentor.getSkillTags())
+            .recommendedReviewCount(mentor.getRecommendCount())
+            .completedMatchingCount(mentor.getCompletedMatchingCount())
+            .responseRate(mentor.getResponseRate())
             .matchScore(totalScore)
             .build();
     }

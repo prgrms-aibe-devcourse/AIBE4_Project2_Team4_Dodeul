@@ -2,7 +2,7 @@ package org.aibe4.dodeul.domain.member.service;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
-import org.aibe4.dodeul.domain.member.model.entity.Member;
+import org.aibe4.dodeul.domain.member.model.dto.MentorCandidateDto;
 import org.aibe4.dodeul.domain.member.model.entity.MentorProfile;
 import org.aibe4.dodeul.domain.member.model.repository.MentorProfileRepository;
 import org.aibe4.dodeul.domain.member.model.repository.MentorRecommendationRepositoryCustom;
@@ -38,7 +38,7 @@ public class MemberQueryService {
         mentorProfile.updateResponseRate(responseRate);
     }
 
-    public List<Member> findCandidateMentors() {
-        return recommendationRepository.findCandidateMentors();
+    public List<MentorCandidateDto> findCandidateMentorsDto() {
+        return recommendationRepository.findCandidateMentorsDto();
     }
 }
