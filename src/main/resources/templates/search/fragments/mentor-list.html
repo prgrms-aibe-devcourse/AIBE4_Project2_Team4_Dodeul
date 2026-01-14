@@ -4,8 +4,7 @@
 <div th:fragment="mentorList(mentors)">
 
   <div id="mentorGrid" class="mentor-grid">
-    <div th:if="${mentors.isEmpty()}"
-         style="grid-column: 1/-1; text-align: center; padding: 60px; color: var(--color-text-secondary);">
+    <div th:if="${mentors.isEmpty()}" class="no-result-message">
       <p style="font-size: 1.1rem; margin-bottom: 8px;">조건에 맞는 멘토가 없습니다.</p>
       <p style="font-size: 0.9rem;">다른 검색어나 필터로 다시 시도해보세요.</p>
     </div>
@@ -17,7 +16,7 @@
 
   <div class="pagination-container" th:if="${!mentors.isEmpty() && mentors.totalPages > 1}">
     <nav aria-label="Page navigation">
-      <ul class="pagination" style="display: flex; gap: 6px; list-style: none; padding: 0;"
+      <ul class="pagination"
           th:with="curr=${mentors.number}, total=${mentors.totalPages},
                          start=${T(java.lang.Math).max(0, curr - 2)},
                          end=${T(java.lang.Math).min(total - 1, curr + 2)}">
