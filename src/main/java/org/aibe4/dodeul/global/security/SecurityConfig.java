@@ -1,3 +1,4 @@
+// src/main/java/org/aibe4_dodeul/global/security/SecurityConfig.java
 package org.aibe4.dodeul.global.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -30,37 +31,63 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
-            .cors(Customizer.withDefaults())
-            .csrf(csrf -> csrf
-                .ignoringRequestMatchers("/api/**", "/h2-console/**", "/consulting-applications/**")
-            )
+        http.cors(Customizer.withDefaults())
+            .csrf(csrf -> csrf.ignoringRequestMatchers(
+                "/api/**", "/h2-console/**", "/consulting-applications/**"
+            ))
             .authorizeHttpRequests(auth -> auth
+
                 // 정적 리소스 및 인프라
                 .requestMatchers(
-                    "/css/**", "/js/**", "/images/**", "/favicon.ico",
-                    "/error",
+                    "/css/**",
+                    "/js/**",
+                    "/images/**",
+                    "/favicon.ico",
+                    "/error", "/error/**",
                     "/h2-console/**",
-                    "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**",
+                    "/swagger-ui.html",
+                    "/swagger-ui/**",
+                    "/v3/api-docs/**",
                     "/demo/**"
                 ).permitAll()
 
-                // 권한 우선 확인 구간
-                // 아래의 permitAll보다 먼저 선언되어야 가로채기가 가능함
+                // 권한 우선 확인
                 .requestMatchers("/onboarding/nickname/**").authenticated()
                 .requestMatchers("/post-login").authenticated()
 
                 // 공개 비즈니스 로직
-                // 로그인 없이 접근 가능한 페이지 및 API
                 .requestMatchers(
                     "/",
-                    "/auth/**", "/oauth2/**", "/login/oauth2/**",
+                    "/auth/**",
+                    "/oauth2/**",
+                    "/login/oauth2/**",
                     "/api/auth/**",
-                    "/onboarding/**", "/api/onboarding/**"
+                    "/onboarding/**",
+                    "/api/onboarding/**",
+                    "/search/mentors/**",
+                    "/api/search/mentors/**"
                 ).permitAll()
 
-                // 게시판 조회(GET)만 공개
-                .requestMatchers(HttpMethod.GET, "/api/board/posts", "/board/posts").permitAll()
+                // 공개 멘토 프로필
+                .requestMatchers(HttpMethod.GET, "/mentor/public/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/public/**").permitAll()
+
+                // 게시판 조회(GET) 공개
+                .requestMatchers(
+                    HttpMethod.GET,
+                    "/api/board/posts",
+                    "/api/board/posts/*",
+                    "/api/board/posts/*/comments",
+                    "/api/board/posts/*/files",
+                    "/board/posts",
+                    "/board/posts/*"
+                ).permitAll()
+
+                // 파일 조회(GET) 공개
+                .requestMatchers(HttpMethod.GET, "/api/files").permitAll()
+
+                // 파일 업로드 API (인증 필요)
+                .requestMatchers(HttpMethod.POST, "/api/files").authenticated()
 
                 // 멘토 전용 구간
                 .requestMatchers(
@@ -70,10 +97,10 @@ public class SecurityConfig {
                     "/api/mentor/**"
                 ).hasRole("MENTOR")
 
-                // 상담 신청 관련 (상세조회, 수정, 삭제 포함)
-                .requestMatchers("/consulting-applications/**").authenticated()// 106번 재커밋
+                // 상담 신청 관련
+                .requestMatchers("/consulting-applications/**").authenticated()
 
-                // AI 초안 생성 API (이게 추가되어야 403 에러가 해결됩니다!)
+                // AI 초안 생성 API
                 .requestMatchers("/api/ai/**").authenticated()
 
                 // 멘티 전용 구간
@@ -87,65 +114,60 @@ public class SecurityConfig {
 
                 .anyRequest().authenticated()
             )
-            .sessionManagement(session -> session
-                .sessionFixation(sessionFixation -> sessionFixation.migrateSession())
-                .invalidSessionUrl("/auth/login?expired")
+            .sessionManagement(session ->
+                session.sessionFixation(sessionFixation -> sessionFixation.migrateSession())
+                    .invalidSessionUrl("/auth/login?expired")
             )
-            .formLogin(form -> form
-                .loginPage("/auth/login")
-                .loginProcessingUrl("/auth/login")
-                .usernameParameter("email")
-                .passwordParameter("password")
-                .defaultSuccessUrl("/post-login")
-                .failureUrl("/auth/login?error")
-                .permitAll()
+            .formLogin(form ->
+                form.loginPage("/auth/login")
+                    .loginProcessingUrl("/auth/login")
+                    .usernameParameter("email")
+                    .passwordParameter("password")
+                    .defaultSuccessUrl("/post-login")
+                    .failureUrl("/auth/login?error")
+                    .permitAll()
             )
-            .oauth2Login(oauth -> oauth
-                .loginPage("/auth/login")
-                .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
-                .successHandler(oAuth2LoginSuccessHandler)
+
+            .oauth2Login(oauth ->
+                oauth.loginPage("/auth/login")
+                    .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
+                    .successHandler(oAuth2LoginSuccessHandler)
             )
-            .logout(logout -> logout
-                .logoutUrl("/logout")
-                .invalidateHttpSession(true)
-                .deleteCookies("JSESSIONID")
-                .logoutSuccessUrl("/auth/login")
+            .logout(logout ->
+                logout.logoutUrl("/logout")
+                    .invalidateHttpSession(true)
+                    .deleteCookies("JSESSIONID")
+                    .logoutSuccessUrl("/auth/login")
             )
             .exceptionHandling(handler -> handler
-                // 인증되지 않은 사용자
                 .authenticationEntryPoint((request, response, authException) -> {
-                    // API 요청이면 401 JSON 응답
                     if (request.getRequestURI().startsWith("/api/")) {
                         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
                         response.setCharacterEncoding("UTF-8");
 
-                        CommonResponse<Void> errorResponse = CommonResponse.fail(ErrorCode.UNAUTHORIZED_ACCESS);
+                        CommonResponse<Void> errorResponse =
+                            CommonResponse.fail(ErrorCode.UNAUTHORIZED_ACCESS);
                         response.getWriter().write(objectMapper.writeValueAsString(errorResponse));
-                    }
-                    // 화면 요청이면 로그인 페이지로 리다이렉트
-                    else {
+                    } else {
                         response.sendRedirect("/auth/login");
                     }
                 })
-
-                // 권한이 없는 사용자
                 .accessDeniedHandler((request, response, accessDeniedException) -> {
-                    // API 요청이면 403 JSON 응답
                     if (request.getRequestURI().startsWith("/api/")) {
                         response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
                         response.setCharacterEncoding("UTF-8");
 
-                        CommonResponse<Void> errorResponse = CommonResponse.fail(ErrorCode.ACCESS_DENIED);
+                        CommonResponse<Void> errorResponse =
+                            CommonResponse.fail(ErrorCode.ACCESS_DENIED);
                         response.getWriter().write(objectMapper.writeValueAsString(errorResponse));
-                    }
-                    // 화면 요청이면 403 에러 페이지로 리다이렉트
-                    else {
+                    } else {
                         response.sendRedirect("/error/403");
                     }
                 })
             );
+
         http.headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()));
         return http.build();
     }
