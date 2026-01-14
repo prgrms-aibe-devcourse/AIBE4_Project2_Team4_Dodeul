@@ -2,12 +2,14 @@ package org.aibe4.dodeul.domain.consulting.model.dto;
 
 import lombok.Builder;
 import lombok.Getter;
+import lombok.Setter;
 import org.aibe4.dodeul.domain.consulting.model.entity.ConsultingApplication;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Getter
+@Setter
 @Builder
 public class ConsultingApplicationDetailResponse {
 

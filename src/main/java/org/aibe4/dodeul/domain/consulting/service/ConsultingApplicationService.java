@@ -12,6 +12,7 @@ import org.aibe4.dodeul.domain.consulting.model.dto.ConsultingApplicationRequest
 import org.aibe4.dodeul.domain.consulting.model.entity.ApplicationSkillTag;
 import org.aibe4.dodeul.domain.consulting.model.entity.ConsultingApplication;
 import org.aibe4.dodeul.domain.consulting.model.repository.ConsultingApplicationRepository;
+import org.aibe4.dodeul.domain.member.model.repository.MemberRepository;
 import org.aibe4.dodeul.global.exception.BusinessException;
 import org.aibe4.dodeul.global.file.model.dto.response.FileUploadResponse;
 import org.aibe4.dodeul.global.file.service.FileService;
@@ -31,15 +32,34 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class ConsultingApplicationService {
 
+    private final MemberRepository memberRepository;
     private final ConsultingApplicationRepository consultingApplicationRepository;
     private final SkillTagRepository skillTagRepository;
     private final ApplicationValidatorService validatorService;
     private final FileService fileService;
     private final CommonFileRepository commonFileRepository; // 이 한 줄만 추가
 
+
+    // [수정] 닉네임 조회 로직 추가 버전
     public ConsultingApplicationDetailResponse getApplicationDetail(Long applicationId) {
+        // 1. 신청서 찾기
         ConsultingApplication application = findApplicationEntity(applicationId);
-        return ConsultingApplicationDetailResponse.from(application);
+
+        // 2. DTO 변환
+        ConsultingApplicationDetailResponse response = ConsultingApplicationDetailResponse.from(application);
+
+        // 3. 멘티 ID(숫자)를 이용해서 진짜 닉네임 찾아오기
+        // (만약 MemberRepository가 없거나 못 찾으면 '알수없음' 처리)
+        if (memberRepository != null) {
+            String nickname = memberRepository.findById(application.getMenteeId())
+                .map(member -> member.getNickname()) // Member 엔티티에 getNickname() 메서드 필요
+                .orElse("(알수없음)");
+
+            // 4. DTO에 닉네임 세팅 (DTO에 setMenteeName 메서드 필요)
+            response.setMenteeName(nickname);
+        }
+
+        return response;
     }
 
     public ConsultingApplication findApplicationEntity(Long applicationId) {
@@ -126,20 +146,22 @@ public class ConsultingApplicationService {
             throw new IllegalStateException("수정 권한이 없습니다.");
         }
 
-        String fileUrl = application.getFileUrl();
+        String fileUrl = application.getFileUrl(); // 기본적으로 기존 URL 유지
+
+        // [수정] 파일이 새로 들어왔을 때만 업로드 및 CommonFile 저장 수행
         if (request.getFile() != null && !request.getFile().isEmpty()) {
             FileUploadResponse response = fileService.upload(request.getFile(), FileDomain.CONSULTING_APPLICATION.name());
             fileUrl = response.getFileUrl();
-        }
 
-        CommonFile commonFile = CommonFile.ofConsultingApplication(
-            applicationId,
-            fileUrl,
-            request.getFile().getOriginalFilename(),
-            request.getFile().getContentType(),
-            request.getFile().getSize()
-        );
-        commonFileRepository.save(commonFile);
+            CommonFile commonFile = CommonFile.ofConsultingApplication(
+                applicationId,
+                fileUrl,
+                request.getFile().getOriginalFilename(),
+                request.getFile().getContentType(),
+                request.getFile().getSize()
+            );
+            commonFileRepository.save(commonFile);
+        }
 
         application.update(
             request.getTitle(),
@@ -181,7 +203,13 @@ public class ConsultingApplicationService {
 
     public ConsultingApplicationRequest getRegistrationForm(Long applicationId) {
         ConsultingApplication application = findApplicationEntity(applicationId);
+
         ConsultingApplicationRequest form = new ConsultingApplicationRequest();
+
+        // ▼▼▼ [이 줄이 지금 코드에 없습니다! 꼭 넣으세요!] ▼▼▼
+        form.setMenteeId(application.getMenteeId());
+        // ▲▲▲ ----------------------------------------- ▲▲▲
+
         form.setTitle(application.getTitle() != null ? application.getTitle() : "");
         form.setContent(application.getContent() != null ? application.getContent() : "");
         form.setConsultingTag(application.getConsultingTag());
