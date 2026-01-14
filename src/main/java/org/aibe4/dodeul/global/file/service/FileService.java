@@ -89,6 +89,10 @@ public class FileService {
             return IMAGE_PROFILE;
         }
 
+        if (p.contains("consulting")) {
+            return union(IMAGE_CONSULTATION, DOC_COMMON, OFFICE_COMMON);
+        }
+
         if (p.contains("consultation") || p.contains("ticket")) {
             return union(IMAGE_CONSULTATION, DOC_COMMON, OFFICE_COMMON);
         }

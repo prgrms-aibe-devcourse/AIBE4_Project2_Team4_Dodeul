@@ -124,9 +124,18 @@
 
       <div class="mb-5">
         <label class="fw-bold mb-2">첨부파일 （선택）</label>
-        <input type="file" id="file" name="file" class="form-control"
-               accept=".jpg,.jpeg,.png,.gif,.pdf,.txt,.ppt,.pptx">
-        <div class="form-text text-muted small">이미지, PDF, PPT 등 최대 5MB까지 첨부 가능합니다.</div>
+
+        <input type="file" id="file" name="file"
+               class="form-control"
+               th:classappend="${#fields.hasErrors('file')} ? 'is-invalid'"
+               accept=".jpg,.jpeg,.png,.gif,.pdf,.txt,.ppt,.pptx"
+               onchange="validateFile(this)">
+
+        <div class="form-text text-muted small">이미지, PDF, PPT 등 최대 10MB까지 첨부 가능합니다.</div>
+
+        <div class="invalid-feedback" th:if="${#fields.hasErrors('file')}" th:errors="*{file}">
+          파일 관련 에러 메시지가 여기에 표시됩니다.
+        </div>
       </div>
 
       <hr class="my-5">
@@ -194,6 +203,28 @@
     function updateCharCount(textarea) {
       const currentLength = textarea.value.length;
       document.getElementById('charCount').textContent = currentLength + '/1000';
+    }
+
+    // [추가] 파일 유효성 검사 (크기 및 확장자)
+    function validateFile(input) {
+      const file = input.files[0];
+      if (!file) return; // 파일 선택 취소 시 중단
+
+      // 1. 용량 제한 (10MB) - 여기 수정됨
+      const maxSize = 10 * 1024 * 1024; // 10MB
+      if (file.size > maxSize) {
+        alert("파일 크기는 10MB를 초과할 수 없습니다.");
+        input.value = ""; // 선택된 파일 초기화
+        return;
+      }
+
+      // 2. 확장자 제한 (보안 강화)
+      const allowedExtensions = /(\.jpg|\.jpeg|\.png|\.gif|\.pdf|\.txt|\.ppt|\.pptx)$/i;
+      if (!allowedExtensions.exec(file.name)) {
+        alert("허용되지 않는 파일 형식입니다.\n(이미지, PDF, TXT, PPT 파일만 가능)");
+        input.value = ""; // 선택된 파일 초기화
+        return;
+      }
     }
 
     // 1. AI 생성 요청
