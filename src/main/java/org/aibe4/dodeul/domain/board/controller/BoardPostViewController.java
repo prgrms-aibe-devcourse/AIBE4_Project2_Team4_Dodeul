@@ -134,6 +134,29 @@ public class BoardPostViewController {
         return "board/post-detail";
     }
 
+    @GetMapping("/board/posts/{postId}/edit")
+    public String editForm(
+        @AuthenticationPrincipal CustomUserDetails userDetails,
+        @PathVariable Long postId,
+        Model model,
+        RedirectAttributes rttr) {
+
+        Long memberId = userDetails == null ? null : userDetails.getMemberId();
+        if (memberId == null) {
+            rttr.addFlashAttribute("msg", "로그인이 필요합니다.");
+            return "redirect:/auth/login";
+        }
+
+        model.addAttribute("postId", postId);
+
+        model.addAttribute("consultingTags", ConsultingTag.values());
+        model.addAttribute("skillTags", skillTagRepository.findAll());
+        model.addAttribute("skillTagIdString", "");
+
+        return "board/post-edit";
+    }
+
+
     private void applySkillTagsIfNeeded(BoardPostCreateRequest form, String skillTagIdString) {
         if (skillTagIdString == null || skillTagIdString.isBlank()) {
             return;

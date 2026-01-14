@@ -1,0 +1,62 @@
+@charset "UTF-8";
+
+/* 대기 화면 전체 컨테이너 */
+.waiting-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 60vh;
+  padding: 2rem 0;
+}
+
+/* 대기 카드  */
+.waiting-card {
+  background-color: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-lg);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+  padding: 4rem 3rem;
+  text-align: center;
+  max-width: 500px;
+  width: 100%;
+}
+
+/* 체크 아이콘 래퍼 */
+.icon-wrapper {
+  margin-bottom: 2rem;
+  color: var(--color-text-primary);
+}
+
+/* 타이틀 텍스트 */
+.waiting-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-bottom: 1.5rem;
+}
+
+/* 멘토 이름 텍스트 */
+.mentor-name-text {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 2.5rem;
+  color: var(--color-text-primary);
+}
+
+/* 내역 보기 버튼 커스텀 */
+.btn-history {
+  padding: 0.8rem 2rem;
+  font-size: 1rem;
+  border-radius: 4px;
+  color: var(--color-text-secondary);
+  border-color: var(--color-border);
+  transition: all 0.2s ease;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.btn-history:hover {
+  color: var(--color-text-primary);
+  border-color: var(--color-text-primary);
+  background-color: transparent;
+}
