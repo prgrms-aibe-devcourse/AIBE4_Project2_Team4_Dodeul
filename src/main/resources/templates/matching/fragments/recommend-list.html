@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<div th:fragment="recommendList">
+  <div th:if="${mentors.isEmpty()}" class="no-result-message py-5">
+    <p style="font-size: 1.1rem; margin-bottom: 8px;">조건에 맞는 추천 멘토를 찾을 수 없습니다.</p>
+    <p style="font-size: 0.9rem;">아래 검색을 통해 직접 찾아보세요!</p>
+  </div>
+
+  <div th:unless="${mentors.isEmpty()}" class="recommendation-container">
+
+    <div class="top-recommendation-wrapper">
+      <th:block th:replace="~{matching/fragments/recommend-card :: recommendCard(${mentors[0]})}"></th:block>
+    </div>
+
+    <div th:if="${mentors.size() > 1}" class="sub-recommendation-grid">
+      <th:block th:each="mentor, stat : ${mentors}">
+        <th:block th:if="${stat.index > 0}">
+          <th:block th:replace="~{matching/fragments/recommend-card :: recommendCard(${mentor})}"></th:block>
+        </th:block>
+      </th:block>
+    </div>
+
+  </div>
+</div>
+</html>
