@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.aibe4.dodeul.domain.matching.model.entity.Matching;
 import org.aibe4.dodeul.domain.matching.model.repository.MatchingRepository;
 import org.aibe4.dodeul.domain.member.model.entity.Member;
+import org.aibe4.dodeul.domain.review.model.dto.NotReviewdDto;
 import org.aibe4.dodeul.domain.review.model.dto.ReviewFormDataDto;
 import org.aibe4.dodeul.domain.review.model.dto.ReviewRequest;
 import org.aibe4.dodeul.domain.review.model.dto.ReviewResponse;
@@ -48,6 +49,8 @@ public class ReviewService {
             .isRecommended(request.isRecommended())
             .build();
 
+        matching.complete();
+
         reviewRepository.save(review);
     }
 
@@ -74,5 +77,9 @@ public class ReviewService {
 
     public boolean hasReview(Long matchingId) {
         return reviewRepository.existsByMatchingId(matchingId);
+    }
+
+    public List<NotReviewdDto> notReviewdDtoList(Long menteeId) {
+        return reviewRepository.findNotReviewedMatches(menteeId);
     }
 }
