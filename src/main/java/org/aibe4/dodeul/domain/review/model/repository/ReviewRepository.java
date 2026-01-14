@@ -1,5 +1,6 @@
 package org.aibe4.dodeul.domain.review.model.repository;
 
+import org.aibe4.dodeul.domain.review.model.dto.NotReviewdDto;
 import org.aibe4.dodeul.domain.review.model.entity.Review;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,4 +22,15 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     Page<Review> findAllByMenteeId(Long menteeId, Pageable pageable);
 
     boolean existsByMatchingId(Long matchingId);
+
+    // 매칭의 상태가 INREVIEW인 매칭에서 작성되지 않은 리뷰들을 조회함
+    @Query("SELECT new org.aibe4.dodeul.domain.review.model.dto.NotReviewdDto(" +
+        "m.id, m.mentor.nickname, m.status) " +
+        "FROM Matching m " +
+        "LEFT JOIN Review r ON r.matching.id = m.id " +
+        "WHERE m.mentee.id = :menteeId " +
+        "AND m.status = org.aibe4.dodeul.domain.matching.model.enums.MatchingStatus.INREVIEW " +
+        "AND r.id IS NULL " +
+        "ORDER BY m.id DESC")
+    List<NotReviewdDto> findNotReviewedMatches(@Param("menteeId") Long menteeId);
 }
