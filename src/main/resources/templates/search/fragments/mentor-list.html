@@ -10,7 +10,7 @@
     </div>
 
     <th:block th:unless="${mentors.isEmpty()}" th:each="mentor : ${mentors}">
-      <th:block th:replace="~{search/fragments/mentor-card :: mentorCard(${mentor})}"></th:block>
+      <th:block th:replace="~{search/fragments/mentor-card :: mentorCard(${mentor}, 'checkAvailability')}"></th:block>
     </th:block>
   </div>
 

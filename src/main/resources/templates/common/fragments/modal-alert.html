@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<div th:fragment="alertModal">
+  <div class="modal fade" id="commonAlertModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header border-0 pb-0">
+          <h5 class="modal-title fw-bold text-danger">알림</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body py-4 text-center">
+          <p id="commonAlertMessage" class="mb-0 fs-5">에러 메시지가 여기에 표시됩니다.</p>
+        </div>
+        <div class="modal-footer border-0 pt-0 justify-content-center">
+          <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">확인</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 모달 띄우기 헬퍼 함수
+    function showCommonModal(message) {
+      const modalEl = document.getElementById('commonAlertModal');
+      const msgEl = document.getElementById('commonAlertMessage');
+      if (modalEl && msgEl) {
+        msgEl.textContent = message;
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+      } else {
+        // 모달 로드 실패 시 fallback
+        alert(message);
+      }
+    }
+  </script>
+</div>
+</html>

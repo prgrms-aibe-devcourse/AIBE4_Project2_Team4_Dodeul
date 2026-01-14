@@ -80,6 +80,39 @@
           loader.innerHTML = '<p class="text-danger">추천 목록을 불러오는 중 오류가 발생했습니다.</p>';
         });
     }
+
+    // 매칭 신청 후 매칭 완료 화면으로 리다이렉트
+    function requestMatching(mentorId, mentorName) {
+      if (!confirm(`'${mentorName}' 멘토님에게 상담을 신청하시겠습니까?`)) {
+        return;
+      }
+
+      const requestData = {
+        applicationId: applicationId,
+        mentorId: mentorId
+      };
+
+      fetch('/api/matchings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData)
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.code >= 200 && data.code < 300) {
+            // encodeURIComponent로 한글 깨짐 방지
+            location.href = `/matchings/waiting?mentorName=${encodeURIComponent(mentorName)}`;
+          } else {
+            alert(data.message || '매칭 신청에 실패했습니다.');
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('시스템 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+        });
+    }
   </script>
 </th:block>
 </html>

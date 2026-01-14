@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<div th:fragment="mentorCard(mentor)" class="card-custom mentor-card-custom h-100 d-flex flex-column">
+<div th:fragment="mentorCard(mentor, actionFunction)" class="card-custom mentor-card-custom h-100 d-flex flex-column">
   <div class="mentor-card-header">
     <img th:src="${mentor.profileUrl != null ? mentor.profileUrl : '/images/default-profile.png'}"
          th:alt="${mentor.nickname}"
@@ -39,8 +39,12 @@
        style="text-decoration: none; text-align: center;">프로필</a>
 
     <button th:if="${mentor.status.name() == 'AVAILABLE'}"
-            th:onclick="|location.href='@{/consulting/request(mentorId=${mentor.memberId})}'|"
-            class="btn-primary-custom mentor-card-btn">상담신청
+            th:data-action="${actionFunction}"
+            th:data-id="${mentor.memberId}"
+            th:data-name="${mentor.nickname}"
+            onclick="handleRequestConsultingAction(this)"
+            class="btn-primary-custom mentor-card-btn">
+      <span class="btn-text">상담신청</span>
     </button>
 
     <button th:if="${mentor.status.name() == 'FULL'}"
