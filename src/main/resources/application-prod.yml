@@ -44,12 +44,12 @@ spring:
             scope:
               - read:user
 
-  supabase:
+supabase:
   url: ${SUPABASE_URL}
   service-role-key: ${SUPABASE_SERVICE_ROLE_KEY}
   storage:
     bucket: files
-    
+
 logging:
   level:
     root: INFO
