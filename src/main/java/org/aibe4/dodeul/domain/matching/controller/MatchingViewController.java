@@ -52,7 +52,11 @@ public class MatchingViewController {
     }
 
     @GetMapping("/waiting")
-    public String waitMatching() {
+    public String waitMatching(
+        @RequestParam(value = "mentorName", defaultValue = "멘토") String mentorName,
+        Model model) {
+
+        model.addAttribute("mentorName", mentorName);
         return "matching/waiting";
     }
 }
