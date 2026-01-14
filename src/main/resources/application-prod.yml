@@ -43,6 +43,13 @@ spring:
             client-secret: ${GITHUB_CLIENT_SECRET}
             scope:
               - read:user
+
+  supabase:
+  url: ${SUPABASE_URL}
+  service-role-key: ${SUPABASE_SERVICE_ROLE_KEY}
+  storage:
+    bucket: files
+    
 logging:
   level:
     root: INFO
