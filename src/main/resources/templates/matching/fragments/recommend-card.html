@@ -44,7 +44,7 @@
   </div>
 
   <button class="btn-primary-custom mentor-card-btn w-100 mt-auto"
-          th:onclick="|location.href='@{/consulting/request(mentorId=${mentor.mentorId})}'|">
+          th:onclick="requestMatching([[${mentor.mentorId}]], [[${mentor.nickname}]])">
     이 멘토에게 상담 신청하기
   </button>
 

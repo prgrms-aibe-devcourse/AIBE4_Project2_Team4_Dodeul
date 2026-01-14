@@ -256,6 +256,40 @@
         resultEl.style.opacity = '1';
       }
     }
+
+    // 상담신청 버튼 클릭 핸들러
+    function handleRequestConsultingAction(element) {
+      let actionName = element.getAttribute('data-action');
+      const mentorId = element.getAttribute('data-id');
+      const mentorName = element.getAttribute('data-name');
+
+      // 추천 페이지의 검색 영역 내부에 있는 버튼이라면
+      // 실행할 함수명을 'requestMatching'으로 강제 변경
+      if (element.closest('.recommendation-page-search')) {
+        actionName = 'requestMatching';
+      }
+
+      if (typeof window[actionName] === 'function') {
+        window[actionName](mentorId, mentorName);
+      } else {
+        console.error(`Function ${actionName} is not defined.`);
+        alert('기능을 실행할 수 없습니다.');
+      }
+    }
+
+    // 매칭 가능 여부 확인 후 상담신청서 작성 페이지로 리다이렉트
+    function checkAvailability(mentorId) {
+      fetch(`/api/matchings/availability?mentorId=${mentorId}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.code >= 200 && data.code < 300) {
+            location.href = `/consulting-applications/form?mentorId=${mentorId}`;
+          } else {
+            showCommonModal(data.message || '현재 상담 신청이 불가능합니다.');
+          }
+        })
+        .catch(err => showCommonModal('서버 통신 중 오류가 발생했습니다.'));
+    }
   </script>
 </div>
 </html>
