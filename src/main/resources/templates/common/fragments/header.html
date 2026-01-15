@@ -26,11 +26,17 @@
       <div sec:authorize="isAuthenticated()"
            style="display:flex; align-items:center; gap:12px;">
 
-        <!-- 프로필 아이콘: JS가 src를 교체할 수 있도록 id 부여 -->
+        <!-- 프로필 이미지 (기본은 숨김) -->
         <img id="headerProfileImg"
-             th:src="@{/css/icons/usericon.svg}"
+             src=""
              alt="profile"
-             style="width:32px; height:32px; border-radius:50%; background:#f2f2f2; padding:4px; object-fit:cover;"/>
+             style="width:32px; height:32px; border-radius:50%; object-fit:cover; display:none;"/>
+
+        <!-- 이니셜 아바타 (기본 표시) -->
+        <div id="headerProfileInitial"
+             style="width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg, #667eea 0%, #764ba2 100%); color:white; display:flex; align-items:center; justify-content:center; font-weight:600; font-size:14px;">
+          U
+        </div>
 
         <!-- role을 JS가 읽도록 숨김 값으로 렌더 -->
         <span id="headerUserRole" sec:authentication="principal.role" style="display:none;">ROLE</span>
@@ -62,20 +68,17 @@
       try {
         const nameEl = document.getElementById('headerNickname');
         const imgEl = document.getElementById('headerProfileImg');
+        const initialEl = document.getElementById('headerProfileInitial');
         const roleEl = document.getElementById('headerUserRole');
 
-        // 1) 닉네임은 dashboard에서 최신값 가져오기
-        const dashRes = await fetch('/api/mypage/dashboard', {
-          credentials: 'same-origin',
-          headers: {'accept': 'application/json'}
-        });
-        const dashJson = await dashRes.json().catch(() => null);
-        if (dashRes.ok && nameEl && dashJson?.data?.nickname) {
-          nameEl.textContent = dashJson.data.nickname;
+        // 1) 즉시 렌더링된 닉네임 사용 (페이지 로드와 동시에 표시)
+        let nickname = (nameEl?.textContent || 'U').trim();
+        if (initialEl) {
+          initialEl.textContent = nickname.substring(0, 1).toUpperCase();
         }
 
-        // 2) 프로필 이미지 업데이트는 role 기반으로 유지
-        if (!roleEl || !imgEl) return;
+        // 2) 프로필 이미지는 비동기로 로드
+        if (!roleEl || !imgEl || !initialEl) return;
         let role = (roleEl.textContent || '').trim();
         if (role.startsWith('ROLE_')) role = role.replace('ROLE_', '');
 
@@ -84,21 +87,34 @@
         else if (role === 'MENTEE') url = '/api/mypage/mentee/profile';
         else return;
 
+        // 프로필 정보 가져오기 (닉네임 + 이미지)
         const res = await fetch(url, {credentials: 'same-origin', headers: {'accept': 'application/json'}});
         const json = await res.json().catch(() => null);
-        if (!res.ok) return;
 
-        const profileUrl = json?.data?.profileUrl;
-        if (!profileUrl) return;
+        if (res.ok && json?.data) {
+          // 최신 닉네임으로 업데이트
+          if (json.data.nickname) {
+            nickname = json.data.nickname;
+            if (nameEl) nameEl.textContent = nickname;
+            if (initialEl) initialEl.textContent = nickname.substring(0, 1).toUpperCase();
+          }
 
-        const cacheBusted = profileUrl + (profileUrl.includes('?') ? '&' : '?') + 't=' + Date.now();
-        imgEl.src = cacheBusted;
-        imgEl.style.padding = '0px';
-        imgEl.style.background = 'none';
-        imgEl.style.objectFit = 'cover';
+          // 프로필 이미지 처리
+          const profileUrl = json.data.profileUrl;
+
+          if (profileUrl) {
+            // 이미지가 있으면 이미지 표시
+            const cacheBusted = profileUrl + (profileUrl.includes('?') ? '&' : '?') + 't=' + Date.now();
+            imgEl.src = cacheBusted;
+            imgEl.style.display = 'block';
+            initialEl.style.display = 'none';
+          }
+          // 이미지가 없으면 이미 표시된 이니셜 유지
+        }
 
       } catch (e) {
         console.debug('header sync failed', e);
+        // 에러 시에도 이미 표시된 이니셜 유지
       }
     })();
   </script>

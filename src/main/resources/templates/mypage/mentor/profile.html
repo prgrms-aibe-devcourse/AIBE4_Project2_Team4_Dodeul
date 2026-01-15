@@ -14,6 +14,18 @@
         background-position: center;
         background-repeat: no-repeat;
       }
+
+      /* 이니셜 아바타 스타일 */
+      #profileAvatar.avatar-initial {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        color: white !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-weight: 600 !important;
+        font-size: 32px !important;
+        line-height: 1 !important;
+      }
     </style>
   </th:block>
 </head>
@@ -81,15 +93,21 @@
       root.innerHTML = arr.map(t => `<span class="tag tag--read-only">${escapeHtml(t)}</span>`).join('');
     }
 
-    function setAvatar(url) {
+    function setAvatar(url, nickname) {
       const avatar = document.getElementById('profileAvatar');
       if (!avatar) return;
 
       if (url) {
+        // 이미지가 있는 경우
         const cacheBusted = url + (url.includes('?') ? '&' : '?') + 't=' + Date.now();
         avatar.style.backgroundImage = `url(${cacheBusted})`;
+        avatar.classList.remove('avatar-initial');
+        avatar.textContent = '';
       } else {
+        // 이미지가 없는 경우 - 이니셜 표시
         avatar.style.backgroundImage = 'none';
+        avatar.classList.add('avatar-initial');
+        avatar.textContent = nickname ? nickname.substring(0, 1).toUpperCase() : 'U';
       }
     }
 
@@ -105,6 +123,7 @@
         }
 
         const data = json?.data || {};
+        const nickname = data.nickname || '멘토';
 
         document.getElementById('mentorName').textContent = data.nickname ? `${data.nickname} 멘토` : '멘토';
 
@@ -124,7 +143,7 @@
         renderTags(document.getElementById('mentorSkills'), data.skillTags ?? []);
         renderTags(document.getElementById('mentorConsultings'), data.consultingTags ?? []);
 
-        setAvatar(data.profileUrl);
+        setAvatar(data.profileUrl, nickname);
 
       } catch (e) {
         err.textContent = '서버와 통신할 수 없습니다.';

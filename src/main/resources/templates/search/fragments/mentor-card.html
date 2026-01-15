@@ -1,8 +1,16 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
+
 <div th:fragment="mentorCard(mentor, actionFunction)" class="card-custom mentor-card-custom h-100 d-flex flex-column">
   <div class="mentor-card-header">
-    <img th:src="${mentor.profileUrl != null ? mentor.profileUrl : '/images/default-profile.png'}"
+    <!-- 프로필 이미지가 없으면 닉네임 첫 글자 표시 -->
+    <div th:if="${mentor.profileUrl == null or #strings.isEmpty(mentor.profileUrl)}"
+         class="mentor-card-avatar mentor-card-avatar--initial"
+         th:text="${#strings.substring(mentor.nickname, 0, 1).toUpperCase()}">A
+    </div>
+    <!-- 프로필 이미지가 있으면 이미지 표시 -->
+    <img th:if="${mentor.profileUrl != null and !#strings.isEmpty(mentor.profileUrl)}"
+         th:src="${mentor.profileUrl}"
          th:alt="${mentor.nickname}"
          class="mentor-card-avatar">
     <div style="min-width: 0;">
@@ -55,5 +63,63 @@
             disabled class="btn-outline-custom status-canceled mentor-card-btn" style="cursor: not-allowed;">상담불가
     </button>
   </div>
+</div>
+
+<div th:fragment="recommendCard(mentor)"
+     class="card-custom mentor-card-custom h-100 d-flex flex-column position-relative text-center">
+
+  <div class="match-score-badge">
+    매칭 적합도 <span th:text="${mentor.matchScore}">95</span>점
+  </div>
+
+  <div class="mentor-card-header mt-4 d-flex flex-column align-items-center justify-content-center w-100">
+    <!-- 프로필 이미지가 없으면 닉네임 첫 글자 표시 -->
+    <div th:if="${mentor.profileUrl == null or #strings.isEmpty(mentor.profileUrl)}"
+         class="mentor-card-avatar mentor-card-avatar--initial mb-3"
+         style="margin-right: 0;"
+         th:text="${#strings.substring(mentor.nickname, 0, 1).toUpperCase()}">A
+    </div>
+    <!-- 프로필 이미지가 있으면 이미지 표시 -->
+    <img th:if="${mentor.profileUrl != null and !#strings.isEmpty(mentor.profileUrl)}"
+         th:src="${mentor.profileUrl}"
+         th:alt="${mentor.nickname}"
+         class="mentor-card-avatar mb-3"
+         style="margin-right: 0;">
+
+    <div style="min-width: 0;">
+      <h3 class="mentor-card-title justify-content-center d-flex"
+          th:title="${mentor.nickname}"
+          th:text="${mentor.nickname}">닉네임</h3>
+      <p class="mentor-card-info" th:text="|${mentor.job} · ${mentor.careerYears}년차|">직무 · N년차</p>
+    </div>
+  </div>
+
+  <div class="mentor-tags mb-3 flex-grow-1 justify-content-center w-100">
+        <span th:each="skill, iterStat : ${mentor.skillTags}"
+              th:if="${iterStat.index < 3}"
+              class="tag tag--read-only mentor-tag-small mb-1"
+              th:text="${skill}">Skill</span>
+  </div>
+
+  <div class="mentor-stats d-flex justify-content-center gap-3 mb-3 text-small w-100"
+       style="border-top: none; padding-top: 0.5rem;"> <span class="stat-item" title="추천 리뷰 수">
+            <i class="bi bi-chat-square-text me-1"></i>
+            <span th:text="${mentor.recommendedReviewCount}">0</span>
+        </span>
+    <span class="stat-item" title="진행한 상담">
+            <i class="bi bi-people me-1"></i>
+            <span th:text="${mentor.completedMatchingCount}">0</span>회
+        </span>
+    <span class="stat-item" title="응답률">
+            <i class="bi bi-lightning-charge me-1"></i>
+            <span th:text="${mentor.responseRate}">0</span>%
+        </span>
+  </div>
+
+  <button class="btn-primary-custom mentor-card-btn w-100 mt-auto"
+          th:onclick="requestMatching([[${mentor.mentorId}]], [[${mentor.nickname}]])">
+    이 멘토에게 상담 신청하기
+  </button>
+
 </div>
 </html>
