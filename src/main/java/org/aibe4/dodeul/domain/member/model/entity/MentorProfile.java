@@ -65,6 +65,8 @@ public class MentorProfile implements Profile {
         // 기본적으로 상담 신청을 받는 상태(ON)
         profile.consultationEnabled = true;
 
+        profile.careerYears = 0;
+
         profile.recommendCount = 0L;
         profile.completedMatchingCount = 0L;
         return profile;
