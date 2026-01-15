@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.aibe4.dodeul.domain.consulting.model.enums.ConsultingTag;
+import org.aibe4.dodeul.domain.matching.MatchingConstants;
 import org.aibe4.dodeul.domain.member.model.entity.Member;
 import org.aibe4.dodeul.domain.member.model.entity.MemberConsultingTag;
 import org.aibe4.dodeul.domain.member.model.entity.MentorProfile;
@@ -35,7 +36,7 @@ public class MentorSearchResponse {
         MentorConsultationAvailableStatus status;
         if (!profile.isConsultationEnabled()) {
             status = MentorConsultationAvailableStatus.OFF;
-        } else if (activeMatchingCount >= 3) {
+        } else if (activeMatchingCount >= MatchingConstants.MAX_ACTIVE_MATCHING_COUNT) {
             status = MentorConsultationAvailableStatus.FULL;
         } else {
             status = MentorConsultationAvailableStatus.AVAILABLE;

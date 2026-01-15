@@ -40,9 +40,10 @@
   --color-text-secondary: #6c757d;
   --color-text-inverse: #FFFFFF;
 
-  --color-brand-primary: #212529;
+  /* Brand Colors (Blue) */
+  --color-brand-primary: #2563eb;
   --color-brand-secondary: #d0d4d9;
-  --color-brand-hover: #000000;
+  --color-brand-hover: #1d4ed8;
 
   --color-bg-page: #F8F9FA;
   --color-bg-surface: #FFFFFF;
@@ -280,6 +281,7 @@ footer {
 }
 .btn-primary-custom:hover {
   background-color: var(--color-brand-hover);
+  border-color: var(--color-brand-hover);
   transform: translateY(-1px);
   box-shadow: var(--shadow-sm);
   color: var(--color-text-inverse);

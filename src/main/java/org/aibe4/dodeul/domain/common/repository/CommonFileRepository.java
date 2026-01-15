@@ -28,4 +28,6 @@ public interface CommonFileRepository extends JpaRepository<CommonFile, Long> {
         @Param("domain") FileDomain domain, @Param("messageId") Long messageId);
 
     Optional<CommonFile> findByIdAndDomainAndMessageId(Long id, FileDomain domain, Long messageId);
+
+    List<CommonFile> findAllByMessageIdInAndDomain(List<Long> messageIds, FileDomain fileDomain);
 }

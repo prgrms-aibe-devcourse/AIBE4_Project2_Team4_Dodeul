@@ -2,18 +2,22 @@
 <!doctype html>
 <html xmlns:th="http://www.thymeleaf.org" lang="ko">
 <body>
+<!--
+  이 파일은 참고용 컴포넌트입니다.
+  실제 댓글 렌더링은 post-detail.html에서 Thymeleaf SSR로 처리됩니다.
+-->
 <section class="card card--soft" th:fragment="postCommentSection">
   <header class="card__header card__header--compact">
     <h2 class="subtitle">
       <span class="subtitle__icon">💬</span>
       <span>답변</span>
-      <span id="answerCount" class="subtitle__count">0</span>
+      <span th:text="${comments.size()}" class="subtitle__count">0</span>
       <span class="subtitle__suffix">개</span>
     </h2>
   </header>
 
   <!-- 댓글 작성 -->
-  <div class="composer">
+  <div th:if="${isAuthenticated}" class="composer">
     <textarea
       id="commentContent"
       class="composer__input"
@@ -24,11 +28,94 @@
     </div>
   </div>
 
-  <div class="comment-list" id="commentList"></div>
+  <!-- 댓글 목록 (서버 렌더링) -->
+  <div class="comment-list">
+    <div
+      th:each="comment : ${comments}"
+      class="comment"
+      th:classappend="${comment.accepted ? 'comment--accepted' : ''}"
+    >
+      <div class="comment__head">
+        <div class="comment__left">
+          <div class="comment__avatar" th:text="${#strings.substring(comment.authorDisplayName, 0, 1).toUpperCase()}">
+            A
+          </div>
+          <div class="comment__meta">
+            <div class="comment__topline">
+              <span class="comment__name" th:text="${comment.authorDisplayName}">익명</span>
 
-  <div class="comment-placeholder" id="commentHint" style="display:none;">
+              <!-- 역할 태그 색상 구분 -->
+              <span
+                th:if="${comment.authorRoleTag == '작성자'}"
+                class="comment__role"
+                style="background:#eff6ff;color:#2563eb;border-color:rgba(37,99,235,0.2)"
+              >작성자</span>
+              <span
+                th:if="${comment.authorRoleTag == '멘토'}"
+                class="comment__role"
+                style="background:#ecfdf5;color:#16a34a;border-color:rgba(22,163,74,0.18)"
+              >멘토</span>
+              <span
+                th:if="${comment.authorRoleTag == '멘티'}"
+                class="comment__role"
+                style="background:#fef2f2;color:#ef4444;border-color:rgba(239,68,68,0.18)"
+              >멘티</span>
+
+              <span class="comment__time"
+                    th:text="${#temporals.format(comment.createdAt, 'yyyy-MM-dd HH:mm')}">방금 전</span>
+            </div>
+            <div class="comment__badges" th:if="${comment.accepted}">
+              <span class="comment__badge comment__badge--accepted">✓ 채택됨</span>
+            </div>
+          </div>
+        </div>
+        <div class="comment__right">
+          <!-- 채택 버튼 -->
+          <button
+            th:if="${comment.canAccept}"
+            class="btn btn--accept"
+          >채택하기
+          </button>
+
+          <!-- 댓글 좋아요 버튼 -->
+          <button
+            th:if="${isAuthenticated}"
+            class="comment__iconBtn"
+            th:classappend="${comment.likedByMe ? 'iconbtn--active' : ''}"
+          >
+            <span class="comment__icon" th:text="${comment.likedByMe ? '❤️' : '🤍'}">🤍</span>
+            <span class="comment__iconCount" th:text="${comment.likeCount}">0</span>
+          </button>
+        </div>
+      </div>
+      <div class="comment__body" th:text="${comment.content}">댓글 내용</div>
+    </div>
+  </div>
+
+  <div th:if="${comments.isEmpty()}" class="comment-placeholder">
     댓글이 없습니다.
   </div>
 </section>
+
+<style>
+  /* 역할 태그 색상 정의 */
+  .comment__role--author {
+    background: #eff6ff !important;
+    color: #2563eb !important;
+    border-color: rgba(37, 99, 235, 0.2) !important;
+  }
+
+  .comment__role--mentor {
+    background: #ecfdf5 !important;
+    color: #16a34a !important;
+    border-color: rgba(22, 163, 74, 0.18) !important;
+  }
+
+  .comment__role--mentee {
+    background: #fef2f2 !important;
+    color: #ef4444 !important;
+    border-color: rgba(239, 68, 68, 0.18) !important;
+  }
+</style>
 </body>
 </html>

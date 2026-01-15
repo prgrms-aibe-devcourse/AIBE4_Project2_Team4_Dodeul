@@ -16,6 +16,9 @@ public class MenteeMyProfileResponse {
     private String intro;
     private String job;
 
+    // 스킬 태그 이름 목록
     private List<String> skillTags;
+
+    // ConsultingTag enum name 목록 (CAREER, RESUME...)
     private List<String> consultingTags;
 }

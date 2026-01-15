@@ -6,6 +6,7 @@ import org.aibe4.dodeul.domain.consulting.model.dto.ConsultingApplicationDetailR
 import org.aibe4.dodeul.domain.consulting.model.dto.ConsultingApplicationRequest;
 import org.aibe4.dodeul.domain.consulting.model.enums.ConsultingTag;
 import org.aibe4.dodeul.domain.consulting.service.ConsultingApplicationService;
+import org.aibe4.dodeul.domain.member.service.MemberService;
 import org.aibe4.dodeul.global.security.CustomUserDetails;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
@@ -19,10 +20,19 @@ import org.springframework.web.bind.annotation.*;
 public class ConsultingApplicationController {
 
     private final ConsultingApplicationService consultingApplicationService;
+    private final MemberService memberService;
 
     // 1. 작성 폼
     @GetMapping("/form")
-    public String applicationForm(Model model) {
+    public String applicationForm(
+        @RequestParam(value = "mentorId", required = false) Long mentorId,
+        Model model
+    ) {
+        if (mentorId != null) {
+            model.addAttribute("mentorId", mentorId);
+            String nickname = memberService.getMemberOrThrow(mentorId).getNickname();
+            model.addAttribute("mentorName", nickname);
+        }
         model.addAttribute("request", new ConsultingApplicationRequest());
         model.addAttribute("consultingTags", ConsultingTag.values());
         model.addAttribute("formActionUrl", "/consulting-applications");
@@ -73,6 +83,16 @@ public class ConsultingApplicationController {
             consultingApplicationService.getApplicationDetail(applicationId);
         model.addAttribute("appDetail", response);
         return "consulting/application-detail";
+    }
+
+    // [누락 주의] 아까 만든 멘토 전용 상세 조회
+    @GetMapping("/{applicationId}/mentor-view")
+    public String viewMentorApplicationDetail(@PathVariable Long applicationId, Model model) {
+        ConsultingApplicationDetailResponse response =
+            consultingApplicationService.getApplicationDetail(applicationId);
+
+        model.addAttribute("appDetail", response);
+        return "consulting/application-mento-detail";
     }
 
     // 4. 수정 폼

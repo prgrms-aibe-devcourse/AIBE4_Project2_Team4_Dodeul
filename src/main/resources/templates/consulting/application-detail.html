@@ -11,7 +11,6 @@
 <section layout:fragment="content">
   <div class="container py-5" style="max-width: 900px;">
 
-
     <div class="mb-4 border-bottom pb-2">
       <h4 class="fw-bold">◇ 상담 신청 상세</h4>
     </div>
@@ -23,7 +22,7 @@
           <i class="bi bi-person"></i> 👤
         </div>
         <div>
-          <h5 class="mb-1 fw-bold" th:text="${appDetail.menteeName}">멘티 이름</h5>
+          <h5 class="mb-1 fw-bold" th:text="${appDetail.menteeName}">멘티 닉네임</h5>
           <small class="text-muted">상담 신청자</small>
         </div>
       </div>
@@ -45,13 +44,16 @@
           상담 신청 내용 본문입니다.
         </div>
 
-        <div class="mb-5">
-            <span th:each="tag : ${appDetail.skillTags}"
-                  class="badge rounded-pill text-bg-secondary me-2 px-3 py-2 fw-normal"
-                  style="background-color: #6c757d !important;"
-                  th:text="${tag}">
-                Java
-            </span>
+        <div class="mb-4" th:if="${appDetail.skillTags != null and !appDetail.skillTags.isEmpty()}">
+          <h6 class="fw-bold text-secondary mb-2" style="font-size: 0.9rem;">관심 스킬</h6>
+          <div>
+                        <span th:each="tag : ${appDetail.skillTags}"
+                              class="badge rounded-pill text-bg-secondary me-2 px-3 py-2 fw-normal"
+                              style="background-color: #6c757d !important;"
+                              th:text="${tag}">
+                            Java
+                        </span>
+          </div>
         </div>
 
         <hr class="text-secondary opacity-25">
@@ -73,22 +75,10 @@
     </div>
 
     <div class="d-flex justify-content-end gap-2 mt-4">
-
       <a th:href="@{/consulting-applications/{id}/edit(id=${appDetail.id})}"
          class="btn btn-outline-secondary px-4">
         수정하기
       </a>
-
-      <form th:action="@{/consulting-applications/{id}/delete(id=${appDetail.id})}"
-            method="post"
-            style="display:inline;">
-        <button type="submit"
-                class="btn btn-outline-secondary px-4"
-                onclick="return confirm('정말로 상담 신청을 취소하시겠습니까? 삭제된 내용은 복구할 수 없습니다.');">
-          취소하기
-        </button>
-      </form>
-
       <a href="/" class="btn btn-outline-dark px-4">홈으로</a>
     </div>
 
@@ -96,4 +86,3 @@
 </section>
 </body>
 </html>
-<!--// 106번 재커밋-->

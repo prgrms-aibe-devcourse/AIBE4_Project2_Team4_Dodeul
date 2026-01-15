@@ -34,8 +34,7 @@
             <label class="board-post-label" for="consultingTag">분야</label>
             <select id="consultingTag" name="consultingTag" class="board-post-select">
               <option value="">선택하세요</option>
-              <option th:each="t : ${consultingTags}" th:value="${t.name()}" th:text="${t.description}">
-              </option>
+              <option th:each="t : ${consultingTags}" th:value="${t.name()}" th:text="${t.description}"></option>
             </select>
           </div>
 
@@ -73,6 +72,9 @@
             <div class="board-post-hint">
               예: Java, Spring, JPA (기존 기술 스택 외에 추가로 입력)
             </div>
+            <div id="duplicateWarning" class="board-post-error" style="display:none;">
+              중복된 태그가 있습니다: <span id="duplicateList"></span>
+            </div>
           </div>
 
           <div class="group">
@@ -91,7 +93,7 @@
 
             <div class="board-upload">
               <div class="board-upload__inner board-upload__inner--readonly">
-                <div class="board-upload__icon">📎</div>
+                <div class="board-upload__icon">🔒</div>
                 <div class="board-upload__text">첨부파일은 수정할 수 없습니다.</div>
                 <div class="board-upload__sub">파일 수정은 게시글을 삭제 후 재작성으로 가능합니다.</div>
               </div>
@@ -128,8 +130,7 @@
     }
 
     function getApiData(res) {
-      if (res && res.data != null) return res.data;
-      return res;
+      return (res && res.data != null) ? res.data : res;
     }
 
     function fetchJson(url, options) {
@@ -137,13 +138,45 @@
         credentials: "include",
         headers: {
           Accept: "application/json",
-          ...(options && options.headers ? options.headers : {}),
+          ...(options?.headers || {}),
         },
       };
       return fetch(url, {...base, ...(options || {})}).then((r) =>
         r.ok ? r.json() : Promise.reject(r),
       );
     }
+
+    // === 중복 태그 검증 ===
+    function checkDuplicateTags() {
+      const checkedTags = Array.from(document.querySelectorAll('input[name="skillTagIds"]:checked'))
+        .map(cb => String(cb.getAttribute("data-name") || "").trim().toLowerCase())
+        .filter(name => name.length > 0);
+
+      const textInput = document.getElementById("skillTagIdString").value || "";
+      const textTags = textInput
+        .split(",")
+        .map(s => s.trim().toLowerCase())
+        .filter(s => s.length > 0);
+
+      const duplicates = textTags.filter(tag => checkedTags.includes(tag));
+
+      const warning = document.getElementById("duplicateWarning");
+      const duplicateList = document.getElementById("duplicateList");
+
+      if (duplicates.length > 0) {
+        duplicateList.textContent = duplicates.join(", ");
+        warning.style.display = "block";
+        return false;
+      } else {
+        warning.style.display = "none";
+        return true;
+      }
+    }
+
+    document.getElementById("skillTagIdString")?.addEventListener("input", checkDuplicateTags);
+    document.querySelectorAll('input[name="skillTagIds"]').forEach(cb => {
+      cb.addEventListener("change", checkDuplicateTags);
+    });
 
     function setCheckedSkillTagsFromPost(post) {
       const checkboxList = Array.from(
@@ -269,6 +302,7 @@
 
     if (!postId) {
       alert("게시글 ID가 없습니다.");
+      window.location.href = "/board/posts";
       return;
     }
 
@@ -276,6 +310,7 @@
       window.location.href = "/board/posts/" + postId;
     });
 
+    // 게시글 정보 로드
     fetchJson("/api/board/posts/" + postId, {headers: {}})
       .then((res) => {
         const post = getApiData(res) || {};
@@ -303,10 +338,17 @@
       })
       .catch(() => {
         alert("게시글 정보를 불러오지 못했습니다.");
+        window.location.href = "/board/posts";
       });
 
+    // 수정 제출
     document.getElementById("editForm")?.addEventListener("submit", (e) => {
       e.preventDefault();
+
+      if (!checkDuplicateTags()) {
+        alert("중복된 태그를 제거해주세요.");
+        return;
+      }
 
       const title = String(document.getElementById("title")?.value || "").trim();
       const content = String(document.getElementById("content")?.value || "").trim();
@@ -327,12 +369,29 @@
         return;
       }
 
+      const skillTagIds = Array.from(
+        document.querySelectorAll('input[name="skillTagIds"]:checked')
+      ).map(cb => parseInt(cb.value));
+
+      const skillTagIdString = String(document.getElementById("skillTagIdString")?.value || "").trim();
+      const skillTagNames = skillTagIdString
+        .split(",")
+        .map(s => s.trim())
+        .filter(s => s.length > 0);
+
       fetchJson("/api/board/posts/" + postId, {
         method: "PATCH",
         headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({title, content, consultingTag}),
+        body: JSON.stringify({
+          title,
+          content,
+          consultingTag,
+          skillTagIds,
+          skillTagNames
+        }),
       })
         .then(() => {
+          alert("수정되었습니다.");
           window.location.href = "/board/posts/" + postId;
         })
         .catch((err) => {

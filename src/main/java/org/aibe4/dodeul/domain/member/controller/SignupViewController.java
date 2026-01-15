@@ -41,12 +41,19 @@ public class SignupViewController {
         Role role = (Role) session.getAttribute(AuthSessionKeys.SELECTED_ROLE);
         if (role == null) return "redirect:/onboarding/role";
 
+        // 비밀번호 확인 검증
+        if (request.password() != null && request.confirmPassword() != null
+            && !request.password().equals(request.confirmPassword())) {
+            bindingResult.rejectValue("confirmPassword", "password.mismatch", "비밀번호가 일치하지 않습니다.");
+        }
+
         if (bindingResult.hasErrors()) {
             model.addAttribute("form", request);
             return "auth/signup";
         }
 
-        memberService.registerLocal(request.email(), request.password(), role);
+        memberService.registerLocal(request.email(), request.password(), request.confirmPassword(), role);
+
         session.removeAttribute(AuthSessionKeys.SELECTED_ROLE);
         return "redirect:/auth/login";
     }

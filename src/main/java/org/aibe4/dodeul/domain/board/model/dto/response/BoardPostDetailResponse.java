@@ -5,6 +5,7 @@ import lombok.Builder;
 import org.aibe4.dodeul.domain.board.model.entity.BoardPost;
 import org.aibe4.dodeul.domain.board.model.enums.PostStatus;
 import org.aibe4.dodeul.domain.common.model.entity.CommonFile;
+import org.aibe4.dodeul.domain.common.model.entity.SkillTag;
 import org.aibe4.dodeul.domain.consulting.model.enums.ConsultingTag;
 
 import java.time.LocalDateTime;
@@ -27,7 +28,8 @@ public record BoardPostDetailResponse(
     Boolean mine,
     Boolean canEdit,
     Boolean canDelete,
-    List<BoardPostFileResponse> files) {
+    List<BoardPostFileResponse> files,
+    List<String> skillTags) {
 
     @Builder
     public record BoardPostFileResponse(String fileName, String fileUrl, String contentType, Long size) {
@@ -56,6 +58,10 @@ public record BoardPostDetailResponse(
 
         boolean deleted = post.getPostStatus() == PostStatus.DELETED;
 
+        List<String> skillTagNames = post.getSkillTags().stream()
+            .map(SkillTag::getName)
+            .toList();
+
         return BoardPostDetailResponse.builder()
             .postId(post.getId())
             .title(post.getTitle())
@@ -73,6 +79,7 @@ public record BoardPostDetailResponse(
             .canEdit(mine && !deleted)
             .canDelete(mine && !deleted)
             .files(fileResponses)
+            .skillTags(skillTagNames)
             .build();
     }
 }

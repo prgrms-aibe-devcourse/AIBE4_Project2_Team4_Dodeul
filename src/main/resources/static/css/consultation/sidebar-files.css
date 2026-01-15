@@ -1,0 +1,24 @@
+#fileListContainer {
+  flex: 1; /* 남은 공간 모두 차지 */
+  overflow-y: auto;
+  padding-top: 10px;
+}
+
+.file-item {
+  transition: background 0.2s;
+  cursor: default;
+  border-bottom: 1px solid #f1f5f9 !important;
+}
+
+.file-item:hover {
+  background-color: #f8f9fa;
+}
+
+.file-item:last-child {
+  border-bottom: none !important;
+}
+
+.file-info-container {
+  min-width: 0;
+  flex: 1;
+}

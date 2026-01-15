@@ -229,14 +229,7 @@ public class BoardPostService {
     }
 
     private void validateListPolicy(Long memberId, BoardPostListRequest request) {
-        if (isDefaultListRequest(request)) {
-            return;
-        }
-
-        if (memberId == null) {
-            throw new BoardPolicyException(
-                ErrorCode.ACCESS_DENIED, "검색/필터 기능은 로그인 후 이용 가능합니다.");
-        }
+        // 로그인 정책 검증 로직 제거 (모든 사용자에게 필터 허용)
     }
 
     private boolean isDefaultListRequest(BoardPostListRequest request) {

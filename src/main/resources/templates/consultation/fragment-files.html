@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<div th:fragment="filePanel" class="tab-pane fade" id="file-pane" role="tabpanel">
+  <div class="d-flex justify-content-end px-3 pt-3">
+    <button type="button" class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1" onclick="loadChatFiles()" style="font-size: 0.75rem; border-radius: 20px;">
+      <i class="bi bi-arrow-clockwise"></i> 목록 갱신
+    </button>
+  </div>
+  <div id="fileListContainer" class="d-flex flex-column">
+    <p class="text-center text-secondary small py-5">공유된 파일을 불러오는 중...</p>
+  </div>
+</div>
+</html>

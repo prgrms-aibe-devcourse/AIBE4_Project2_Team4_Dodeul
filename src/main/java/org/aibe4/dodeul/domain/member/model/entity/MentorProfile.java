@@ -61,7 +61,10 @@ public class MentorProfile implements Profile {
     public static MentorProfile create(Member member) {
         MentorProfile profile = new MentorProfile();
         profile.member = member;
-        profile.consultationEnabled = false;
+
+        // 기본적으로 상담 신청을 받는 상태(ON)
+        profile.consultationEnabled = true;
+
         profile.recommendCount = 0L;
         profile.completedMatchingCount = 0L;
         return profile;
@@ -72,7 +75,8 @@ public class MentorProfile implements Profile {
         String intro,
         String job,
         Integer careerYears,
-        boolean consultationEnabled) {
+        boolean consultationEnabled
+    ) {
         this.profileUrl = profileUrl;
         this.intro = intro;
         this.job = job;
@@ -90,5 +94,9 @@ public class MentorProfile implements Profile {
 
     public void increaseCompletedMatchingCount() {
         this.completedMatchingCount++;
+    }
+
+    public void changeConsultationEnabled(boolean enabled) {
+        this.consultationEnabled = enabled;
     }
 }
