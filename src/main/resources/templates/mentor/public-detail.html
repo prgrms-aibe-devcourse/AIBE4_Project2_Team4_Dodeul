@@ -34,10 +34,12 @@
 
         <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-end;">
           <!-- 신청서 작성 URL에 맞춰 수정 -->
-          <a class="btn-primary-custom"
-             th:href="@{/consulting-applications/new(mentorId=${mentorId})}">
+          <button class="btn-primary-custom"
+                  th:if="${mentorId != null}"
+                  th:data-mentor-id="${mentorId}"
+                  onclick="checkAvailability(this.dataset.mentorId)">
             신청하기
-          </a>
+          </button>
           <div class="text-small" style="text-align:right;">
             신청서 작성 후 상담 신청이 완료됩니다.
           </div>
@@ -152,6 +154,20 @@
         errEl.textContent = e?.message ?? '프로필을 불러오지 못했습니다.';
       }
     })();
+
+    // 매칭 가능 여부 확인 후 상담신청서 작성 페이지로 리다이렉트
+    function checkAvailability(mentorId) {
+      fetch(`/api/matchings/availability?mentorId=${mentorId}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.code >= 200 && data.code < 300) {
+            location.href = `/consulting-applications/form?mentorId=${mentorId}`;
+          } else {
+            showCommonModal(data.message || '현재 상담 신청이 불가능합니다.');
+          }
+        })
+        .catch(err => showCommonModal('서버 통신 중 오류가 발생했습니다.'));
+    }
   </script>
 </th:block>
 

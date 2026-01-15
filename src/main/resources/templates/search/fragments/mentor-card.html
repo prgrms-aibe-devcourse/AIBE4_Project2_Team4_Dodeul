@@ -35,7 +35,7 @@
   </div>
 
   <div class="d-grid gap-2 mentor-card-actions">
-    <a th:href="@{/members/{id}(id=${mentor.memberId})}" class="btn-outline-custom mentor-card-btn"
+    <a th:href="@{/mentor/public/{id}(id=${mentor.memberId})}" class="btn-outline-custom mentor-card-btn"
        style="text-decoration: none; text-align: center;">프로필</a>
 
     <button th:if="${mentor.status.name() == 'AVAILABLE'}"
