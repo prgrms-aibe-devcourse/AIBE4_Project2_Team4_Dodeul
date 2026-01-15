@@ -61,6 +61,7 @@ public class MentorProfile implements Profile {
     public static MentorProfile create(Member member) {
         MentorProfile profile = new MentorProfile();
         profile.member = member;
+        profile.careerYears = 0;
 
         // 기본적으로 상담 신청을 받는 상태(ON)
         profile.consultationEnabled = true;
