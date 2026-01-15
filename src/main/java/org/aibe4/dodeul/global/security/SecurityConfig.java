@@ -134,7 +134,7 @@ public class SecurityConfig {
                         .loginProcessingUrl("/auth/login")
                         .usernameParameter("email")
                         .passwordParameter("password")
-                        .defaultSuccessUrl("/post-login")
+                        .defaultSuccessUrl("/post-login", true)
                         .failureUrl("/auth/login?error")
                         .permitAll())
             .oauth2Login(
