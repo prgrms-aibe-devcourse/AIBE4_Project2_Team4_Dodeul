@@ -1,6 +1,5 @@
 package org.aibe4.dodeul.domain.member.service;
 
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.aibe4.dodeul.domain.member.model.dto.MentorCandidateDto;
 import org.aibe4.dodeul.domain.member.model.entity.MentorProfile;
@@ -28,14 +27,6 @@ public class MemberQueryService {
         if (!mentorProfile.isConsultationEnabled()) {
             throw new BusinessException(ErrorCode.MENTOR_CONSULTATION_DISABLED);
         }
-    }
-
-    @Transactional
-    public void updateMentorResponseRate(Long mentorId, double responseRate) {
-        MentorProfile mentorProfile = mentorProfileRepository.findById(mentorId)
-            .orElseThrow(() -> new EntityNotFoundException("멘토 프로필 없음"));
-
-        mentorProfile.updateResponseRate(responseRate);
     }
 
     public List<MentorCandidateDto> findCandidateMentorsDto() {

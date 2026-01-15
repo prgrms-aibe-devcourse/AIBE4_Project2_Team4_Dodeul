@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.aibe4.dodeul.domain.matching.model.entity.Matching;
 import org.aibe4.dodeul.domain.matching.model.repository.MatchingRepository;
 import org.aibe4.dodeul.domain.member.model.entity.Member;
+import org.aibe4.dodeul.domain.member.service.MentorProfileService;
 import org.aibe4.dodeul.domain.review.model.dto.NotReviewdDto;
 import org.aibe4.dodeul.domain.review.model.dto.ReviewFormDataDto;
 import org.aibe4.dodeul.domain.review.model.dto.ReviewRequest;
@@ -16,11 +17,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
@@ -29,6 +27,8 @@ public class ReviewService {
 
     private final MatchingRepository matchingRepository;
     private final ReviewRepository reviewRepository;
+
+    private final MentorProfileService mentorProfileService;
 
     public ReviewFormDataDto loadFormData(Long matchingId) {
         Matching matching = matchingRepository.findById(matchingId).orElseThrow(() -> new NoSuchElementException(ErrorCode.RESOURCE_NOT_FOUND.getMessage()));
@@ -51,6 +51,10 @@ public class ReviewService {
 
         matching.complete();
 
+        if (request.isRecommended()) {
+            mentorProfileService.increaseRecommendCount(matching.getMentor().getId());
+        }
+
         reviewRepository.save(review);
     }
 
@@ -62,17 +66,6 @@ public class ReviewService {
     public Page<ReviewResponse> getReceivedReviews(Long mentorId, Pageable pageable) {
         return reviewRepository.findAllByMentorId(mentorId, pageable)
             .map(ReviewResponse::of);
-    }
-
-    public Map<Long, Long> getRecommendedReviewCounts(List<Long> mentorIds) {
-        if (mentorIds.isEmpty()) {
-            return Collections.emptyMap();
-        }
-        return reviewRepository.countRecommendedReviewsByMentorIds(mentorIds).stream()
-            .collect(Collectors.toMap(
-                obj -> (Long) obj[0],
-                obj -> ((Number) obj[1]).longValue()
-            ));
     }
 
     public boolean hasReview(Long matchingId) {
