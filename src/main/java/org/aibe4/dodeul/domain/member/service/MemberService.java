@@ -220,16 +220,13 @@ public class MemberService {
             .build();
 
         Member saved = memberRepository.save(member);
-        
+
         ensureProfileCreated(saved);
 
         return saved;
     }
 
-    /**
-     * 신규 회원이 멘토 목록 검색(join member.mentorProfile)에서 누락되지 않도록
-     * 역할에 맞는 프로필 row를 바로 생성합니다.
-     */
+
     private void ensureProfileCreated(Member member) {
         if (member == null || member.getRole() == null) return;
 
