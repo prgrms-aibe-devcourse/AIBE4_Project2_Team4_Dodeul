@@ -26,10 +26,8 @@ public class ConsultationGuard {
             .orElseThrow(() -> new NoSuchElementException(ErrorCode.RESOURCE_NOT_FOUND.getMessage()));
 
         Matching matching = room.getValidatedMatching();
-        Long mentorId = matching.getMentor().getId();
-        Long menteeId = matching.getMentee().getId();
 
-        if (!memberId.equals(mentorId) && !memberId.equals(menteeId)) {
+        if (!isMatchingParticipant(matching, memberId)) {
             throw new AccessDeniedException(ErrorCode.ACCESS_DENIED.getMessage());
         }
 
@@ -37,7 +35,7 @@ public class ConsultationGuard {
     }
 
     public boolean isCorrectMatchedMember(Long matchingId, Long memberId) {
-        if (matchingId == null || memberId == null) {
+        if (isInvalidInput(matchingId, memberId)) {
             return false;
         }
 
@@ -45,23 +43,40 @@ public class ConsultationGuard {
     }
 
     public boolean isCorrectMatchedMemberAndRoomClosed(Long matchingId, Long memberId) {
-        if (matchingId == null || memberId == null) {
+        if (isInvalidInput(matchingId, memberId)) {
             return false;
         }
 
-        Matching matching = matchingRepository.findById(matchingId).orElseThrow(() -> new NoSuchElementException(ErrorCode.RESOURCE_NOT_FOUND.getMessage()));
-        ConsultationRoom consultationRoom = consultationRoomRepository.findByMatching(matching).orElseThrow(() -> new NoSuchElementException(ErrorCode.RESOURCE_NOT_FOUND.getMessage()));
-        boolean isRoomClosed = consultationRoom.getStatus() == ConsultationRoomStatus.CLOSED;
+        Matching matching = findMatchingById(matchingId);
+        ConsultationRoom consultationRoom = consultationRoomRepository.findByMatching(matching)
+            .orElseThrow(() -> new NoSuchElementException(ErrorCode.RESOURCE_NOT_FOUND.getMessage()));
 
-        return matchingRepository.isMemberParticipantOfMatching(matchingId, memberId) && isRoomClosed;
+        return isMatchingParticipant(matching, memberId) &&
+            consultationRoom.getStatus() == ConsultationRoomStatus.CLOSED;
     }
 
-
     public boolean isMenteeOfMatching(Long matchingId, Long memberId) {
-        if (matchingId == null || memberId == null) return false;
+        if (isInvalidInput(matchingId, memberId)) {
+            return false;
+        }
 
         return matchingRepository.findById(matchingId)
             .map(matching -> matching.getMentee().getId().equals(memberId))
             .orElse(false);
+    }
+
+    private Matching findMatchingById(Long matchingId) {
+        return matchingRepository.findById(matchingId)
+            .orElseThrow(() -> new NoSuchElementException(ErrorCode.RESOURCE_NOT_FOUND.getMessage()));
+    }
+
+    private boolean isMatchingParticipant(Matching matching, Long memberId) {
+        Long mentorId = matching.getMentor().getId();
+        Long menteeId = matching.getMentee().getId();
+        return memberId.equals(mentorId) || memberId.equals(menteeId);
+    }
+
+    private boolean isInvalidInput(Long matchingId, Long memberId) {
+        return matchingId == null || memberId == null;
     }
 }

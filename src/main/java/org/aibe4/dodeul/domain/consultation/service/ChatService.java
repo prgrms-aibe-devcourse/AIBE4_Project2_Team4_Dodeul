@@ -42,9 +42,9 @@ public class ChatService {
     private final CommonFileRepository commonFileRepository;
 
     @Transactional
-    public MessageDto saveMessage(ChatMessageRequest request) {
+    public MessageDto saveMessage(ChatMessageRequest request, Long currentMemberId) {
         ConsultationRoom room = consultationRoomRepository.findById(request.getRoomId()).orElseThrow(() -> new NoSuchElementException(ErrorCode.RESOURCE_NOT_FOUND.getMessage()));
-        Member sender = memberRepository.findById(request.getSenderId()).orElseThrow(() -> new NoSuchElementException(ErrorCode.RESOURCE_NOT_FOUND.getMessage()));
+        Member sender = memberRepository.findById(currentMemberId).orElseThrow(() -> new NoSuchElementException(ErrorCode.RESOURCE_NOT_FOUND.getMessage()));
 
         Message message = Message.builder()
             .consultationRoom(room)
