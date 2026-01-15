@@ -230,31 +230,122 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 12px;
   background: #fff;
   border: 1px solid var(--line);
   border-radius: 14px;
-  padding: 12px 12px;
+  padding: 14px 14px;
+  transition: all 0.15s ease;
+}
+
+.filechip:hover {
+  border-color: var(--primary);
+  background: rgba(59, 130, 246, 0.03);
+}
+
+/* 파일 타입별 스타일 */
+.filechip.type-pdf {
+  background: #fef2f2;
+  border-color: rgba(239, 68, 68, 0.2);
+}
+.filechip.type-pdf .filechip__icon {
+  background: #fff;
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.2);
+}
+
+.filechip.type-ppt {
+  background: #fff7ed;
+  border-color: rgba(249, 115, 22, 0.2);
+}
+.filechip.type-ppt .filechip__icon {
+  background: #fff;
+  color: #f97316;
+  border-color: rgba(249, 115, 22, 0.2);
+}
+
+.filechip.type-image {
+  background: #eff6ff;
+  border-color: rgba(37, 99, 235, 0.2);
+}
+.filechip.type-image .filechip__icon {
+  background: #fff;
+  color: #2563eb;
+  border-color: rgba(37, 99, 235, 0.2);
+}
+
+.filechip.type-text {
+  background: #ecfdf5;
+  border-color: rgba(22, 163, 74, 0.2);
+}
+.filechip.type-text .filechip__icon {
+  background: #fff;
+  color: #16a34a;
+  border-color: rgba(22, 163, 74, 0.2);
 }
 
 .filechip__left {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.filechip__icon {
+  font-size: 18px;
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fafafa;
+}
+
+.filechip__info {
   min-width: 0;
   flex: 1;
 }
 
 .filechip__name {
   font-size: 13px;
-  font-weight: 900;
+  font-weight: 600;
   color: var(--text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  margin-bottom: 3px;
 }
 
 .filechip__meta {
-  margin-top: 3px;
   font-size: 12px;
   color: var(--muted);
+}
+
+.filechip__remove {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: #fff;
+  color: var(--muted);
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  line-height: 1;
+}
+
+.filechip__remove:hover {
+  border-color: #ef4444;
+  background: #fef2f2;
+  color: #ef4444;
 }
 
 /* ===== Actions ===== */

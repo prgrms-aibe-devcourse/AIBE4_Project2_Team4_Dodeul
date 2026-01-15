@@ -22,240 +22,180 @@
       </div>
 
       <div class="board-list__actions">
-        <a class="btn btn--primary" href="/board/posts/new">질문 작성</a>
+        <a class="btn btn--primary" th:href="@{/board/posts/new}">질문 작성</a>
       </div>
     </header>
 
-    <section class="board-filters card">
+    <!-- 상단 필터 영역 (Form 태그 제거, JS 처리) -->
+    <div class="board-filters card">
       <div class="board-filters__row">
         <div class="field">
-          <label class="field__label" for="keyword">검색</label>
-          <input id="keyword" class="field__input" type="text" placeholder="제목/본문 키워드"/>
+          <label class="field__label" for="keywordInput">검색</label>
+          <div class="field__search">
+            <input
+              id="keywordInput"
+              class="field__input"
+              type="text"
+              placeholder="제목/본문 키워드"
+              th:value="${param.keyword}"
+              onkeydown="if(event.key === 'Enter') { event.preventDefault(); applyFilters(); }"
+            />
+            <button type="button" class="btn btn--icon" aria-label="검색" onclick="applyFilters()">🔍</button>
+          </div>
         </div>
 
         <div class="field">
-          <label class="field__label" for="status">상태</label>
-          <select id="status" class="field__select">
+          <label class="field__label" for="statusSelect">상태</label>
+          <select id="statusSelect" class="field__select" onchange="applyFilters()">
             <option value="">전체</option>
-            <option value="OPEN">OPEN</option>
-            <option value="CLOSED">CLOSED</option>
+            <option value="OPEN" th:selected="${param.status != null && param.status[0] == 'OPEN'}">OPEN</option>
+            <option value="CLOSED" th:selected="${param.status != null && param.status[0] == 'CLOSED'}">CLOSED</option>
           </select>
         </div>
 
         <div class="field">
-          <label class="field__label" for="sort">정렬</label>
-          <select id="sort" class="field__select">
-            <option value="LATEST">최신순</option>
-            <option value="VIEW">조회수순</option>
-            <option value="SCRAP">스크랩순</option>
-            <option value="COMMENTED">최근댓글순</option>
+          <label class="field__label" for="sortSelect">정렬</label>
+          <select id="sortSelect" class="field__select" onchange="applyFilters()">
+            <option value="LATEST" th:selected="${param.sort == null || param.sort[0] == 'LATEST'}">최신순</option>
+            <option value="VIEWS" th:selected="${param.sort != null && param.sort[0] == 'VIEWS'}">조회수순</option>
+            <option value="SCRAPS" th:selected="${param.sort != null && param.sort[0] == 'SCRAPS'}">스크랩순</option>
           </select>
         </div>
 
-        <button id="applyBtn" class="btn" type="button">적용</button>
-        <button id="resetBtn" class="btn btn--ghost" type="button">초기화</button>
+        <a th:href="@{/board/posts}" class="btn btn--ghost">초기화</a>
       </div>
 
       <div class="board-filters__hint">
         검색/필터 사용 시 로그인 정책이 적용될 수 있습니다.
       </div>
-    </section>
+    </div>
 
-    <section class="board-cards" aria-live="polite">
-      <div id="emptyState" class="empty" style="display:none;">
-        <div class="empty__title">게시글이 없습니다.</div>
-        <div class="empty__desc">첫 질문을 작성해보세요.</div>
-      </div>
+    <div class="board-body">
+      <!-- 게시글 카드 그리드 -->
+      <section class="board-cards">
+        <!-- 빈 상태 -->
+        <div th:if="${posts == null || posts.isEmpty()}" class="empty">
+          <div class="empty__title">게시글이 없습니다.</div>
+          <div class="empty__desc">첫 질문을 작성해보세요.</div>
+        </div>
 
-      <div id="cardList" class="board-cards__grid"></div>
-    </section>
+        <!-- 게시글 목록 -->
+        <div th:unless="${posts == null || posts.isEmpty()}" class="board-cards__grid">
+          <a
+            th:each="post : ${posts}"
+            th:href="@{/board/posts/{id}(id=${post.postId})}"
+            class="postcard"
+          >
+            <div class="postcard__top">
+              <span
+                th:class="${post.postStatus == 'OPEN' ? 'badge badge--blue' : 'badge badge--gray'}"
+                th:text="${post.postStatus}"
+              ></span>
+              <span class="postcard__date" th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd')}"></span>
+            </div>
 
-    <nav class="pager" aria-label="페이지네이션">
-      <button id="prevBtn" class="btn btn--ghost" type="button">이전</button>
+            <div class="postcard__title" th:text="${post.title}">제목</div>
+
+            <div class="postcard__meta">
+              <span class="meta__item">👁 <b th:text="${post.viewCount}">0</b></span>
+              <span class="meta__dot">·</span>
+              <span class="meta__item">📖 <b th:text="${post.scrapCount}">0</b></span>
+              <span class="meta__dot">·</span>
+              <span class="meta__item">💬 <b th:text="${post.commentCount}">0</b></span>
+            </div>
+
+            <div class="postcard__tags">
+              <span
+                th:each="tag, iterStat : ${post.skillTags}"
+                th:if="${iterStat.index < 6}"
+                class="chip"
+                th:text="${tag}"
+              ></span>
+              <span
+                th:if="${post.skillTags != null && post.skillTags.size() > 6}"
+                class="chip chip--more"
+                th:text="'+' + ${post.skillTags.size() - 6}"
+              ></span>
+            </div>
+          </a>
+        </div>
+      </section>
+
+      <!-- 사이드바 필터 -->
+      <aside class="board-aside">
+        <div class="card side">
+          <div class="side__head">
+            <h2 class="side__title">필터</h2>
+          </div>
+
+          <div class="side__section">
+            <div class="side__label">기술 스택</div>
+            <div class="side__hint">원하는 태그를 선택하세요</div>
+
+            <div class="side__tagbox">
+              <label
+                th:each="tag : ${skillTags}"
+                class="tagcheck"
+              >
+                <input
+                  type="checkbox"
+                  name="tagIds"
+                  th:value="${tag.id}"
+                  th:checked="${param.tagIds != null && #lists.contains(param.tagIds, tag.id.toString())}"
+                  class="tagcheck__input tag-filter"
+                  onchange="applyFilters()"
+                />
+                <span class="tagcheck__box"></span>
+                <span class="tagcheck__text" th:text="${tag.name}"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <!-- 페이지네이션 -->
+    <nav th:if="${totalPages > 0}" class="pager" aria-label="페이지네이션">
+      <a
+        th:if="${currentPage > 0}"
+        th:href="@{/board/posts(page=${currentPage - 1}, size=${pageSize}, keyword=${param.keyword}, status=${param.status}, sort=${param.sort}, tagIds=${param.tagIds})}"
+        class="btn btn--ghost"
+      >이전</a>
+      <button th:unless="${currentPage > 0}" class="btn btn--ghost" disabled>이전</button>
+
       <div class="pager__info">
-        <span id="pageInfo">1 / 1</span>
+        <span th:text="${currentPage + 1} + ' / ' + ${totalPages}">1 / 1</span>
       </div>
-      <button id="nextBtn" class="btn btn--ghost" type="button">다음</button>
+
+      <a
+        th:if="${currentPage < totalPages - 1}"
+        th:href="@{/board/posts(page=${currentPage + 1}, size=${pageSize}, keyword=${param.keyword}, status=${param.status}, sort=${param.sort}, tagIds=${param.tagIds})}"
+        class="btn btn--ghost"
+      >다음</a>
+      <button th:unless="${currentPage < totalPages - 1}" class="btn btn--ghost" disabled>다음</button>
     </nav>
   </main>
 
   <script>
-    (function () {
-      const $ = (id) => document.getElementById(id);
+    function applyFilters() {
+      const keyword = document.getElementById('keywordInput').value;
+      const status = document.getElementById('statusSelect').value;
+      const sort = document.getElementById('sortSelect').value;
 
-      const state = {
-        page: 0,
-        size: 12,
-        totalPages: 1,
-        keyword: "",
-        status: "",
-        sort: "LATEST",
-      };
+      const params = new URLSearchParams();
 
-      function fetchJson(url, options) {
-        const base = {
-          credentials: "include",
-          headers: {Accept: "application/json"},
-        };
-        return fetch(url, {...base, ...(options || {})}).then((r) => (r.ok ? r.json() : Promise.reject(r)));
-      }
+      if (keyword) params.append('keyword', keyword);
+      if (status) params.append('status', status);
+      if (sort) params.append('sort', sort);
 
-      function getApiData(res) {
-        return (res && res.data != null) ? res.data : res;
-      }
-
-      function buildQuery() {
-        const params = new URLSearchParams();
-        params.set("page", String(state.page));
-        params.set("size", String(state.size));
-
-        if (state.keyword) params.set("keyword", state.keyword);
-        if (state.status) params.set("status", state.status);
-        if (state.sort) params.set("sort", state.sort);
-
-        return params.toString();
-      }
-
-      function badgeClass(status) {
-        const s = String(status || "").toUpperCase();
-        if (s === "OPEN") return "badge badge--blue";
-        if (s === "CLOSED") return "badge badge--gray";
-        if (s === "DELETED") return "badge badge--red";
-        return "badge badge--gray";
-      }
-
-      function formatDate(value) {
-        if (!value) return "-";
-        const d = new Date(value);
-        if (isNaN(d.getTime())) return String(value);
-        const pad = (n) => String(n).padStart(2, "0");
-        return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
-      }
-
-      function escapeHtml(s) {
-        return String(s)
-          .replaceAll("&", "&amp;")
-          .replaceAll("<", "&lt;")
-          .replaceAll(">", "&gt;")
-          .replaceAll('"', "&quot;")
-          .replaceAll("'", "&#039;");
-      }
-
-      function renderCards(items) {
-        const list = $("cardList");
-        const empty = $("emptyState");
-        list.innerHTML = "";
-
-        if (!items || items.length === 0) {
-          empty.style.display = "block";
-          return;
-        }
-        empty.style.display = "none";
-
-        items.forEach((p) => {
-          const postId = p.postId ?? p.id;
-          const title = p.title ?? "-";
-          const status = p.postStatus ?? p.status ?? "-";
-          const viewCount = p.viewCount ?? 0;
-          const scrapCount = p.scrapCount ?? 0;
-          const commentCount = p.commentCount ?? 0;
-          const createdAt = formatDate(p.createdAt);
-
-          const tags = Array.isArray(p.skillTags) ? p.skillTags : [];
-          const tagHtml = tags.slice(0, 6).map((t) => {
-            const name = (t && typeof t === "object") ? (t.name ?? t.tagName ?? "") : String(t);
-            if (!name) return "";
-            return `<span class="chip">${escapeHtml(name)}</span>`;
-          }).join("");
-
-          const card = document.createElement("a");
-          card.className = "postcard";
-          card.href = "/board/posts/" + postId;
-
-          card.innerHTML = `
-            <div class="postcard__top">
-              <span class="${badgeClass(status)}">${escapeHtml(String(status).toUpperCase())}</span>
-              <span class="postcard__date">${createdAt}</span>
-            </div>
-            <div class="postcard__title">${escapeHtml(title)}</div>
-            <div class="postcard__meta">
-              <span class="meta__item">👁 <b>${viewCount}</b></span>
-              <span class="meta__dot">·</span>
-              <span class="meta__item">🔖 <b>${scrapCount}</b></span>
-              <span class="meta__dot">·</span>
-              <span class="meta__item">💬 <b>${commentCount}</b></span>
-            </div>
-            <div class="postcard__tags">${tagHtml}</div>
-          `;
-
-          list.appendChild(card);
-        });
-      }
-
-      function updatePager() {
-        $("pageInfo").innerText = String(state.page + 1) + " / " + String(state.totalPages);
-        $("prevBtn").disabled = state.page <= 0;
-        $("nextBtn").disabled = state.page >= state.totalPages - 1;
-      }
-
-      function load() {
-        const url = "/api/board/posts?" + buildQuery();
-        return fetchJson(url)
-          .then((res) => {
-            const data = getApiData(res) || {};
-            const content = data.content ?? data.posts ?? data.items ?? [];
-            const totalPages = data.totalPages ?? data.pageInfo?.totalPages ?? 1;
-
-            state.totalPages = Number(totalPages || 1);
-            renderCards(Array.isArray(content) ? content : []);
-            updatePager();
-          })
-          .catch(async (r) => {
-            // 로그인/정책 위반(예: 401/403/409)으로 목록이 막힌 경우 UI를 비우고 끝냄
-            renderCards([]);
-            state.totalPages = 1;
-            updatePager();
-            try {
-              await r.text();
-            } catch (e) {
-            }
-          });
-      }
-
-      $("applyBtn").addEventListener("click", () => {
-        state.keyword = String($("keyword").value || "").trim();
-        state.status = String($("status").value || "").trim();
-        state.sort = String($("sort").value || "LATEST").trim();
-        state.page = 0;
-        load();
+      // 태그 체크박스 수집
+      document.querySelectorAll('.tag-filter:checked').forEach(cb => {
+        params.append('tagIds', cb.value);
       });
 
-      $("resetBtn").addEventListener("click", () => {
-        $("keyword").value = "";
-        $("status").value = "";
-        $("sort").value = "LATEST";
-
-        state.keyword = "";
-        state.status = "";
-        state.sort = "LATEST";
-        state.page = 0;
-        load();
-      });
-
-      $("prevBtn").addEventListener("click", () => {
-        if (state.page <= 0) return;
-        state.page -= 1;
-        load();
-      });
-
-      $("nextBtn").addEventListener("click", () => {
-        if (state.page >= state.totalPages - 1) return;
-        state.page += 1;
-        load();
-      });
-
-      load();
-    })();
+      // 페이지 이동
+      window.location.href = '/board/posts?' + params.toString();
+    }
   </script>
 </section>
 </body>
