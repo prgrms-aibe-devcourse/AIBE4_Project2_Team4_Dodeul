@@ -228,8 +228,11 @@
           const id = Number(btn.getAttribute('data-matching-id'));
           if (!id) return;
 
-          const ok = confirm('이 상담을 수락할까요?');
-          if (!ok) return;
+          const isConfirmed = await showConfirmModal(`이 상담을 수락할까요?`);
+
+          if (!isConfirmed) {
+            return;
+          }
 
           await onAccept(id);
         });
@@ -241,8 +244,11 @@
           const id = Number(btn.getAttribute('data-matching-id'));
           if (!id) return;
 
-          const ok = confirm('이 상담을 거절할까요?');
-          if (!ok) return;
+          const isConfirmed = await showConfirmModal(`이 상담을 거절할까요?`);
+
+          if (!isConfirmed) {
+            return;
+          }
 
           await onReject(id);
         });

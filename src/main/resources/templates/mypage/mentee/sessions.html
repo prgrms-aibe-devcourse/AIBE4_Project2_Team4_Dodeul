@@ -195,7 +195,7 @@
                     type="button"
                     data-complete-btn="true"
                     data-matching-id="${escapeHtml(it.matchingId)}">
-              리뷰 작성(완료)
+              리뷰 작성
             </button>
           `
           : '';
@@ -223,21 +223,27 @@
           const id = Number(btn.getAttribute('data-matching-id'));
           if (!id) return;
 
-          const ok = confirm('신청을 취소할까요?');
-          if (!ok) return;
+          const isConfirmed = await showConfirmModal(`신청을 취소할까요?`);
+
+          if (!isConfirmed) {
+            return;
+          }
 
           await onCancel(id);
         });
       });
 
-      // 리뷰 작성 완료
+      // 리뷰 작성
       listEl.querySelectorAll('[data-complete-btn="true"]').forEach(btn => {
         btn.addEventListener('click', async () => {
           const id = Number(btn.getAttribute('data-matching-id'));
           if (!id) return;
 
-          const ok = confirm('리뷰 작성 완료 처리할까요?');
-          if (!ok) return;
+          const isConfirmed = await showConfirmModal(`리뷰를 작성하러 가시겠습니까?`);
+
+          if (!isConfirmed) {
+            return;
+          }
 
           await onComplete(id);
         });
@@ -293,14 +299,7 @@
       }
 
       async function completeMatching(matchingId) {
-        try {
-          errEl.textContent = '';
-          await apiRequest(`/api/matchings/${matchingId}/completion`, {method: 'POST'});
-          await load();
-        } catch (e) {
-          console.error(e);
-          errEl.textContent = e?.message ?? '완료 처리에 실패했습니다.';
-        }
+        window.location.href = `/reviews/new/${matchingId}`;
       }
 
       document.querySelectorAll('[data-filter]').forEach(btn => {
