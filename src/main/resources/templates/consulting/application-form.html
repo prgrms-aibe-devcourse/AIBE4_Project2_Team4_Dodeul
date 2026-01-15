@@ -69,8 +69,8 @@
       </div>
     </div>
 
-    <form th:action="${formActionUrl}" th:object="${request}" method="post" enctype="multipart/form-data">
-
+    <form id="applicationForm" th:action="${formActionUrl}" th:object="${request}" method="post" enctype="multipart/form-data">
+      <input type="hidden" id="targetMentorId" name="mentorId" th:value="${mentorId}">
       <div class="mb-5">
         <h4 class="fw-bold mb-2">카테고리 선택</h4>
         <p class="text-muted small mb-3">관심 있는 멘토링 분야를 1개 선택해주세요.</p>
@@ -144,8 +144,15 @@
         <button type="button" class="btn btn-outline-secondary px-4 py-2" onclick="history.back()">
           < 이전 단계
         </button>
-        <button type="submit" class="btn btn-dark px-4 py-2">
+        <button type="submit" class="btn btn-dark px-4 py-2" th:if="${mentorId == null}">
           멘토 선택 >
+        </button>
+        <button type="button" class="btn btn-dark px-4 py-2"
+                th:if="${mentorId != null}"
+                th:data-mentor-id="${mentorId}"
+                th:data-mentor-name="${mentorName}"
+                onclick="requestMatching(this.dataset.mentorId, this.dataset.mentorName)">
+          상담 신청하기
         </button>
       </div>
     </form>
@@ -295,6 +302,84 @@
       const modalEl = document.getElementById('aiModal');
       const modal = bootstrap.Modal.getInstance(modalEl);
       modal.hide();
+    }
+
+    // 매칭 신청 후 매칭 완료 화면으로 리다이렉트
+    async function requestMatching(mentorId, mentorName) {
+      const safeMentorName = mentorName || '멘토';
+
+      const isConfirmed = await showConfirmModal(`'${safeMentorName}' 멘토님에게 상담을 신청하시겠습니까?`);
+      if (!isConfirmed) return;
+
+      const form = document.getElementById('applicationForm');
+
+      if (!form) {
+        alert("신청서 폼을 찾을 수 없습니다.");
+        return;
+      }
+
+      if (!form.reportValidity()) return;
+
+      const csrfTokenMeta = document.querySelector('meta[name="_csrf"]');
+      const csrfHeaderMeta = document.querySelector('meta[name="_csrf_header"]');
+
+      if (!csrfTokenMeta || !csrfHeaderMeta) {
+        alert('보안 토큰을 찾을 수 없습니다. 페이지를 새로고침 해주세요.');
+        return;
+      }
+
+      const csrfToken = csrfTokenMeta.content;
+      const csrfHeader = csrfHeaderMeta.content;
+
+      try {
+        const formData = new FormData(form);
+
+        const saveResponse = await fetch('/api/consulting-applications', {
+          method: 'POST',
+          headers: {
+            [csrfHeader]: csrfToken
+          },
+          body: formData
+        });
+
+        const saveResult = await saveResponse.json();
+
+        if (!saveResponse.ok || saveResult.code !== 200) {
+          throw new Error(saveResult.message || '신청서 저장에 실패했습니다.');
+        }
+
+        const savedApplicationId = saveResult.data;
+
+        if (!savedApplicationId) {
+          throw new Error('신청서 ID를 받아오지 못했습니다.');
+        }
+
+        const matchingRequestData = {
+          applicationId: savedApplicationId,
+          mentorId: mentorId
+        };
+
+        const matchingResponse = await fetch('/api/matchings', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            [csrfHeader]: csrfToken
+          },
+          body: JSON.stringify(matchingRequestData)
+        });
+
+        const matchingResult = await matchingResponse.json();
+
+        if (matchingResult.code >= 200 && matchingResult.code < 300) {
+          location.href = `/matchings/waiting?mentorName=${encodeURIComponent(safeMentorName)}`;
+        } else {
+          showCommonModal(matchingResult.message || '매칭 신청에 실패했습니다.');
+        }
+
+      } catch (error) {
+        console.error('Request Matching Error:', error);
+        showCommonModal(error.message || '시스템 오류가 발생했습니다.');
+      }
     }
   </script>
 
