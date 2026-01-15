@@ -19,6 +19,7 @@ public class BoardCommentItemResponse {
     private String authorDisplayName;
     private String authorNickname;
     private String authorRoleTag;
+    private String authorProfileImageUrl;  // 프로필 이미지 URL
 
     private String content;
     private String commentStatus;

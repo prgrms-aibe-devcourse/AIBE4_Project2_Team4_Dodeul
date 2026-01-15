@@ -207,10 +207,7 @@ public class ConsultingApplicationService {
 
         ConsultingApplicationRequest form = new ConsultingApplicationRequest();
 
-        // ▼▼▼ [이 줄이 지금 코드에 없습니다! 꼭 넣으세요!] ▼▼▼
         form.setMenteeId(application.getMenteeId());
-        // ▲▲▲ ----------------------------------------- ▲▲▲
-
         form.setTitle(application.getTitle() != null ? application.getTitle() : "");
         form.setContent(application.getContent() != null ? application.getContent() : "");
         form.setConsultingTag(application.getConsultingTag());

@@ -74,12 +74,12 @@
             <span class="meta__value" th:text="${post.consultingTag != null ? post.consultingTag.description : '-'}">-</span>
           </span>
           <span class="meta__date">
-            <span th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">-</span>
-            <span
-              th:if="${post.updatedAt != null && !#temporals.format(post.updatedAt, 'yyyy-MM-dd HH:mm').equals(#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm'))}"
-              class="meta__updated"
-              th:text="'(수정됨: ' + ${#temporals.format(post.updatedAt, 'yyyy-MM-dd HH:mm')} + ')'"
-            ></span>
+            <!-- 수정되지 않았으면 생성시간만 표시 -->
+            <span th:if="${post.updatedAt == null || #temporals.format(post.updatedAt, 'yyyy-MM-dd HH:mm').equals(#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm'))}"
+                  th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">-</span>
+            <!-- 수정되었으면 수정시간만 표시 -->
+            <span th:if="${post.updatedAt != null && !#temporals.format(post.updatedAt, 'yyyy-MM-dd HH:mm').equals(#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm'))}"
+                  th:text="'수정: ' + ${#temporals.format(post.updatedAt, 'yyyy-MM-dd HH:mm')}">-</span>
           </span>
         </div>
 
@@ -190,7 +190,17 @@
           >
             <div class="comment__head">
               <div class="comment__left">
-                <div class="comment__avatar" th:text="${#strings.substring(comment.authorDisplayName, 0, 1).toUpperCase()}">A</div>
+                <!-- 프로필 이미지가 없으면 닉네임 첫 글자 표시 -->
+                <div class="comment__avatar"
+                     th:if="${comment.authorProfileImageUrl == null or comment.authorProfileImageUrl.isEmpty()}"
+                     th:text="${#strings.substring(comment.authorDisplayName, 0, 1).toUpperCase()}">A</div>
+                <!-- 프로필 이미지가 있으면 이미지 표시 -->
+                <div class="comment__avatar comment__avatar--image"
+                     th:if="${comment.authorProfileImageUrl != null and !comment.authorProfileImageUrl.isEmpty()}">
+                  <img th:src="${comment.authorProfileImageUrl}"
+                       th:alt="${comment.authorDisplayName}"
+                       class="comment__avatarImg"/>
+                </div>
                 <div class="comment__meta">
                   <div class="comment__topline">
                     <span class="comment__name" th:text="${comment.authorDisplayName}">익명</span>
@@ -212,12 +222,14 @@
                       style="background:#fef2f2;color:#ef4444;border-color:rgba(239,68,68,0.18)"
                     >멘티</span>
 
-                    <span class="comment__time" th:text="${#temporals.format(comment.createdAt, 'yyyy-MM-dd HH:mm')}">방금 전</span>
-                    <span
-                      th:if="${comment.updatedAt != null && !#temporals.format(comment.updatedAt, 'yyyy-MM-dd HH:mm').equals(#temporals.format(comment.createdAt, 'yyyy-MM-dd HH:mm'))}"
-                      class="comment__time"
-                      th:text="'(수정됨: ' + ${#temporals.format(comment.updatedAt, 'yyyy-MM-dd HH:mm')} + ')'"
-                    ></span>
+                    <!-- 수정되지 않았으면 생성시간만 표시 -->
+                    <span class="comment__time"
+                          th:if="${comment.updatedAt == null || #temporals.format(comment.updatedAt, 'yyyy-MM-dd HH:mm').equals(#temporals.format(comment.createdAt, 'yyyy-MM-dd HH:mm'))}"
+                          th:text="${#temporals.format(comment.createdAt, 'yyyy-MM-dd HH:mm')}">방금 전</span>
+                    <!-- 수정되었으면 수정시간만 표시 -->
+                    <span class="comment__time"
+                          th:if="${comment.updatedAt != null && !#temporals.format(comment.updatedAt, 'yyyy-MM-dd HH:mm').equals(#temporals.format(comment.createdAt, 'yyyy-MM-dd HH:mm'))}"
+                          th:text="'수정: ' + ${#temporals.format(comment.updatedAt, 'yyyy-MM-dd HH:mm')}">방금 전</span>
                   </div>
                 </div>
               </div>
@@ -290,7 +302,18 @@
           >
             <div class="comment__head">
               <div class="comment__left">
-                <div class="comment__avatar" style="width:28px; height:28px; font-size:12px;" th:text="${#strings.substring(child.authorDisplayName, 0, 1).toUpperCase()}">A</div>
+                <!-- 프로필 이미지가 없으면 닉네임 첫 글자 표시 -->
+                <div class="comment__avatar" style="width:28px; height:28px; font-size:12px;"
+                     th:if="${child.authorProfileImageUrl == null or child.authorProfileImageUrl.isEmpty()}"
+                     th:text="${#strings.substring(child.authorDisplayName, 0, 1).toUpperCase()}">A</div>
+                <!-- 프로필 이미지가 있으면 이미지 표시 -->
+                <div class="comment__avatar comment__avatar--image" style="width:28px; height:28px;"
+                     th:if="${child.authorProfileImageUrl != null and !child.authorProfileImageUrl.isEmpty()}">
+                  <img th:src="${child.authorProfileImageUrl}"
+                       th:alt="${child.authorDisplayName}"
+                       class="comment__avatarImg"
+                       style="width:100%; height:100%;"/>
+                </div>
                 <div class="comment__meta">
                   <div class="comment__topline">
                     <span class="comment__name" style="font-size:13px;" th:text="${child.authorDisplayName}">익명</span>
@@ -306,13 +329,14 @@
                       style="background:#ecfdf5;color:#16a34a;border-color:rgba(22,163,74,0.18);font-size:11px;"
                     >멘토</span>
 
-                    <span class="comment__time" style="font-size:11px;" th:text="${#temporals.format(child.createdAt, 'yyyy-MM-dd HH:mm')}">방금 전</span>
-                    <span
-                      th:if="${child.updatedAt != null && !#temporals.format(child.updatedAt, 'yyyy-MM-dd HH:mm').equals(#temporals.format(child.createdAt, 'yyyy-MM-dd HH:mm'))}"
-                      class="comment__time"
-                      style="font-size:11px;"
-                      th:text="'(수정됨: ' + ${#temporals.format(child.updatedAt, 'yyyy-MM-dd HH:mm')} + ')'"
-                    ></span>
+                    <!-- 수정되지 않았으면 생성시간만 표시 -->
+                    <span class="comment__time" style="font-size:11px;"
+                          th:if="${child.updatedAt == null || #temporals.format(child.updatedAt, 'yyyy-MM-dd HH:mm').equals(#temporals.format(child.createdAt, 'yyyy-MM-dd HH:mm'))}"
+                          th:text="${#temporals.format(child.createdAt, 'yyyy-MM-dd HH:mm')}">방금 전</span>
+                    <!-- 수정되었으면 수정시간만 표시 -->
+                    <span class="comment__time" style="font-size:11px;"
+                          th:if="${child.updatedAt != null && !#temporals.format(child.updatedAt, 'yyyy-MM-dd HH:mm').equals(#temporals.format(child.createdAt, 'yyyy-MM-dd HH:mm'))}"
+                          th:text="'수정: ' + ${#temporals.format(child.updatedAt, 'yyyy-MM-dd HH:mm')}">방금 전</span>
                   </div>
                 </div>
               </div>
@@ -434,7 +458,8 @@
       return;
     }
 
-    const isScraped = this.getAttribute('data-scraped') === 'true';
+    const button = this; // this 바인딩 문제 해결
+    const isScraped = button.getAttribute('data-scraped') === 'true';
     const method = isScraped ? 'DELETE' : 'POST';
 
     fetch(`/api/board/posts/${postId}/scrap`, {
@@ -442,19 +467,39 @@
       credentials: 'include',
       headers: {'Content-Type': 'application/json'}
     })
-      .then(r => r.ok ? r.json() : Promise.reject(r))
-      .then(data => {
-        const newScraped = data.data?.scraped || !isScraped;
-        this.setAttribute('data-scraped', newScraped);
-        this.classList.toggle('iconbtn--active', newScraped);
-        this.querySelector('.iconbtn__icon').textContent = newScraped ? '📌' : '🔖';
-
-        const count = parseInt(this.querySelector('.iconbtn__count').textContent) || 0;
-        const newCount = newScraped ? count + 1 : count - 1;
-        this.querySelector('.iconbtn__count').textContent = newCount;
-        document.getElementById('scrapCountDisplay').textContent = newCount;
+      .then(r => {
+        console.log('스크랩 응답 상태:', r.status, r.ok);
+        if (!r.ok) {
+          return r.text().then(text => {
+            console.error('스크랩 실패 응답:', text);
+            throw new Error('HTTP ' + r.status);
+          });
+        }
+        return r.json();
       })
-      .catch(() => alert('스크랩 처리에 실패했습니다.'));
+      .then(response => {
+        console.log('스크랩 전체 응답:', response);
+
+        // CommonResponse 구조: { code, message, data: { postId, scrappedByMe, scrapCount } }
+        const data = response.data;
+
+        if (!data || typeof data.scrappedByMe === 'undefined' || typeof data.scrapCount === 'undefined') {
+          console.error('응답 데이터 구조 오류:', response);
+          throw new Error('Invalid response structure');
+        }
+
+        const newScraped = data.scrappedByMe;
+        const newCount = data.scrapCount;
+
+        button.setAttribute('data-scraped', newScraped);
+        button.classList.toggle('iconbtn--active', newScraped);
+        button.querySelector('.iconbtn__icon').textContent = newScraped ? '📌' : '🔖';
+        button.querySelector('.iconbtn__count').textContent = newCount;
+      })
+      .catch(err => {
+        console.error('스크랩 에러:', err);
+        alert('스크랩 처리에 실패했습니다.');
+      });
   });
 
   // === 댓글 작성 (AJAX) ===

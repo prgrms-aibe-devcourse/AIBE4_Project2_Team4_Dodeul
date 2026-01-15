@@ -9,6 +9,9 @@ import org.aibe4.dodeul.domain.board.model.dto.request.BoardPostFileCreateReques
 import org.aibe4.dodeul.domain.board.model.dto.request.BoardPostListRequest;
 import org.aibe4.dodeul.domain.board.model.dto.response.BoardPostDetailResponse;
 import org.aibe4.dodeul.domain.board.model.dto.response.BoardPostListResponse;
+import org.aibe4.dodeul.domain.board.model.entity.BoardPost;
+import org.aibe4.dodeul.domain.board.model.enums.PostStatus;
+import org.aibe4.dodeul.domain.board.model.repository.BoardPostRepository;
 import org.aibe4.dodeul.domain.board.service.*;
 import org.aibe4.dodeul.domain.common.repository.SkillTagRepository;
 import org.aibe4.dodeul.domain.consulting.model.enums.ConsultingTag;
@@ -30,6 +33,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 @Controller
 @RequiredArgsConstructor
@@ -39,6 +43,7 @@ public class BoardPostViewController {
     private final BoardPostDetailService boardPostDetailService;
     private final BoardCommentService boardCommentService;
     private final BoardPostScrapService boardPostScrapService;
+    private final BoardPostRepository boardPostRepository;
     private final SkillTagRepository skillTagRepository;
     private final FileService fileService;
     private final BoardPostFileService boardPostFileService;
@@ -225,17 +230,43 @@ public class BoardPostViewController {
         RedirectAttributes rttr) {
 
         Long memberId = userDetails == null ? null : userDetails.getMemberId();
+
+        // 1. 로그인 확인
         if (memberId == null) {
             rttr.addFlashAttribute("msg", "로그인이 필요합니다.");
             return "redirect:/auth/login";
         }
 
-        model.addAttribute("postId", postId);
-        model.addAttribute("consultingTags", ConsultingTag.values());
-        model.addAttribute("skillTags", skillTagRepository.findAll());
-        model.addAttribute("skillTagIdString", "");
+        // 2. 게시글 조회 및 작성자 확인
+        try {
+            BoardPost post = boardPostRepository
+                .findByIdAndPostStatusNot(postId, PostStatus.DELETED)
+                .orElseThrow(() -> new IllegalArgumentException("게시글을 찾을 수 없습니다."));
 
-        return "board/post-edit";
+            // 3. 작성자 권한 확인
+            if (!Objects.equals(post.getMemberId(), memberId)) {
+                rttr.addFlashAttribute("msg", "게시글 작성자만 수정할 수 있습니다.");
+                return "redirect:/board/posts/" + postId;
+            }
+
+            // 4. 삭제된 게시글 확인 (추가 안전장치)
+            if (post.getPostStatus() == PostStatus.DELETED) {
+                rttr.addFlashAttribute("msg", "삭제된 게시글입니다.");
+                return "redirect:/board/posts";
+            }
+
+            // 5. 권한 확인 완료 후 페이지 렌더링
+            model.addAttribute("postId", postId);
+            model.addAttribute("consultingTags", ConsultingTag.values());
+            model.addAttribute("skillTags", skillTagRepository.findAll());
+            model.addAttribute("skillTagIdString", "");
+
+            return "board/post-edit";
+
+        } catch (IllegalArgumentException e) {
+            rttr.addFlashAttribute("msg", e.getMessage());
+            return "redirect:/board/posts";
+        }
     }
 
     private void applySkillTagsIfNeeded(BoardPostCreateRequest form, String skillTagIdString) {

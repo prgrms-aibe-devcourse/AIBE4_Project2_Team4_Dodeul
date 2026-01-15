@@ -67,7 +67,26 @@
     </div>
   </div>
 
-  <div class="modal fade" id="successModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+  <div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow">
+        <div class="modal-header border-0 pb-0">
+          <h5 class="modal-title fw-bold">리뷰 등록</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body py-4 text-center">
+          <p class="text-secondary mb-0 fs-5">작성하신 리뷰를 등록하시겠습니까?</p>
+          <p class="text-small text-muted mt-2">등록 후에는 수정할 수 없습니다.</p>
+        </div>
+        <div class="modal-footer border-0 pt-0 justify-content-center pb-4">
+          <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">취소</button>
+          <button type="button" class="btn btn-primary-custom px-4" id="finalSubmitBtn">등록하기</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="successModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content border-0 shadow">
         <div class="modal-body text-center py-5">
@@ -92,16 +111,19 @@
       const textarea = document.getElementById('content');
       const countLabel = document.getElementById('charCount');
       const counterWrapper = document.getElementById('counterWrapper');
+
+      const confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
       const successModal = new bootstrap.Modal(document.getElementById('successModal'));
+
+      const finalSubmitBtn = document.getElementById('finalSubmitBtn');
       const goHomeBtn = document.getElementById('goHomeBtn');
 
-      // [핵심 수정] 확인 버튼 클릭 이벤트 리스너
-      // 타임리프 인라인 문법을 사용하여 서버 컨텍스트 경로가 포함된 URL을 생성합니다.
+      // [3단계] 성공 모달 확인 -> 대시보드 이동
       goHomeBtn.addEventListener('click', function() {
         location.href = /*[[@{/mentee/dashboard}]]*/ '/mentee/dashboard';
       });
 
-      // 글자수 세기 로직
+      // 글자수 세기
       textarea.addEventListener('input', function () {
         const len = this.value.length;
         countLabel.textContent = len;
@@ -114,11 +136,15 @@
         }
       });
 
-      // 폼 제출 로직
-      reviewForm.addEventListener('submit', async function (e) {
+      // [1단계] 폼 제출 시 -> 확인 모달 띄우기
+      reviewForm.addEventListener('submit', function (e) {
         e.preventDefault();
+        confirmModal.show();
+      });
 
-        if (!confirm("리뷰를 등록하시겠습니까?")) return;
+      // [2단계] API 호출 및 성공 처리
+      finalSubmitBtn.addEventListener('click', async function() {
+        finalSubmitBtn.disabled = true; // 중복 클릭 방지
 
         const matchingId = document.getElementById('matchingId').value;
         const apiUrl = `/api/reviews/${matchingId}`;
@@ -137,14 +163,24 @@
 
           const result = await response.json();
 
-          if (response.ok && result.success) {
-            successModal.show(); // 성공 시 모달 띄움 -> 이후 사용자가 '확인' 누르면 위 이벤트 리스너 작동
+          // [핵심 수정] HTTP 상태 코드가 200번대(OK)면 무조건 성공 처리
+          if (response.ok) {
+            confirmModal.hide(); // 확인 모달 닫기
+
+            // 자연스러운 전환을 위해 약간의 지연 후 성공 모달 표시
+            setTimeout(() => {
+              successModal.show();
+            }, 200);
+
           } else {
+            // 실패한 경우에만 alert 표시
             alert(result.message || "리뷰 등록 중 오류가 발생했습니다.");
+            finalSubmitBtn.disabled = false; // 버튼 다시 활성화
           }
         } catch (error) {
           console.error("에러 발생:", error);
           alert("네트워크 통신 중 오류가 발생했습니다.");
+          finalSubmitBtn.disabled = false;
         }
       });
     });

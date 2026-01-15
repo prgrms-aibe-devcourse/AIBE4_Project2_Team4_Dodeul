@@ -3,10 +3,14 @@ package org.aibe4.dodeul.domain.member.service;
 import lombok.RequiredArgsConstructor;
 import org.aibe4.dodeul.domain.member.model.dto.response.ProfileDto;
 import org.aibe4.dodeul.domain.member.model.entity.Member;
+import org.aibe4.dodeul.domain.member.model.entity.MenteeProfile;
+import org.aibe4.dodeul.domain.member.model.entity.MentorProfile;
 import org.aibe4.dodeul.domain.member.model.entity.Profile;
 import org.aibe4.dodeul.domain.member.model.enums.Provider;
 import org.aibe4.dodeul.domain.member.model.enums.Role;
 import org.aibe4.dodeul.domain.member.model.repository.MemberRepository;
+import org.aibe4.dodeul.domain.member.model.repository.MenteeProfileRepository;
+import org.aibe4.dodeul.domain.member.model.repository.MentorProfileRepository;
 import org.aibe4.dodeul.global.exception.BusinessException;
 import org.aibe4.dodeul.global.response.enums.ErrorCode;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -22,6 +26,9 @@ public class MemberService {
 
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
+
+    private final MentorProfileRepository mentorProfileRepository;
+    private final MenteeProfileRepository menteeProfileRepository;
 
     public Member getMemberOrThrow(Long memberId) {
         return memberRepository.findById(memberId)
@@ -87,7 +94,11 @@ public class MemberService {
             .nickname(tempNickname)
             .build();
 
-        return memberRepository.save(member).getId();
+        Member saved = memberRepository.save(member);
+
+        ensureProfileCreated(saved);
+
+        return saved.getId();
     }
 
     @Transactional
@@ -173,7 +184,11 @@ public class MemberService {
             .nickname(tempNickname)
             .build();
 
-        return memberRepository.save(member);
+        Member saved = memberRepository.save(member);
+
+        ensureProfileCreated(saved);
+
+        return saved;
     }
 
     private Member createGithubMember(String email, String providerId, Role role) {
@@ -204,7 +219,27 @@ public class MemberService {
             .nickname(tempNickname)
             .build();
 
-        return memberRepository.save(member);
+        Member saved = memberRepository.save(member);
+
+        ensureProfileCreated(saved);
+
+        return saved;
+    }
+
+
+    private void ensureProfileCreated(Member member) {
+        if (member == null || member.getRole() == null) return;
+
+        if (member.getRole() == Role.MENTOR) {
+            // 이미 있으면 생성하지 않음
+            if (!mentorProfileRepository.existsByMemberId(member.getId())) {
+                mentorProfileRepository.save(MentorProfile.create(member));
+            }
+        } else if (member.getRole() == Role.MENTEE) {
+            if (!menteeProfileRepository.existsByMemberId(member.getId())) {
+                menteeProfileRepository.save(MenteeProfile.create(member));
+            }
+        }
     }
 
     private String generateTempNickname() {

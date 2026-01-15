@@ -7,6 +7,7 @@ import org.aibe4.dodeul.domain.consultation.model.entity.ConsultationRoom;
 import org.aibe4.dodeul.domain.consultation.model.repository.ConsultationRoomRepository;
 import org.aibe4.dodeul.domain.matching.model.entity.Matching;
 import org.aibe4.dodeul.domain.matching.model.repository.MatchingRepository;
+import org.aibe4.dodeul.domain.member.service.MentorProfileService;
 import org.aibe4.dodeul.global.response.enums.ErrorCode;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +23,7 @@ public class ConsultationRoomService {
     private final MatchingRepository matchingRepository;
     private final ConsultationRoomRepository consultationRoomRepository;
     private final ChatService chatService;
+    private final MentorProfileService mentorProfileService;
 
     public ConsultationRoomDto loadRoomInfo(Long roomId, Long currentMemberId) {
         ConsultationRoom room = consultationRoomRepository.findById(roomId).orElseThrow(() -> new NoSuchElementException(ErrorCode.RESOURCE_NOT_FOUND.getMessage()));
@@ -53,6 +55,8 @@ public class ConsultationRoomService {
         room.getMatching().finishConsulting();
 
         room.changeStatusToClose();
+
+        mentorProfileService.increaseCompletedMatchingCount(room.getMatching().getMentor().getId());
 
         chatService.sendSystemMessage(roomId, currentMemberId, "상담이 종료되었습니다.");
     }
