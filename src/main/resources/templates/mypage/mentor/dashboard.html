@@ -34,7 +34,24 @@
       <div style="flex:1;">
         <div class="fw-bold" id="mentorName" style="margin-bottom:4px;">-</div>
         <div class="text-small" id="mentorDesc">내 프로필 정보를 불러오는 중…</div>
+
+        <!-- 상담 상태 + 토글 버튼 -->
+        <div style="margin-top:10px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+          <span class="text-small">
+            상담 상태: <strong id="consultationStatusText">-</strong>
+          </span>
+
+          <button type="button"
+                  class="btn-outline-custom"
+                  id="toggleConsultationBtn"
+                  style="padding:8px 10px; font-size:12px;">
+            상태 변경
+          </button>
+
+          <span class="text-small" id="consultationStatusHint" style="opacity:0.8;"></span>
+        </div>
       </div>
+
       <a class="btn-outline-custom" href="/mentor/profile">프로필 보기</a>
     </div>
   </section>
@@ -207,10 +224,22 @@
         document.getElementById('sumCompleted').textContent = dash.summary?.completed ?? '-';
 
         const upcoming = dash.upcomingSessions || [];
-        renderRows(document.getElementById('ongoingList'), upcoming.slice(0, 2), '진행중인 상담이 없습니다.', '상담 내역', () => `/mentor/sessions`);
+        renderRows(
+          document.getElementById('ongoingList'),
+          upcoming.slice(0, 2),
+          '진행중인 상담이 없습니다.',
+          '상담 내역',
+          () => `/mentor/sessions`
+        );
 
         const completedRecentSessions = dash.completedRecentSessions || [];
-        renderRows(document.getElementById('recentList'), completedRecentSessions, '최근 완료된 상담 내역이 없습니다.', '상담 내역 조회', () => `/mentor/sessions`);
+        renderRows(
+          document.getElementById('recentList'),
+          completedRecentSessions,
+          '최근 완료된 상담 내역이 없습니다.',
+          '상담 내역 조회',
+          () => `/mentor/sessions`
+        );
 
         const scrapEl = document.getElementById('scrapBox');
         const mockScrap = {title: '멘토링 질문 템플릿 공유합니다', href: '/board/posts'};
@@ -226,8 +255,10 @@
           </div>
         `;
 
+        // 2) 프로필 데이터 (+ 상담 상태 토글)
         const profileRes = await fetch('/api/mypage/mentor/profile', {credentials: 'same-origin'});
         const profileJson = await profileRes.json().catch(() => null);
+
         if (profileRes.ok) {
           const p = profileJson?.data || {};
           document.getElementById('mentorName').textContent = p.nickname ? `${p.nickname} 멘토` : '멘토';
@@ -237,6 +268,51 @@
           document.getElementById('mentorDesc').textContent = `${job} / ${fields}`;
 
           setAvatar(p.profileUrl);
+
+          // 상담 상태 렌더링 + 토글 버튼 연결
+          const enabled = !!p.consultationEnabled;
+
+          const statusTextEl = document.getElementById('consultationStatusText');
+          const hintEl = document.getElementById('consultationStatusHint');
+          const btn = document.getElementById('toggleConsultationBtn');
+
+          if (statusTextEl) statusTextEl.textContent = enabled ? '상담 가능' : '상담 불가';
+
+          if (hintEl) {
+            hintEl.textContent = enabled
+              ? '현재 상담 신청을 받고 있습니다.'
+              : '현재 상담 신청을 받지 않습니다.';
+          }
+
+          if (btn) {
+            btn.textContent = enabled ? '상담 안받기' : '상담 받기';
+            btn.onclick = async () => {
+              const next = !enabled;
+              const label = next ? '상담을 받도록 전환' : '상담을 받지 않도록 전환';
+
+              if (!confirm(`${label}할까요?`)) return;
+
+              try {
+                btn.disabled = true;
+
+                await apiRequest('/api/mentor/profile/consultation-enabled', {
+                  method: 'PATCH',
+                  headers: {
+                    'content-type': 'application/json',
+                    'accept': 'application/json'
+                  },
+                  body: JSON.stringify({enabled: next})
+                });
+
+                location.reload();
+              } catch (e) {
+                console.error(e);
+                alert(e?.message ?? '상담 상태 변경에 실패했습니다.');
+              } finally {
+                btn.disabled = false;
+              }
+            };
+          }
         }
       } catch (e) {
         console.error(e);
