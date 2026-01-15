@@ -64,11 +64,15 @@
              th:href="${appDetail.fileUrl}"
              class="text-decoration-none text-dark fw-bold"
              download>
-            <span th:text="${appDetail.fileUrl}">첨부파일_링크</span>
+    <span
+      th:text="${#strings.contains(appDetail.fileUrl, '/') ? #strings.substringAfter(appDetail.fileUrl, '/') : appDetail.fileUrl}">
+        파일명.png
+    </span>
           </a>
+
           <span th:if="${appDetail.fileUrl == null or appDetail.fileUrl.isEmpty()}" class="text-muted small">
-             첨부된 파일이 없습니다.
-          </span>
+     첨부된 파일이 없습니다.
+  </span>
         </div>
 
       </div>
