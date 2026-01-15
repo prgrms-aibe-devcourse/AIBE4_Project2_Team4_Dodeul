@@ -13,8 +13,6 @@ import org.aibe4.dodeul.domain.consultation.model.repository.ConsultationRoomRep
 import org.aibe4.dodeul.domain.consultation.model.repository.MessageRepository;
 import org.aibe4.dodeul.domain.member.model.entity.Member;
 import org.aibe4.dodeul.domain.member.model.repository.MemberRepository;
-import org.aibe4.dodeul.global.exception.BusinessException;
-import org.aibe4.dodeul.global.file.model.dto.response.FileUploadResponse;
 import org.aibe4.dodeul.global.response.enums.ErrorCode;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
@@ -33,29 +31,48 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ChatService {
 
-    private final MemberRepository memberRepository;
     private final ConsultationRoomRepository consultationRoomRepository;
+    private final CommonFileRepository commonFileRepository;
     private final MessageRepository messageRepository;
+    private final MemberRepository memberRepository;
+
     private final SimpMessagingTemplate messagingTemplate;
 
     private static final int INITIAL_MESSAGE_SIZE = 20;
-    private final CommonFileRepository commonFileRepository;
 
     @Transactional
     public MessageDto saveMessage(ChatMessageRequest request, Long currentMemberId) {
-        ConsultationRoom room = consultationRoomRepository.findById(request.getRoomId()).orElseThrow(() -> new NoSuchElementException(ErrorCode.RESOURCE_NOT_FOUND.getMessage()));
-        Member sender = memberRepository.findById(currentMemberId).orElseThrow(() -> new NoSuchElementException(ErrorCode.RESOURCE_NOT_FOUND.getMessage()));
+        ConsultationRoom room = consultationRoomRepository.findById(request.getRoomId())
+            .orElseThrow(() -> new NoSuchElementException(ErrorCode.RESOURCE_NOT_FOUND.getMessage()));
+
+        Member sender = memberRepository.findById(currentMemberId)
+            .orElseThrow(() -> new NoSuchElementException(ErrorCode.RESOURCE_NOT_FOUND.getMessage()));
 
         Message message = Message.builder()
             .consultationRoom(room)
             .sender(sender)
             .content(request.getContent())
-            .messageType(MessageType.TEXT) // 기본 타입 텍스트
+            .messageType(request.getMessageType())
             .build();
 
-        messageRepository.save(message);
+        Message savedMessage = messageRepository.save(message);
 
-        return MessageDto.of(message);
+        if (request.getMessageType() == MessageType.FILE || request.getMessageType() == MessageType.IMAGE) {
+            saveFile(message, request);
+        }
+
+        return MessageDto.of(savedMessage, request.getFileName());
+    }
+
+    private void saveFile(Message message, ChatMessageRequest request) {
+        CommonFile commonFile = CommonFile.ofChatMessage(
+            message.getId(),
+            request.getContent(),
+            request.getFileName(),
+            request.getContentType(),
+            request.getFileSize()
+        );
+        commonFileRepository.save(commonFile);
     }
 
     public Slice<MessageDto> getMoreMessages(Long roomId, Long lastMessageId, int size) {
@@ -67,6 +84,14 @@ public class ChatService {
     }
 
     /**
+     * 공통 로직: 파일명이 존재하면 포함하여 DTO 변환
+     */
+    private MessageDto mapToDtoWithFileName(Message m, Map<Long, String> fileNameMap) {
+        String fileName = fileNameMap.get(m.getId());
+        return (fileName != null) ? MessageDto.of(m, fileName) : MessageDto.of(m);
+    }
+
+    /**
      * 공통 로직: 메시지 ID 목록으로 파일명 맵 조회
      */
     private Map<Long, String> getFileNameMap(List<Long> messageIds) {
@@ -75,14 +100,6 @@ public class ChatService {
         return commonFileRepository.findAllByMessageIdInAndDomain(messageIds, FileDomain.CHAT_MESSAGE)
             .stream()
             .collect(Collectors.toMap(CommonFile::getMessageId, CommonFile::getOriginFileName));
-    }
-
-    /**
-     * 공통 로직: 파일명이 존재하면 포함하여 DTO 변환
-     */
-    private MessageDto mapToDtoWithFileName(Message m, Map<Long, String> fileNameMap) {
-        String fileName = fileNameMap.get(m.getId());
-        return (fileName != null) ? MessageDto.of(m, fileName) : MessageDto.of(m);
     }
 
     /**
@@ -123,42 +140,6 @@ public class ChatService {
         messageRepository.save(systemMessage);
 
         messagingTemplate.convertAndSend("/topic/room/" + roomId, MessageDto.of(systemMessage));
-    }
-
-    @Transactional
-    public MessageDto saveFileMessage(Long roomId, Long senderId, FileUploadResponse fileInfo) {
-        ConsultationRoom room = consultationRoomRepository.findById(roomId)
-            .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-
-        Member sender = memberRepository.findById(senderId).orElseThrow(() -> new NoSuchElementException(ErrorCode.RESOURCE_NOT_FOUND.getMessage()));
-
-        // 이미지 여부 판단
-        MessageType type = fileInfo.getContentType().startsWith("image")
-            ? MessageType.IMAGE : MessageType.FILE;
-
-        Message message = Message.builder()
-            .consultationRoom(room)
-            .sender(sender)
-            .content(fileInfo.getFileUrl()) // Supabase URL 저장
-            .messageType(type)
-            .build();
-
-        Message savedMessage = messageRepository.save(message);
-
-        CommonFile commonFile = CommonFile.ofChatMessage(
-            savedMessage.getId(),
-            fileInfo.getFileUrl(),
-            fileInfo.getOriginFileName(),
-            fileInfo.getContentType(),
-            fileInfo.getFileSize()
-        );
-        commonFileRepository.save(commonFile);
-
-        MessageDto dto = MessageDto.of(savedMessage, fileInfo.getOriginFileName());
-
-        messagingTemplate.convertAndSend("/topic/room/" + roomId, dto);
-
-        return dto;
     }
 
     public List<MessageDto> getChatFiles(Long roomId) {

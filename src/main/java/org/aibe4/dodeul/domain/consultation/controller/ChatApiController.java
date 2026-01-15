@@ -33,16 +33,14 @@ public class ChatApiController {
         return CommonResponse.success(SuccessCode.SELECT_SUCCESS, messages);
     }
 
-    @PostMapping("/{roomId}/file")
+    @PostMapping("/{roomId}/file/upload")
     @PreAuthorize("@consultationGuard.isParticipantMember(#roomId, #userDetails.memberId)")
-    public CommonResponse<MessageDto> uploadFile(@PathVariable Long roomId,
+    public CommonResponse<FileUploadResponse> uploadFile(@PathVariable Long roomId,
                                                  @RequestParam("file") MultipartFile file,
                                                  @AuthenticationPrincipal CustomUserDetails userDetails) {
 
         FileUploadResponse uploadResponse = fileService.upload(file, "chat");
 
-        MessageDto messageDto = chatService.saveFileMessage(roomId, userDetails.getMemberId(), uploadResponse);
-
-        return CommonResponse.success(SuccessCode.SUCCESS, messageDto);
+        return CommonResponse.success(SuccessCode.SUCCESS, uploadResponse);
     }
 }
