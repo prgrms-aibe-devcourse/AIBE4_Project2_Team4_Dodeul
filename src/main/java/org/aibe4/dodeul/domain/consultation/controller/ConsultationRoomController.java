@@ -26,7 +26,7 @@ public class ConsultationRoomController {
 
         model.addAttribute("consultationRoomDto", consultationRoomDto);
 
-        return "consultation/consultation-room";
+        return "consultation/room";
     }
 
     @GetMapping("/matching/{matchingId}")
