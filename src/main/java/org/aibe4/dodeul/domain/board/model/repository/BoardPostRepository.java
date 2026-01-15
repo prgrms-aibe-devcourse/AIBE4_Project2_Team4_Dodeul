@@ -13,6 +13,7 @@ import java.util.Optional;
 
 public interface BoardPostRepository extends JpaRepository<BoardPost, Long>, BoardPostRepositoryCustom {
 
+    // 상세 조회 시 태그 정보까지 한 번에 가져오기 (N+1 방지)
     @EntityGraph(attributePaths = {"boardPostTagRelations", "boardPostTagRelations.skillTag"})
     Optional<BoardPost> findDetailById(Long id);
 

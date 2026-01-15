@@ -23,6 +23,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -58,7 +59,6 @@ public class BoardPostViewController {
      */
     @GetMapping("/board/posts")
     public String listPage(
-        @AuthenticationPrincipal CustomUserDetails userDetails,
         @RequestParam(required = false) String keyword,
         @RequestParam(required = false) String status,
         @RequestParam(required = false) String sort,
@@ -68,7 +68,7 @@ public class BoardPostViewController {
         @RequestParam(defaultValue = "12") int size,
         Model model) {
 
-        Long memberId = userDetails == null ? null : userDetails.getMemberId();
+        Long memberId = getMemberIdFromContext();
 
         BoardPostListRequest request = BoardPostListRequest.builder()
             .consultingTag(consultingTag)
@@ -107,11 +107,10 @@ public class BoardPostViewController {
      */
     @GetMapping("/board/posts/{postId}")
     public String detail(
-        @AuthenticationPrincipal CustomUserDetails userDetails,
         @PathVariable Long postId,
         Model model) {
 
-        Long memberId = userDetails == null ? null : userDetails.getMemberId();
+        Long memberId = getMemberIdFromContext();
 
         // 조회수 증가
         boardPostService.increaseViewCount(postId);
@@ -267,6 +266,18 @@ public class BoardPostViewController {
             rttr.addFlashAttribute("msg", e.getMessage());
             return "redirect:/board/posts";
         }
+    }
+
+    private Long getMemberIdFromContext() {
+        try {
+            Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            if (principal instanceof CustomUserDetails) {
+                return ((CustomUserDetails) principal).getMemberId();
+            }
+        } catch (Exception e) {
+            // ignore
+        }
+        return null;
     }
 
     private void applySkillTagsIfNeeded(BoardPostCreateRequest form, String skillTagIdString) {
