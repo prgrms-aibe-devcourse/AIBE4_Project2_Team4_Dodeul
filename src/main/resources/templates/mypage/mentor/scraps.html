@@ -1,72 +1,92 @@
+<!-- src/main/resources/templates/mypage/mentor/scraps.html -->
 <!DOCTYPE html>
-<html lang="ko"
-      xmlns:th="http://www.thymeleaf.org"
-      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
-      layout:decorate="~{common/layout/mentor}">
-
+<html
+  lang="ko"
+  xmlns:th="http://www.thymeleaf.org"
+  xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+  layout:decorate="~{common/layout/mentor}"
+>
 <head>
   <th:block layout:fragment="head">
     <title>DODEUL | 멘토 스크랩</title>
-    <link rel="stylesheet" href="/css/mypage/dashboard.css">
+    <link rel="stylesheet" href="/css/mypage/dashboard.css"/>
   </th:block>
 </head>
 
 <body>
 <div layout:fragment="page">
-
   <div class="dashboard-header">
-    <h2 class="fw-bold" style="margin-bottom:8px;">스크랩</h2>
-    <p class="text-small" style="margin-bottom:16px;">스크랩한 항목을 확인할 수 있습니다.</p>
+    <h2 class="fw-bold" style="margin-bottom: 8px">스크랩</h2>
+    <p class="text-small" style="margin-bottom: 16px">
+      스크랩한 항목을 확인할 수 있습니다.
+    </p>
   </div>
 
   <!-- 필터 -->
-  <section class="card-custom" style="margin-bottom:16px;">
-    <div class="fw-bold" style="margin-bottom:10px;">필터</div>
-    <div style="display:flex; gap:8px; flex-wrap:wrap;">
-      <button class="tag tag--selectable tag--active" type="button" data-filter="all">전체</button>
-      <button class="tag tag--selectable" type="button" data-filter="post">기술 스택</button>
-      <button class="tag tag--selectable" type="button" data-filter="mentor">상담 유형</button>
+  <section class="card-custom" style="margin-bottom: 16px">
+    <div class="fw-bold" style="margin-bottom: 10px">필터</div>
+    <div style="display: flex; gap: 8px; flex-wrap: wrap">
+      <button
+        class="tag tag--selectable tag--active"
+        type="button"
+        data-filter="all"
+      >
+        전체
+      </button>
+      <button class="tag tag--selectable" type="button" data-filter="post">
+        기술 스택
+      </button>
+      <button
+        class="tag tag--selectable"
+        type="button"
+        data-filter="mentor"
+        disabled
+        title="게시판 스크랩만 제공됩니다."
+      >
+        상담 유형
+      </button>
     </div>
-    <p class="text-small" style="margin-top:10px;">※ 현재는 UI만 제공되며, 추후 API 연동 예정입니다.</p>
+    <p class="text-small" style="margin-top: 10px">
+      ※ 게시판 스크랩만 API 연동됩니다.
+    </p>
   </section>
 
   <!-- 리스트 -->
   <section>
-    <div class="fw-bold" style="margin-bottom:10px;">스크랩 목록</div>
+    <div class="fw-bold" style="margin-bottom: 10px">스크랩 목록</div>
 
-    <div class="card-custom dashboard-list" id="scrapList" style="margin:0;">
+    <div class="card-custom dashboard-list" id="scrapList" style="margin: 0">
       <div class="dashboard-row">
         <div class="text-small">불러오는 중…</div>
       </div>
     </div>
 
-    <p id="scrapError" style="color:#d33; margin-top:12px;"></p>
+    <p id="scrapError" style="color: #d33; margin-top: 12px"></p>
   </section>
-
 </div>
 
 <th:block layout:fragment="script">
   <script>
     function escapeHtml(s) {
-      return String(s ?? '')
-        .replaceAll('&', '&amp;')
-        .replaceAll('<', '&lt;')
-        .replaceAll('>', '&gt;')
-        .replaceAll('"', '&quot;')
+      return String(s ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
         .replaceAll("'", "&#039;");
     }
 
     function badgeHtml(type) {
-      if (type === 'post') return '<span class="status-badge status-approved">기술 스택</span>';
-      if (type === 'mentor') return '<span class="status-badge status-review">상담 유형</span>';
+      if (type === "post")
+        return '<span class="status-badge status-approved">기술 스택</span>';
+      if (type === "mentor")
+        return '<span class="status-badge status-review">상담 유형</span>';
       return '<span class="status-badge status-canceled">-</span>';
     }
 
     function hrefByItem(item) {
-      // TODO: 실제 상세 링크 확정되면 교체
-      if (item.type === 'post') return '/board/posts';
-      if (item.type === 'mentor') return '/mentors';
-      return '#';
+      if (item.type === "post") return "/board/posts/" + item.id;
+      return "#";
     }
 
     function render(listEl, items, onUnscrap) {
@@ -75,13 +95,14 @@
         return;
       }
 
-      listEl.innerHTML = items.map(it => {
-        const title = escapeHtml(it.title);
-        const sub = escapeHtml(it.subText ?? '');
-        const badge = badgeHtml(it.type);
-        const href = hrefByItem(it);
+      listEl.innerHTML = items
+        .map((it) => {
+          const title = escapeHtml(it.title);
+          const sub = escapeHtml(it.subText ?? "");
+          const badge = badgeHtml(it.type);
+          const href = hrefByItem(it);
 
-        return `
+          return `
           <div class="dashboard-row">
             <div>
               <div class="dashboard-row-title">${title}</div>
@@ -89,7 +110,9 @@
             </div>
             <div class="dashboard-row-right">
               ${badge}
-              <a class="btn-outline-custom" style="padding:8px 10px; font-size:12px;" href="${escapeHtml(href)}">보기</a>
+              <a class="btn-outline-custom" style="padding:8px 10px; font-size:12px;" href="${escapeHtml(
+            href
+          )}">보기</a>
               <button class="btn-outline-custom" style="padding:8px 10px; font-size:12px;" type="button"
                       data-unscrap-id="${escapeHtml(it.id)}">
                 해제
@@ -97,65 +120,100 @@
             </div>
           </div>
         `;
-      }).join('');
+        })
+        .join("");
 
-      listEl.querySelectorAll('[data-unscrap-id]').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const id = Number(btn.getAttribute('data-unscrap-id'));
+      listEl.querySelectorAll("[data-unscrap-id]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const id = Number(btn.getAttribute("data-unscrap-id"));
           onUnscrap(id);
         });
       });
     }
 
+    function fetchJson(url, options) {
+      const base = {
+        credentials: "include",
+        headers: {
+          Accept: "application/json",
+          ...(options && options.headers ? options.headers : {}),
+        },
+      };
+      return fetch(url, {...base, ...(options || {})}).then((r) =>
+        r.ok ? r.json() : Promise.reject(r)
+      );
+    }
+
+    function getApiData(res) {
+      if (res && res.data != null) return res.data;
+      return res;
+    }
+
     (function () {
-      const listEl = document.getElementById('scrapList');
-      const errEl = document.getElementById('scrapError');
+      const listEl = document.getElementById("scrapList");
+      const errEl = document.getElementById("scrapError");
 
-      // TODO: API 연동 예정 (현재 mock)
-      let mock = [
-        {id: 1, type: 'post', title: '면접 질문 리스트 정리', subText: '게시판 · 2026-01-12'},
-        {id: 2, type: 'post', title: '문제 해결 경험 공유', subText: '게시판 · 2026-01-10'},
-        {id: 3, type: 'mentor', title: '면접 준비', subText: '게시판 · 2026-01-10'}
-      ];
-
-      let currentFilter = 'all';
+      let allItems = [];
+      let currentFilter = "all";
 
       function setActive(btn) {
-        document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('tag--active'));
-        btn.classList.add('tag--active');
+        document
+          .querySelectorAll("[data-filter]")
+          .forEach((b) => b.classList.remove("tag--active"));
+        btn.classList.add("tag--active");
       }
 
       function filteredItems() {
-        return (currentFilter === 'all') ? mock : mock.filter(x => x.type === currentFilter);
+        if (currentFilter === "all") return allItems;
+        return allItems.filter((x) => x.type === currentFilter);
       }
 
       function rerender() {
-        render(listEl, filteredItems(), (id) => {
-          const ok = confirm('스크랩을 해제할까요?');
+        render(listEl, filteredItems(), (postId) => {
+          const ok = confirm("스크랩을 해제할까요?");
           if (!ok) return;
 
-          mock = mock.filter(x => x.id !== id);
-          rerender();
+          fetchJson("/api/board/posts/" + postId + "/scrap", {method: "DELETE"})
+            .then(() => load())
+            .catch((err) => {
+              if (err && (err.status === 401 || err.status === 403)) {
+                alert("로그인이 필요합니다.");
+                return;
+              }
+              alert("스크랩 해제에 실패했습니다.");
+            });
         });
       }
 
-      document.querySelectorAll('[data-filter]').forEach(btn => {
-        btn.addEventListener('click', () => {
-          currentFilter = btn.getAttribute('data-filter');
+      function load() {
+        errEl.textContent = "";
+        listEl.innerHTML = `<div class="dashboard-row"><div class="text-small">불러오는 중…</div></div>`;
+
+        fetchJson("/api/mypage/scraps", {method: "GET"})
+          .then((res) => {
+            const data = getApiData(res) || {};
+            const items = Array.isArray(data.items) ? data.items : [];
+            allItems = items;
+            rerender();
+          })
+          .catch(() => {
+            errEl.textContent = "스크랩 목록을 불러올 수 없습니다.";
+            allItems = [];
+            rerender();
+          });
+      }
+
+      document.querySelectorAll("[data-filter]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          currentFilter = btn.getAttribute("data-filter");
           setActive(btn);
           rerender();
         });
       });
 
-      try {
-        rerender();
-      } catch (e) {
-        errEl.textContent = '화면을 렌더링할 수 없습니다.';
-        console.error(e);
-      }
+      load();
     })();
   </script>
 </th:block>
-
 </body>
 </html>

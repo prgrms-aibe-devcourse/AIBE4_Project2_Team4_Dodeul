@@ -3,15 +3,22 @@ package org.aibe4.dodeul.domain.board.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.aibe4.dodeul.domain.board.model.dto.comment.BoardCommentListResponse;
 import org.aibe4.dodeul.domain.board.model.dto.request.BoardPostCreateRequest;
 import org.aibe4.dodeul.domain.board.model.dto.request.BoardPostFileCreateRequest;
-import org.aibe4.dodeul.domain.board.service.BoardPostFileService;
-import org.aibe4.dodeul.domain.board.service.BoardPostService;
+import org.aibe4.dodeul.domain.board.model.dto.request.BoardPostListRequest;
+import org.aibe4.dodeul.domain.board.model.dto.response.BoardPostDetailResponse;
+import org.aibe4.dodeul.domain.board.model.dto.response.BoardPostListResponse;
+import org.aibe4.dodeul.domain.board.service.*;
 import org.aibe4.dodeul.domain.common.repository.SkillTagRepository;
 import org.aibe4.dodeul.domain.consulting.model.enums.ConsultingTag;
 import org.aibe4.dodeul.global.file.model.dto.response.FileUploadResponse;
 import org.aibe4.dodeul.global.file.service.FileService;
 import org.aibe4.dodeul.global.security.CustomUserDetails;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -29,18 +36,105 @@ import java.util.List;
 public class BoardPostViewController {
 
     private final BoardPostService boardPostService;
+    private final BoardPostDetailService boardPostDetailService;
+    private final BoardCommentService boardCommentService;
+    private final BoardPostScrapService boardPostScrapService;
     private final SkillTagRepository skillTagRepository;
     private final FileService fileService;
-    private final BoardPostFileService boardPostFileService;  // ← 추가!
+    private final BoardPostFileService boardPostFileService;
 
     @GetMapping("/board")
     public String boardHome() {
         return "redirect:/board/posts";
     }
 
+    /**
+     * 게시글 목록 페이지 (Thymeleaf SSR)
+     */
     @GetMapping("/board/posts")
-    public String listPage() {
+    public String listPage(
+        @AuthenticationPrincipal CustomUserDetails userDetails,
+        @RequestParam(required = false) String keyword,
+        @RequestParam(required = false) String status,
+        @RequestParam(required = false) String sort,
+        @RequestParam(required = false) List<Long> tagIds,
+        @RequestParam(required = false) ConsultingTag consultingTag,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "12") int size,
+        Model model) {
+
+        Long memberId = userDetails == null ? null : userDetails.getMemberId();
+
+        BoardPostListRequest request = BoardPostListRequest.builder()
+            .consultingTag(consultingTag)
+            .tagIds(tagIds)
+            .status(status)
+            .keyword(keyword)
+            .sort(sort)
+            .build();
+
+        Pageable pageable = PageRequest.of(page, size, toSpringSort(sort));
+
+        try {
+            Page<BoardPostListResponse> result = boardPostService.getPosts(request, memberId, pageable);
+
+            // Model에 데이터 추가
+            model.addAttribute("posts", result.getContent());
+            model.addAttribute("currentPage", result.getNumber());
+            model.addAttribute("totalPages", result.getTotalPages());
+            model.addAttribute("pageSize", size);
+            model.addAttribute("skillTags", skillTagRepository.findAll());
+
+        } catch (Exception e) {
+            // 로그인 정책 위반 등으로 실패 시 빈 목록
+            model.addAttribute("posts", List.of());
+            model.addAttribute("currentPage", 0);
+            model.addAttribute("totalPages", 0);
+            model.addAttribute("pageSize", size);
+            model.addAttribute("skillTags", skillTagRepository.findAll());
+        }
+
         return "board/post-list";
+    }
+
+    /**
+     * 게시글 상세 페이지 (Thymeleaf SSR)
+     */
+    @GetMapping("/board/posts/{postId}")
+    public String detail(
+        @AuthenticationPrincipal CustomUserDetails userDetails,
+        @PathVariable Long postId,
+        Model model) {
+
+        Long memberId = userDetails == null ? null : userDetails.getMemberId();
+
+        // 조회수 증가
+        boardPostService.increaseViewCount(postId);
+
+        // 게시글 상세 정보
+        BoardPostDetailResponse post = boardPostDetailService.getDetail(postId, memberId);
+
+        // 댓글 목록
+        BoardCommentListResponse commentsResponse = boardCommentService.getComments(postId, memberId);
+
+        // 스크랩 여부
+        boolean isScraped = false;
+        if (memberId != null) {
+            try {
+                isScraped = boardPostScrapService.getStatus(memberId, postId).isScrappedByMe();
+            } catch (Exception e) {
+                // 무시
+            }
+        }
+
+        // Model에 데이터 추가
+        model.addAttribute("post", post);
+        model.addAttribute("comments", commentsResponse.getComments());
+        model.addAttribute("isScraped", isScraped);
+        model.addAttribute("isAuthor", post.mine());  // Response의 mine 필드 사용
+        model.addAttribute("isAuthenticated", memberId != null);
+
+        return "board/post-detail";
     }
 
     @GetMapping("/board/posts/new")
@@ -83,10 +177,10 @@ public class BoardPostViewController {
         }
 
         try {
-            // 1. 게시글 먼저 생성
+            // 게시글 생성
             Long postId = boardPostService.createPost(memberId, form);
 
-            // 2. 파일이 있으면 업로드 후 CommonFile로 저장
+            // 파일 업로드 및 저장
             if (files != null && !files.isEmpty()) {
                 List<BoardPostFileCreateRequest.Item> fileItems = new ArrayList<>();
 
@@ -95,10 +189,8 @@ public class BoardPostViewController {
                         continue;
                     }
 
-                    // Supabase에 업로드
                     FileUploadResponse uploaded = fileService.upload(file, "board");
 
-                    // CommonFile 저장을 위한 Item 생성
                     fileItems.add(BoardPostFileCreateRequest.Item.of(
                         uploaded.getFileUrl(),
                         uploaded.getOriginFileName(),
@@ -107,11 +199,8 @@ public class BoardPostViewController {
                     ));
                 }
 
-                // CommonFile 테이블에 저장
                 if (!fileItems.isEmpty()) {
-                    BoardPostFileCreateRequest fileRequest =
-                        BoardPostFileCreateRequest.of(fileItems);
-                    // ✅ 수정: static 호출 → 인스턴스 호출
+                    BoardPostFileCreateRequest fileRequest = BoardPostFileCreateRequest.of(fileItems);
                     boardPostFileService.addFiles(memberId, postId, fileRequest);
                 }
             }
@@ -128,12 +217,6 @@ public class BoardPostViewController {
         }
     }
 
-    @GetMapping("/board/posts/{postId}")
-    public String detail(@PathVariable Long postId, Model model) {
-        model.addAttribute("postId", postId);
-        return "board/post-detail";
-    }
-
     @GetMapping("/board/posts/{postId}/edit")
     public String editForm(
         @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -148,14 +231,12 @@ public class BoardPostViewController {
         }
 
         model.addAttribute("postId", postId);
-
         model.addAttribute("consultingTags", ConsultingTag.values());
         model.addAttribute("skillTags", skillTagRepository.findAll());
         model.addAttribute("skillTagIdString", "");
 
         return "board/post-edit";
     }
-
 
     private void applySkillTagsIfNeeded(BoardPostCreateRequest form, String skillTagIdString) {
         if (skillTagIdString == null || skillTagIdString.isBlank()) {
@@ -198,5 +279,21 @@ public class BoardPostViewController {
 
     private String normalizeForName(String value) {
         return value == null ? "" : value.trim();
+    }
+
+    private Sort toSpringSort(String sort) {
+        if (sort == null || sort.isBlank() || "LATEST".equalsIgnoreCase(sort)) {
+            return Sort.by(Sort.Direction.DESC, "createdAt");
+        }
+
+        if ("VIEWS".equalsIgnoreCase(sort)) {
+            return Sort.by(Sort.Direction.DESC, "viewCount").and(Sort.by(Sort.Direction.DESC, "createdAt"));
+        }
+
+        if ("SCRAPS".equalsIgnoreCase(sort)) {
+            return Sort.by(Sort.Direction.DESC, "scrapCount").and(Sort.by(Sort.Direction.DESC, "createdAt"));
+        }
+
+        return Sort.by(Sort.Direction.DESC, "createdAt");
     }
 }

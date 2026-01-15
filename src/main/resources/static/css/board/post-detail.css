@@ -372,9 +372,14 @@ body {
 }
 
 .btn--primary {
-  background: #111827;
+  background: #2563eb;
   color: #fff;
-  border-color: #111827;
+  border-color: #2563eb;
+}
+
+.btn--primary:hover {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
 }
 
 /* ===== 댓글/채택 UI ===== */
@@ -634,7 +639,8 @@ body {
 }
 
 .comment__acceptedMark {
-  display: inline-flex;
+  display: flex;
+  justify-content: flex-end;
   align-items: center;
   gap: 6px;
   font-size: 12px;
@@ -644,6 +650,7 @@ body {
   height: 24px;
   border-radius: 8px;
   white-space: nowrap;
+  margin-top: 8px;
 }
 
 /* ===== 게시글 메뉴(점 세개) ===== */
@@ -735,6 +742,7 @@ body {
   background: #fff;
   border-radius: 14px;
   padding: 12px 12px;
+  transition: all 0.2s ease;
 }
 
 .attachcard--clickable {
@@ -743,6 +751,59 @@ body {
 
 .attachcard:hover {
   background: rgba(17, 24, 39, 0.03);
+}
+
+/* 파일 타입별 카드 스타일 */
+.attachcard.type-pdf {
+  background: #fef2f2;
+  border-color: rgba(239, 68, 68, 0.2);
+}
+.attachcard.type-pdf:hover {
+  background: #fee2e2;
+}
+.attachcard.type-pdf .attachcard__icon {
+  background: #fff;
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.2);
+}
+
+.attachcard.type-ppt {
+  background: #fff7ed;
+  border-color: rgba(249, 115, 22, 0.2);
+}
+.attachcard.type-ppt:hover {
+  background: #ffedd5;
+}
+.attachcard.type-ppt .attachcard__icon {
+  background: #fff;
+  color: #f97316;
+  border-color: rgba(249, 115, 22, 0.2);
+}
+
+.attachcard.type-image {
+  background: #eff6ff;
+  border-color: rgba(37, 99, 235, 0.2);
+}
+.attachcard.type-image:hover {
+  background: #dbeafe;
+}
+.attachcard.type-image .attachcard__icon {
+  background: #fff;
+  color: #2563eb;
+  border-color: rgba(37, 99, 235, 0.2);
+}
+
+.attachcard.type-text {
+  background: #ecfdf5;
+  border-color: rgba(22, 163, 74, 0.2);
+}
+.attachcard.type-text:hover {
+  background: #d1fae5;
+}
+.attachcard.type-text .attachcard__icon {
+  background: #fff;
+  color: #16a34a;
+  border-color: rgba(22, 163, 74, 0.2);
 }
 
 .attachcard__icon {
@@ -810,6 +871,14 @@ body {
 
 .attachments__previewCloseBtn {
   padding: 8px 12px;
+  background: #2563eb;
+  color: #fff;
+  border-color: #2563eb;
+}
+
+.attachments__previewCloseBtn:hover {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
 }
 
 .attachments__previewImage {

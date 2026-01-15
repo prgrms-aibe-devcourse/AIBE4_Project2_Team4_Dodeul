@@ -44,7 +44,7 @@
             ></div>
           </div>
 
-          <!-- 분야 (수정하기 폼과 동일: value=name(), text=description) -->
+          <!-- 분야 -->
           <div class="group">
             <label class="board-post-label" for="consultingTag">분야</label>
             <select
@@ -81,6 +81,7 @@
                     class="board-post-tag-checkbox"
                     th:value="${tag.id}"
                     th:attr="data-name=${tag.name}"
+                    th:checked="${form.skillTagIds != null && #lists.contains(form.skillTagIds, tag.id)}"
                   />
                   <span class="board-post-tag-name" th:text="${tag.name}"></span>
                 </label>
@@ -101,6 +102,9 @@
             />
             <div class="board-post-hint">
               예: Java, Spring, JPA (기존 기술 스택 외에 추가로 입력)
+            </div>
+            <div id="duplicateWarning" class="board-post-error" style="display:none;">
+              중복된 태그가 있습니다: <span id="duplicateList"></span>
             </div>
           </div>
 
@@ -149,7 +153,7 @@
             </div>
           </div>
 
-          <!-- 액션 (수정하기 폼 톤과 동일: 버튼 2개) -->
+          <!-- 액션 -->
           <div class="board-post-actions">
             <button id="cancelBtn" type="button" class="btn btn--ghost">취소</button>
             <button type="submit" class="btn btn--primary">등록</button>
@@ -162,25 +166,102 @@
 </main>
 
 <script>
-  // ===== 취소 =====
-  document.getElementById("cancelBtn")?.addEventListener("click", () => {
-    window.location.href = "/board/posts";
+  // === 취소 ===
+  document.getElementById('cancelBtn')?.addEventListener('click', () => {
+    window.location.href = '/board/posts';
   });
 
-  // ===== 업로드 검증 + 리스트(칩) =====
+  // === 중복 태그 검증 ===
+  function checkDuplicateTags() {
+    const checkedTags = Array.from(document.querySelectorAll('input[name="skillTagIds"]:checked'))
+      .map(cb => String(cb.getAttribute("data-name") || "").trim().toLowerCase())
+      .filter(name => name.length > 0);
+
+    const textInput = document.getElementById("skillTagIdString").value || "";
+    const textTags = textInput
+      .split(",")
+      .map(s => s.trim().toLowerCase())
+      .filter(s => s.length > 0);
+
+    const duplicates = textTags.filter(tag => checkedTags.includes(tag));
+
+    const warning = document.getElementById("duplicateWarning");
+    const duplicateList = document.getElementById("duplicateList");
+
+    if (duplicates.length > 0) {
+      duplicateList.textContent = duplicates.join(", ");
+      warning.style.display = "block";
+      return false;
+    } else {
+      warning.style.display = "none";
+      return true;
+    }
+  }
+
+  document.getElementById("skillTagIdString")?.addEventListener("input", checkDuplicateTags);
+  document.querySelectorAll('input[name="skillTagIds"]').forEach(cb => {
+    cb.addEventListener("change", checkDuplicateTags);
+  });
+
+  // === 폼 제출 전 유효성 검사 (파일/태그 유지용) ===
+  document.getElementById("createForm")?.addEventListener("submit", (e) => {
+    // 1. 중복 태그 검사
+    if (!checkDuplicateTags()) {
+      e.preventDefault();
+      alert("중복된 태그를 제거해주세요.");
+      return false;
+    }
+
+    // 2. 필수값 검사 (제목, 분야, 본문)
+    const title = document.getElementById("title").value.trim();
+    const consultingTag = document.getElementById("consultingTag").value;
+    const content = document.getElementById("content").value.trim();
+
+    if (!title) {
+      e.preventDefault();
+      alert("제목을 입력해주세요.");
+      document.getElementById("title").focus();
+      return false;
+    }
+
+    if (!consultingTag) {
+      e.preventDefault();
+      alert("분야를 선택해주세요.");
+      document.getElementById("consultingTag").focus();
+      return false;
+    }
+
+    if (!content) {
+      e.preventDefault();
+      alert("본문을 입력해주세요.");
+      document.getElementById("content").focus();
+      return false;
+    }
+
+    if (content.length < 10) {
+      e.preventDefault();
+      alert("본문은 10자 이상 입력해야 합니다.");
+      document.getElementById("content").focus();
+      return false;
+    }
+  });
+
+  // === 파일 업로드 ===
   const MAX_FILES = 5;
-  const MAX_SIZE = 10 * 1024 * 1024; // 10MB
+  const MAX_SIZE = 10 * 1024 * 1024;
   const ALLOWED_EXT = /(\.jpg|\.jpeg|\.png|\.gif|\.pdf|\.txt|\.ppt|\.pptx)$/i;
 
   const input = document.getElementById("files");
   const uploadBox = document.getElementById("uploadBox");
   const uploadInner = document.getElementById("uploadInner");
 
+  // 현재 선택된 파일들을 저장하는 배열 (DataTransfer 대신 사용)
+  let currentFiles = [];
+
   function formatBytes(bytes) {
     if (!bytes && bytes !== 0) return "";
     const units = ["B", "KB", "MB", "GB"];
-    let b = bytes;
-    let i = 0;
+    let b = bytes, i = 0;
     while (b >= 1024 && i < units.length - 1) {
       b /= 1024;
       i += 1;
@@ -199,40 +280,74 @@
 
   function validateFiles(fileList) {
     if (!fileList || fileList.length === 0) return true;
-
     if (fileList.length > MAX_FILES) {
       alert("첨부파일은 최대 5개까지 가능합니다.");
       return false;
     }
-
     for (const file of fileList) {
       if (file.size > MAX_SIZE) {
-        alert("파일 크기는 10MB를 초과할 수 없습니다.");
+        alert(`${file.name}의 크기가 10MB를 초과합니다.`);
         return false;
       }
       if (!ALLOWED_EXT.exec(file.name)) {
-        alert("허용되지 않는 파일 형식입니다.\n(이미지, PDF, TXT, PPT 파일만 가능)");
+        alert(`${file.name}는 허용되지 않는 파일 형식입니다.`);
         return false;
       }
     }
     return true;
   }
 
+  // 중복 제거 (파일명 기준)
+  function removeDuplicateFiles(fileList) {
+    const seen = new Map();
+    const result = [];
+
+    for (const file of fileList) {
+      if (!seen.has(file.name)) {
+        seen.set(file.name, true);
+        result.push(file);
+      }
+    }
+
+    return result;
+  }
+
+  function getFileIcon(type) {
+    if (type.includes('pdf')) return '📄';
+    if (type.includes('presentation') || type.includes('powerpoint')) return '📊';
+    if (type.includes('image')) return '🖼️';
+    if (type.includes('text')) return '📝';
+    return '📎';
+  }
+
+  function getFileTypeClass(type) {
+    if (type.includes('pdf')) return 'type-pdf';
+    if (type.includes('presentation') || type.includes('powerpoint')) return 'type-ppt';
+    if (type.includes('image')) return 'type-image';
+    if (type.includes('text')) return 'type-text';
+    return '';
+  }
+
   function renderFileList() {
     const list = document.getElementById("fileList");
-    if (!list || !input) return;
+    if (!list) return;
 
     list.innerHTML = "";
-    const files = input.files ? Array.from(input.files) : [];
-    if (files.length === 0) return;
+    if (currentFiles.length === 0) return;
 
-    files.forEach((f, idx) => {
+    currentFiles.forEach((f, idx) => {
       const chip = document.createElement("div");
-      chip.className = "filechip";
+      const typeClass = getFileTypeClass(f.type);
+      const icon = getFileIcon(f.type);
+
+      chip.className = `filechip ${typeClass}`;
       chip.innerHTML = `
         <div class="filechip__left">
-          <div class="filechip__name">${escapeHtml(f.name)}</div>
-          <div class="filechip__meta">${escapeHtml(f.type || "file")} · ${formatBytes(f.size)}</div>
+          <div class="filechip__icon">${icon}</div>
+          <div class="filechip__info">
+            <div class="filechip__name">${escapeHtml(f.name)}</div>
+            <div class="filechip__meta">${formatBytes(f.size)}</div>
+          </div>
         </div>
         <button type="button" class="filechip__remove" aria-label="파일 제거" data-idx="${idx}">×</button>
       `;
@@ -242,38 +357,47 @@
     list.querySelectorAll(".filechip__remove").forEach((btn) => {
       btn.addEventListener("click", () => {
         const removeIdx = Number(btn.getAttribute("data-idx"));
-        const dt = new DataTransfer();
-        Array.from(input.files).forEach((f, i) => {
-          if (i !== removeIdx) dt.items.add(f);
-        });
-        input.files = dt.files;
+        currentFiles.splice(removeIdx, 1);
+        updateInputFiles();
         renderFileList();
       });
     });
   }
 
-  function setFiles(files) {
+  function updateInputFiles() {
     if (!input) return;
-
-    const list = Array.from(files || []);
-    if (!validateFiles(list)) return;
-
     const dt = new DataTransfer();
-    list.forEach((f) => dt.items.add(f));
+    currentFiles.forEach((f) => dt.items.add(f));
     input.files = dt.files;
+  }
+
+  function addFiles(newFiles) {
+    // 기존 파일 + 새 파일 병합
+    const merged = currentFiles.concat(newFiles);
+
+    // 중복 제거
+    const uniqueFiles = removeDuplicateFiles(merged);
+
+    // 유효성 검사
+    if (!validateFiles(uniqueFiles)) {
+      // 실패 시 input 초기화 (기존 파일 유지)
+      updateInputFiles();
+      return;
+    }
+
+    currentFiles = uniqueFiles;
+    updateInputFiles();
     renderFileList();
   }
 
   // 클릭으로 파일 선택
   uploadInner?.addEventListener("click", () => input?.click());
+
   input?.addEventListener("change", () => {
-    const files = input.files ? Array.from(input.files) : [];
-    if (!validateFiles(files)) {
-      input.value = "";
-      renderFileList();
-      return;
-    }
-    renderFileList();
+    const newFiles = input.files ? Array.from(input.files) : [];
+    if (newFiles.length === 0) return;
+
+    addFiles(newFiles);
   });
 
   // Drag & Drop
@@ -294,11 +418,7 @@
       const dropped = e.dataTransfer && e.dataTransfer.files ? Array.from(e.dataTransfer.files) : [];
       if (dropped.length === 0) return;
 
-      const current = input.files ? Array.from(input.files) : [];
-      const merged = current.concat(dropped);
-      if (!validateFiles(merged)) return;
-
-      setFiles(merged);
+      addFiles(dropped);
     });
   }
 </script>
