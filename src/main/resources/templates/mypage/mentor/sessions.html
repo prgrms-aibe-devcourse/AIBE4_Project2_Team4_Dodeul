@@ -115,7 +115,7 @@
       return `/consultations/matching/${matchingId}`;
     }
 
-    function applicationHref(matchingId) {
+    function applicationHref(matchingId, applicationId) {
       return `/consulting-applications/${applicationId}/mentor-view`;
     }
 
@@ -173,7 +173,7 @@
         const applicationBtn = `
           <a class="btn-outline-custom"
              style="padding:8px 10px; font-size:12px;"
-             href="${escapeHtml(applicationHref(it.applicationId))}"
+             href="${escapeHtml(applicationHref(it.matchingId, it.applicationId))}"
              data-application-btn="true"
              data-matching-id="${escapeHtml(it.matchingId)}">
             신청서 조회

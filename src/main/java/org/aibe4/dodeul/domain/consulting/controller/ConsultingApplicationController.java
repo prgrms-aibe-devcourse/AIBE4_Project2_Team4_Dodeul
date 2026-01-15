@@ -100,15 +100,20 @@ public class ConsultingApplicationController {
     public String editForm(
         @PathVariable Long applicationId,
         Model model,
-        @AuthenticationPrincipal CustomUserDetails user // [수정] 이 부분이 추가되어야 빨간 줄이 사라집니다!
+        @AuthenticationPrincipal CustomUserDetails user
     ) {
-        // 서비스에서 수정용 폼 데이터 가져오기
+        // 1. 서비스에서 수정용 데이터 가져오기
         ConsultingApplicationRequest form = consultingApplicationService.getRegistrationForm(applicationId);
 
-        // [보안 검사] 이제 user 변수를 사용할 수 있습니다.
-        if (!form.getMenteeId().equals(user.getMemberId())) {
+        // 2. 권한 검사 (Null 방지 추가)
+        if (form == null || user == null || !form.getMenteeId().equals(user.getMemberId())) {
             throw new IllegalStateException("수정 권한이 없습니다.");
         }
+
+        // 3. [핵심 해결책] HTML 렌더링 에러 방지를 위해 빈 값 추가
+        // 수정 페이지 진입 시 mentorId와 mentorName이 없어서 발생하는 500 에러를 막아줍니다.
+        model.addAttribute("mentorId", null);
+        model.addAttribute("mentorName", "");
 
         model.addAttribute("request", form);
         model.addAttribute("consultingTags", ConsultingTag.values());
