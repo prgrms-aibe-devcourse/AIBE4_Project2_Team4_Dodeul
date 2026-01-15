@@ -9,6 +9,5 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ChatMessageRequest {
     private Long roomId;
-    private Long senderId;
     private String content;
 }
