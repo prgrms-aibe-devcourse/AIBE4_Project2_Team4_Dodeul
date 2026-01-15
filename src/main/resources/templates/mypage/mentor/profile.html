@@ -9,7 +9,6 @@
     <title>DODEUL | 멘토 프로필</title>
     <link rel="stylesheet" href="/css/mypage/dashboard.css">
     <style>
-      /* 혹시 기본 CSS가 background를 안 보이게 할 수 있어서 안전하게 보정 */
       #profileAvatar {
         background-size: cover;
         background-position: center;
@@ -33,7 +32,7 @@
 
       <div style="flex:1;">
         <div class="fw-bold" id="mentorName" style="margin-bottom:4px;">-</div>
-        <div class="text-small" id="mentorMeta">직무 / 상담 가능 분야</div>
+        <div class="text-small" id="mentorMeta">직무 · 연차 / 상담 가능 분야</div>
       </div>
     </div>
   </section>
@@ -87,7 +86,6 @@
       if (!avatar) return;
 
       if (url) {
-        // ✅ 캐시 때문에 안 바뀌는 현상 방지용 쿼리스트링
         const cacheBusted = url + (url.includes('?') ? '&' : '?') + 't=' + Date.now();
         avatar.style.backgroundImage = `url(${cacheBusted})`;
       } else {
@@ -107,12 +105,18 @@
         }
 
         const data = json?.data || {};
+
         document.getElementById('mentorName').textContent = data.nickname ? `${data.nickname} 멘토` : '멘토';
 
         const job = data.job ?? '-';
+        const years = data.careerYears;
+        const yearsText = (years === null || years === undefined || years === '') ? '-' : `${years}년차`;
+
         const consultings = (data.consultingTags && data.consultingTags.length) ? data.consultingTags : [];
+        const consultingText = consultings.length ? consultings.join(', ') : '-';
+
         document.getElementById('mentorMeta').textContent =
-          consultings.length ? `${job} / ${consultings.join(', ')}` : `${job} / -`;
+          `${job} · ${yearsText} / ${consultingText}`;
 
         document.getElementById('mentorBio').textContent =
           data.intro ?? '자기소개가 아직 등록되지 않았습니다.';
