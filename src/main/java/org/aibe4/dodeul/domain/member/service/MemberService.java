@@ -29,17 +29,11 @@ public class MemberService {
                 new BusinessException(ErrorCode.UNAUTHORIZED_ACCESS, "인증 정보가 유효하지 않습니다."));
     }
 
-    /**
-     * 임시 닉네임(user_*) 여부 판단 - 최초 가입 직후 닉네임 온보딩 판단용
-     */
     public boolean hasTemporaryNickname(Member member) {
         String nickname = member.getNickname();
         return nickname == null || nickname.isBlank() || nickname.startsWith("user_");
     }
 
-    /**
-     * 역할 분기 없이 프로필 공통 필드를 조회
-     */
     public ProfileDto getMemberProfile(Long memberId) {
         Member member = getMemberOrThrow(memberId);
 
@@ -58,18 +52,26 @@ public class MemberService {
     }
 
     @Transactional
-    public Long registerLocal(String email, String rawPassword, Role role) {
+    public Long registerLocal(String email, String rawPassword, String confirmPassword, Role role) {
         if (email == null || email.isBlank()) {
             throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "이메일을 입력해주세요.");
         }
         if (rawPassword == null || rawPassword.isBlank()) {
             throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "비밀번호를 입력해주세요.");
         }
+        if (confirmPassword == null || confirmPassword.isBlank()) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "비밀번호 확인을 입력해주세요.");
+        }
+        if (!rawPassword.equals(confirmPassword)) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "비밀번호가 일치하지 않습니다.");
+        }
         if (role == null) {
             throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "역할 선택이 필요합니다.");
         }
 
-        if (memberRepository.existsByEmail(email)) {
+        String normalizedEmail = email.trim();
+
+        if (memberRepository.existsByEmail(normalizedEmail)) {
             throw new BusinessException(ErrorCode.ALREADY_EXISTS, "이미 가입된 이메일입니다.");
         }
 
@@ -77,7 +79,7 @@ public class MemberService {
         String tempNickname = generateTempNickname();
 
         Member member = Member.builder()
-            .email(email.trim())
+            .email(normalizedEmail)
             .passwordHash(passwordHash)
             .provider(Provider.LOCAL)
             .providerId(null)
@@ -88,12 +90,11 @@ public class MemberService {
         return memberRepository.save(member).getId();
     }
 
-    /**
-     * 닉네임 설정 / 변경 정책:
-     * - 2~10자
-     * - 한글 / 영문 / 숫자만 허용
-     * - 중복 불가
-     */
+    @Transactional
+    public Long registerLocal(String email, String rawPassword, Role role) {
+        return registerLocal(email, rawPassword, rawPassword, role);
+    }
+
     @Transactional
     public void updateNickname(Long memberId, String nickname) {
         if (nickname == null || nickname.isBlank()) {
@@ -123,10 +124,6 @@ public class MemberService {
         member.updateNickname(trimmed);
     }
 
-    /**
-     * Google OAuth2 로그인:
-     * providerId(sub) 기준으로 회원을 찾거나 없으면 생성
-     */
     @Transactional
     public Member findOrCreateGoogleMember(String email, String providerId, Role role) {
         if (providerId == null || providerId.isBlank()) {
@@ -137,13 +134,6 @@ public class MemberService {
             .orElseGet(() -> createGoogleMember(email, providerId, role));
     }
 
-    /**
-     * GitHub OAuth2 로그인:
-     * providerId(id) 기준으로 회원을 찾거나 없으면 생성
-     * 정책:
-     * - email이 제공되는 경우에만 기존 이메일과 중복이면 가입 차단
-     * - email이 null이면 중복 체크 없이 진행(계정 분리 허용)
-     */
     @Transactional
     public Member findOrCreateGithubMember(String email, String providerId, Role role) {
         if (providerId == null || providerId.isBlank()) {
@@ -191,12 +181,10 @@ public class MemberService {
             throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "역할 선택이 필요합니다.");
         }
 
-        // email은 null일 수 있음
         String normalizedEmail = null;
         if (email != null && !email.isBlank()) {
             normalizedEmail = email.trim();
 
-            // email이 제공된 경우에만 중복 이메일 차단
             if (memberRepository.existsByEmail(normalizedEmail)) {
                 throw new BusinessException(
                     ErrorCode.ALREADY_EXISTS,
@@ -208,7 +196,7 @@ public class MemberService {
         String tempNickname = generateTempNickname();
 
         Member member = Member.builder()
-            .email(normalizedEmail)     // null 가능
+            .email(normalizedEmail)
             .passwordHash(null)
             .provider(Provider.GITHUB)
             .providerId(providerId)

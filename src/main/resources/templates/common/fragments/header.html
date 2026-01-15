@@ -36,7 +36,11 @@
         <span id="headerUserRole" sec:authentication="principal.role" style="display:none;">ROLE</span>
 
         <!-- 유저 이름 -->
-        <span style="font-weight:600;" sec:authentication="principal.nickname">user</span>
+        <span id="headerNickname"
+              style="font-weight:600;"
+              sec:authentication="principal.nickname">
+              user
+        </span>
 
         <!-- 로그아웃 -->
         <form th:action="@{/logout}" method="post" style="margin:0;">
@@ -56,37 +60,45 @@
   <script sec:authorize="isAuthenticated()">
     (async function () {
       try {
-        const roleEl = document.getElementById('headerUserRole');
+        const nameEl = document.getElementById('headerNickname');
         const imgEl = document.getElementById('headerProfileImg');
+        const roleEl = document.getElementById('headerUserRole');
+
+        // 1) 닉네임은 dashboard에서 최신값 가져오기
+        const dashRes = await fetch('/api/mypage/dashboard', {
+          credentials: 'same-origin',
+          headers: {'accept': 'application/json'}
+        });
+        const dashJson = await dashRes.json().catch(() => null);
+        if (dashRes.ok && nameEl && dashJson?.data?.nickname) {
+          nameEl.textContent = dashJson.data.nickname;
+        }
+
+        // 2) 프로필 이미지 업데이트는 role 기반으로 유지
         if (!roleEl || !imgEl) return;
+        let role = (roleEl.textContent || '').trim();
+        if (role.startsWith('ROLE_')) role = role.replace('ROLE_', '');
 
-        const role = (roleEl.textContent || '').trim(); // "MENTOR" or "MENTEE"
         let url = null;
-
         if (role === 'MENTOR') url = '/api/mypage/mentor/profile';
         else if (role === 'MENTEE') url = '/api/mypage/mentee/profile';
         else return;
 
-        const res = await fetch(url, {
-          credentials: 'same-origin',
-          headers: {'accept': 'application/json'}
-        });
-
+        const res = await fetch(url, {credentials: 'same-origin', headers: {'accept': 'application/json'}});
         const json = await res.json().catch(() => null);
         if (!res.ok) return;
 
         const profileUrl = json?.data?.profileUrl;
         if (!profileUrl) return;
 
-        // 캐시 방지
         const cacheBusted = profileUrl + (profileUrl.includes('?') ? '&' : '?') + 't=' + Date.now();
-
         imgEl.src = cacheBusted;
         imgEl.style.padding = '0px';
         imgEl.style.background = 'none';
         imgEl.style.objectFit = 'cover';
+
       } catch (e) {
-        console.debug('header profile image sync failed', e);
+        console.debug('header sync failed', e);
       }
     })();
   </script>
