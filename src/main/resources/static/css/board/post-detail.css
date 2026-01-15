@@ -424,6 +424,19 @@ body {
   color: var(--muted);
   background: #fafafa;
   flex: 0 0 auto;
+  overflow: hidden;
+}
+
+.comment__avatar--image {
+  padding: 0;
+  background: transparent;
+}
+
+.comment__avatarImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 999px;
 }
 
 .comment__meta {
@@ -758,9 +771,11 @@ body {
   background: #fef2f2;
   border-color: rgba(239, 68, 68, 0.2);
 }
+
 .attachcard.type-pdf:hover {
   background: #fee2e2;
 }
+
 .attachcard.type-pdf .attachcard__icon {
   background: #fff;
   color: #ef4444;
@@ -771,9 +786,11 @@ body {
   background: #fff7ed;
   border-color: rgba(249, 115, 22, 0.2);
 }
+
 .attachcard.type-ppt:hover {
   background: #ffedd5;
 }
+
 .attachcard.type-ppt .attachcard__icon {
   background: #fff;
   color: #f97316;
@@ -784,9 +801,11 @@ body {
   background: #eff6ff;
   border-color: rgba(37, 99, 235, 0.2);
 }
+
 .attachcard.type-image:hover {
   background: #dbeafe;
 }
+
 .attachcard.type-image .attachcard__icon {
   background: #fff;
   color: #2563eb;
@@ -797,9 +816,11 @@ body {
   background: #ecfdf5;
   border-color: rgba(22, 163, 74, 0.2);
 }
+
 .attachcard.type-text:hover {
   background: #d1fae5;
 }
+
 .attachcard.type-text .attachcard__icon {
   background: #fff;
   color: #16a34a;
