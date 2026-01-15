@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{common/layout/base}">
+<head>
+  <th:block layout:fragment="head">
+    <title>DODEUL | 닉네임 설정</title>
+  </th:block>
+</head>
+
+<body>
+<section layout:fragment="content">
+  <div style="max-width: 560px; margin: 0 auto; padding: 56px 0;">
+
+    <h1 class="fw-bold" style="margin-bottom: 20px;">닉네임 설정</h1>
+
+    <p id="msg" style="min-height:20px; margin-bottom:16px; color:red;"></p>
+
+    <form id="nicknameForm" style="display:flex; flex-direction:column; gap:20px;">
+      <input type="hidden" id="csrfToken"
+             th:name="${_csrf.parameterName}"
+             th:value="${_csrf.token}"/>
+
+      <div>
+        <label style="display:block; margin-bottom:8px;">닉네임</label>
+
+        <input type="text"
+               id="nickname"
+               name="nickname"
+               maxlength="10"
+               minlength="2"
+               required
+               class="form-control-custom">
+
+        <small class="text-small" style="display:block; margin-top:10px;">
+          닉네임은 2~10자의 한글, 영문, 숫자만 사용할 수 있으며 수정할 수 없습니다.
+        </small>
+      </div>
+
+      <!-- 버튼은 아래쪽에 여유 -->
+      <button type="submit" class="btn-primary-custom" style="margin-top:8px;">
+        저장
+      </button>
+    </form>
+  </div>
+
+  <script>
+    const form = document.getElementById('nicknameForm');
+    const msg = document.getElementById('msg');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      msg.textContent = "";
+
+      const nickname = document.getElementById('nickname').value;
+      const csrfToken = document.getElementById('csrfToken').value;
+
+      try {
+        const res = await fetch('/api/mypage/nickname', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': csrfToken
+          },
+          body: JSON.stringify({nickname})
+        });
+
+        const json = await res.json();
+
+        if (res.ok) {
+          window.location.href = '/';
+        } else {
+          msg.textContent = json.message || '닉네임 설정 중 오류가 발생했습니다.';
+        }
+      } catch (err) {
+        msg.textContent = '서버와 통신할 수 없습니다.';
+      }
+    });
+  </script>
+</section>
+</body>
+</html>

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<div th:fragment="alertModal">
+
+  <div class="modal fade" id="commonAlertModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold" style="color: var(--color-status-danger);">알림</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body text-center">
+          <p id="commonAlertMessage"
+             style="font-size: 1.1rem; color: var(--color-text-primary); margin: 1rem 0;">
+            메시지 내용
+          </p>
+        </div>
+        <div class="modal-footer justify-content-center">
+          <button type="button" class="btn-primary-custom px-5" data-bs-dismiss="modal">확인</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="commonConfirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold" style="color: var(--color-text-primary);">확인</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body text-center">
+          <p id="commonConfirmMessage"
+             style="font-size: 1.1rem; color: var(--color-text-primary); margin: 1rem 0;">
+            진행하시겠습니까?
+          </p>
+        </div>
+        <div class="modal-footer justify-content-center gap-2">
+          <button type="button" class="btn-outline-custom px-4" data-bs-dismiss="modal">취소</button>
+          <button type="button" id="btnConfirmAction" class="btn-primary-custom px-4">확인</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 단순 메시지 표시용 모달
+    function showCommonModal(message) {
+      const modalEl = document.getElementById('commonAlertModal');
+      const msgEl = document.getElementById('commonAlertMessage');
+      if (modalEl && msgEl) {
+        msgEl.textContent = message;
+        new bootstrap.Modal(modalEl).show();
+      } else {
+        alert(message);
+      }
+    }
+
+    // 선택 확인용 모달
+    function showConfirmModal(message) {
+      return new Promise((resolve) => {
+        const modalEl = document.getElementById('commonConfirmModal');
+        const msgEl = document.getElementById('commonConfirmMessage');
+        const confirmBtn = document.getElementById('btnConfirmAction');
+
+        if (!modalEl || !msgEl || !confirmBtn) {
+          const result = confirm(message);
+          resolve(result);
+          return;
+        }
+
+        msgEl.textContent = message;
+
+        const modal = new bootstrap.Modal(modalEl);
+
+        // 확인 클릭 시
+        confirmBtn.onclick = function () {
+          modal.hide();
+          resolve(true);
+        };
+
+        // 취소/닫기 시
+        modalEl.addEventListener('hidden.bs.modal', function onHidden() {
+          resolve(false);
+          modalEl.removeEventListener('hidden.bs.modal', onHidden); // 리스너 제거
+        }, {once: true});
+
+        modal.show();
+      });
+    }
+  </script>
+</div>
+</html>

@@ -1,7 +1,7 @@
 package org.aibe4.dodeul.domain.member.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.aibe4.dodeul.domain.member.model.dto.RegisterRequest;
+import org.aibe4.dodeul.domain.member.model.dto.request.RegisterRequest;
 import org.aibe4.dodeul.domain.member.service.MemberService;
 import org.aibe4.dodeul.global.response.CommonResponse;
 import org.aibe4.dodeul.global.response.enums.SuccessCode;
@@ -23,6 +23,7 @@ public class AuthApiController {
             memberService.registerLocal(
                 request.email(),
                 request.password(),
+                request.confirmPassword(),
                 request.role()
             );
 

@@ -1,53 +1,726 @@
-<!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<!-- src/main/resources/templates/board/post-detail.html -->
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      lang="ko">
 <head>
   <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
   <title th:text="${post.title}">게시글 상세</title>
+  <link rel="stylesheet" href="/css/board/post-detail.css"/>
 </head>
 <body>
-<div class="container">
-  <h1 th:text="${post.title}">제목</h1>
+<main class="page">
+  <section class="shell">
+    <a th:href="@{/board/posts}" class="back">
+      <span class="back__icon">←</span>
+      <span>목록으로</span>
+    </a>
 
-  <p class="meta">
-    작성자:
-    <span th:text="${post.author.displayName}">작성자</span>
-    |
-    상담분야:
-    <span
-      th:text="${post.consultingTagSummary.name != null ? post.consultingTagSummary.name : post.consultingTagSummary.code}">
-          RESUME
-        </span>
-    |
-    상태:
-    <span th:text="${post.postStatus}">OPEN</span>
-  </p>
+    <!-- 게시글 카드 -->
+    <article class="card">
+      <header class="card__header">
+        <div class="header__top">
+          <span
+            th:class="${post.status.name() == 'OPEN' ? 'badge badge--blue' : 'badge badge--gray'}"
+            th:text="${post.status}"
+          >OPEN</span>
+          <div class="header__spacer"></div>
+          <div class="header__actions">
+            <div class="kpi">
+              <span class="kpi__item">
+                <span class="kpi__icon">👁</span>
+                <span th:text="${post.viewCount}">0</span>
+              </span>
+            </div>
 
-  <p class="meta">
-    조회수: <span th:text="${post.viewCount}">0</span>
-    |
-    스크랩: <span th:text="${post.scrapCount}">0</span>
-    |
-    댓글: <span th:text="${post.commentCount}">0</span>
-  </p>
+            <!-- 스크랩 버튼 (AJAX 토글) -->
+            <button
+              id="scrapBtn"
+              class="iconbtn"
+              type="button"
+              th:classappend="${isScraped ? 'iconbtn--active' : ''}"
+              th:attr="data-post-id=${post.postId}, data-scraped=${isScraped}"
+            >
+              <span class="iconbtn__icon" th:text="${isScraped ? '📌' : '🔖'}">🔖</span>
+              <span class="iconbtn__count" th:text="${post.scrapCount}">0</span>
+            </button>
 
-  <p class="meta">
-    작성일:
-    <span th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">2026-01-01 10:00</span>
-    <span th:if="${post.updatedAt != null}">
-          | 수정일:
-          <span th:text="${#temporals.format(post.updatedAt, 'yyyy-MM-dd HH:mm')}">2026-01-01 11:00</span>
-        </span>
-  </p>
+            <!-- 게시글 메뉴 (작성자만) -->
+            <div
+              th:if="${isAuthor}"
+              class="post__menuWrap"
+            >
+              <button class="iconbtn" type="button" id="postMenuBtn">⋮</button>
+              <div class="post__menu" id="postMenu" style="display:none;">
+                <div class="post__menuList">
+                  <a th:href="@{/board/posts/{id}/edit(id=${post.postId})}" class="post__menuItem">수정하기</a>
+                  <button class="post__menuItem" id="deletePostBtn">삭제하기</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
-  <hr/>
+        <h1 class="title" th:text="${post.title}">제목</h1>
 
-  <div class="content" th:text="${post.content}">내용</div>
+        <div class="meta">
+          <span class="meta__pill">
+            <span class="meta__label">작성자</span>
+            <span class="meta__value" th:text="${post.authorDisplayName != null ? post.authorDisplayName : '익명'}">-</span>
+          </span>
+          <span class="meta__pill">
+            <span class="meta__label">분야</span>
+            <span class="meta__value" th:text="${post.consultingTag != null ? post.consultingTag.description : '-'}">-</span>
+          </span>
+          <span class="meta__date">
+            <!-- 수정되지 않았으면 생성시간만 표시 -->
+            <span th:if="${post.updatedAt == null || #temporals.format(post.updatedAt, 'yyyy-MM-dd HH:mm').equals(#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm'))}"
+                  th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">-</span>
+            <!-- 수정되었으면 수정시간만 표시 -->
+            <span th:if="${post.updatedAt != null && !#temporals.format(post.updatedAt, 'yyyy-MM-dd HH:mm').equals(#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm'))}"
+                  th:text="'수정: ' + ${#temporals.format(post.updatedAt, 'yyyy-MM-dd HH:mm')}">-</span>
+          </span>
+        </div>
 
-  <hr/>
+        <div class="tagrow">
+          <div class="tags">
+            <span
+              th:each="tag : ${post.skillTags}"
+              class="chip"
+              th:text="${tag}"
+            ></span>
+          </div>
+        </div>
+      </header>
 
-  <div class="actions">
-    <a href="/board/posts">목록으로</a>
-  </div>
-</div>
+      <hr class="divider"/>
+
+      <section class="content">
+        <div class="content__body" th:text="${post.content}"></div>
+
+        <!-- 첨부파일 섹션 -->
+        <div
+          th:if="${post.files != null && !post.files.isEmpty()}"
+          class="attachments"
+        >
+          <div class="attachments__head">
+            <span class="attachments__title">첨부파일</span>
+            <span class="attachments__count" th:text="${post.files.size()} + '개'">0개</span>
+          </div>
+          <div class="attachments__list">
+            <div
+              th:each="file : ${post.files}"
+              class="attachcard attachcard--clickable"
+              th:classappend="${
+                 #strings.contains(file.contentType, 'pdf') ? 'type-pdf' :
+                 (#strings.contains(file.contentType, 'presentation') || #strings.contains(file.contentType, 'powerpoint') ? 'type-ppt' :
+                 (#strings.contains(file.contentType, 'image') ? 'type-image' :
+                 (#strings.contains(file.contentType, 'text') ? 'type-text' : '')))
+               }"
+              th:attr="data-url=${file.fileUrl}, data-type=${file.contentType}, data-name=${file.fileName}"
+              onclick="previewFile(this)"
+            >
+              <div class="attachcard__icon"
+                   th:text="${
+                     #strings.contains(file.contentType, 'pdf') ? '📄' :
+                     (#strings.contains(file.contentType, 'presentation') || #strings.contains(file.contentType, 'powerpoint') ? '📊' :
+                     (#strings.contains(file.contentType, 'image') ? '🖼️' :
+                     (#strings.contains(file.contentType, 'text') ? '📝' : '📎')))
+                   }"
+              >📎</div>
+              <div class="attachcard__body">
+                <div class="attachcard__name" th:text="${file.fileName}">파일명</div>
+                <div class="attachcard__meta" th:text="${file.contentType}">파일타입</div>
+              </div>
+              <div class="attachcard__go">→</div>
+            </div>
+          </div>
+
+          <!-- 미리보기 영역 -->
+          <div id="filePreview" class="attachments__preview">
+            <div class="attachments__previewHead">
+              <span class="attachments__previewTitle" id="previewTitle">파일명</span>
+              <button class="btn btn--primary attachments__previewCloseBtn" onclick="closePreview()">닫기</button>
+            </div>
+            <div id="previewContent"></div>
+          </div>
+        </div>
+      </section>
+    </article>
+
+    <!-- 댓글 섹션 (서버 렌더링) -->
+    <section class="card card--soft">
+      <header class="card__header card__header--compact">
+        <h2 class="subtitle">
+          <span class="subtitle__icon">💬</span>
+          <span>답변</span>
+          <span class="subtitle__count" th:text="${comments.size()}">0</span>
+          <span class="subtitle__suffix">개</span>
+        </h2>
+      </header>
+
+      <!-- 댓글 작성 (로그인 사용자만) -->
+      <div th:if="${isAuthenticated}" class="composer">
+        <textarea
+          id="commentContent"
+          class="composer__input"
+          placeholder="답변을 작성하세요..."
+          aria-label="답변 작성"
+        ></textarea>
+        <div class="composer__actions">
+          <button id="commentSubmitBtn" class="btn btn--primary" type="button">답변 작성</button>
+        </div>
+      </div>
+
+      <div th:unless="${isAuthenticated}" class="composer">
+        <div style="text-align:center; padding:20px; color:var(--muted);">
+          <a th:href="@{/auth/login}" style="text-decoration:underline;">로그인</a>하여 답변을 작성하세요.
+        </div>
+      </div>
+
+      <!-- 댓글 목록 (서버 렌더링) -->
+      <div class="comment-list">
+        <th:block th:each="comment : ${comments}">
+          <!-- 루트 댓글 -->
+          <div
+            class="comment"
+            th:classappend="${comment.accepted ? 'comment--accepted' : ''}"
+            th:attr="data-comment-id=${comment.commentId}"
+          >
+            <div class="comment__head">
+              <div class="comment__left">
+                <!-- 프로필 이미지가 없으면 닉네임 첫 글자 표시 -->
+                <div class="comment__avatar"
+                     th:if="${comment.authorProfileImageUrl == null or comment.authorProfileImageUrl.isEmpty()}"
+                     th:text="${#strings.substring(comment.authorDisplayName, 0, 1).toUpperCase()}">A</div>
+                <!-- 프로필 이미지가 있으면 이미지 표시 -->
+                <div class="comment__avatar comment__avatar--image"
+                     th:if="${comment.authorProfileImageUrl != null and !comment.authorProfileImageUrl.isEmpty()}">
+                  <img th:src="${comment.authorProfileImageUrl}"
+                       th:alt="${comment.authorDisplayName}"
+                       class="comment__avatarImg"/>
+                </div>
+                <div class="comment__meta">
+                  <div class="comment__topline">
+                    <span class="comment__name" th:text="${comment.authorDisplayName}">익명</span>
+
+                    <!-- 역할 태그 (색상 구분) -->
+                    <span
+                      th:if="${comment.authorRoleTag == '작성자'}"
+                      class="comment__role"
+                      style="background:#eff6ff;color:#2563eb;border-color:rgba(37,99,235,0.2)"
+                    >작성자</span>
+                    <span
+                      th:if="${comment.authorRoleTag == '멘토'}"
+                      class="comment__role"
+                      style="background:#ecfdf5;color:#16a34a;border-color:rgba(22,163,74,0.18)"
+                    >멘토</span>
+                    <span
+                      th:if="${comment.authorRoleTag == '멘티'}"
+                      class="comment__role"
+                      style="background:#fef2f2;color:#ef4444;border-color:rgba(239,68,68,0.18)"
+                    >멘티</span>
+
+                    <!-- 수정되지 않았으면 생성시간만 표시 -->
+                    <span class="comment__time"
+                          th:if="${comment.updatedAt == null || #temporals.format(comment.updatedAt, 'yyyy-MM-dd HH:mm').equals(#temporals.format(comment.createdAt, 'yyyy-MM-dd HH:mm'))}"
+                          th:text="${#temporals.format(comment.createdAt, 'yyyy-MM-dd HH:mm')}">방금 전</span>
+                    <!-- 수정되었으면 수정시간만 표시 -->
+                    <span class="comment__time"
+                          th:if="${comment.updatedAt != null && !#temporals.format(comment.updatedAt, 'yyyy-MM-dd HH:mm').equals(#temporals.format(comment.createdAt, 'yyyy-MM-dd HH:mm'))}"
+                          th:text="'수정: ' + ${#temporals.format(comment.updatedAt, 'yyyy-MM-dd HH:mm')}">방금 전</span>
+                  </div>
+                </div>
+              </div>
+              <div class="comment__right">
+                <!-- 채택 버튼 (게시글 작성자만, 아직 채택 안된 댓글) -->
+                <button
+                  th:if="${comment.canAccept}"
+                  class="btn btn--accept"
+                  th:attr="data-comment-id=${comment.commentId}"
+                  onclick="acceptComment(this)"
+                >채택하기</button>
+
+                <!-- 댓글 좋아요 버튼 -->
+                <button
+                  th:if="${isAuthenticated}"
+                  class="comment__iconBtn"
+                  th:classappend="${comment.likedByMe ? 'iconbtn--active' : ''}"
+                  th:attr="data-comment-id=${comment.commentId}, data-liked=${comment.likedByMe}"
+                  onclick="toggleCommentLike(this)"
+                >
+                  <span class="comment__icon" th:text="${comment.likedByMe ? '❤️' : '🤍'}">🤍</span>
+                  <span class="comment__iconCount" th:text="${comment.likeCount}">0</span>
+                </button>
+
+                <!-- 댓글 메뉴 (본인 댓글만) -->
+                <div th:if="${comment.mine || comment.canReply}" class="comment__menuWrap">
+                  <button class="comment__iconBtn comment__menuBtn" onclick="toggleCommentMenu(this)">⋮</button>
+                  <div class="comment__menu" style="display:none;">
+                    <div class="comment__menuList">
+                      <button th:if="${comment.canReply}" class="comment__menuItem" onclick="showReplyForm(this)" th:attr="data-comment-id=${comment.commentId}">답글 달기</button>
+                      <button th:if="${comment.mine}" class="comment__menuItem" onclick="showEditForm(this)" th:attr="data-comment-id=${comment.commentId}">수정</button>
+                      <button th:if="${comment.mine}" class="comment__menuItem comment__menuItem--danger" onclick="deleteComment(this)" th:attr="data-comment-id=${comment.commentId}">삭제</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="comment__body" th:text="${comment.content}">댓글 내용</div>
+
+            <!-- 채택됨 표시 (우측 하단) -->
+            <div th:if="${comment.accepted}" class="comment__acceptedMark">
+              ✓ 채택됨
+            </div>
+
+            <!-- 답글 입력 폼 (숨김) -->
+            <div class="comment__reply" style="display:none;">
+              <textarea class="comment__replyInput" placeholder="답글을 작성하세요..."></textarea>
+              <div class="comment__replyActions">
+                <button class="btn btn--ghost" onclick="hideReplyForm(this)">취소</button>
+                <button class="btn btn--primary" onclick="submitReply(this)" th:attr="data-parent-id=${comment.commentId}">등록</button>
+              </div>
+            </div>
+
+            <!-- 수정 입력 폼 (숨김) -->
+            <div class="comment__editor" style="display:none;">
+              <textarea class="comment__editorInput"></textarea>
+              <div class="comment__editorActions">
+                <button class="btn btn--ghost" onclick="hideEditForm(this)">취소</button>
+                <button class="btn btn--primary" onclick="submitEdit(this)" th:attr="data-comment-id=${comment.commentId}">수정 완료</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 대댓글 (들여쓰기) -->
+          <div
+            th:each="child : ${comment.children}"
+            class="comment comment--child"
+            style="margin-left: 40px; margin-top: 8px; background: #fafafa;"
+            th:attr="data-comment-id=${child.commentId}"
+          >
+            <div class="comment__head">
+              <div class="comment__left">
+                <!-- 프로필 이미지가 없으면 닉네임 첫 글자 표시 -->
+                <div class="comment__avatar" style="width:28px; height:28px; font-size:12px;"
+                     th:if="${child.authorProfileImageUrl == null or child.authorProfileImageUrl.isEmpty()}"
+                     th:text="${#strings.substring(child.authorDisplayName, 0, 1).toUpperCase()}">A</div>
+                <!-- 프로필 이미지가 있으면 이미지 표시 -->
+                <div class="comment__avatar comment__avatar--image" style="width:28px; height:28px;"
+                     th:if="${child.authorProfileImageUrl != null and !child.authorProfileImageUrl.isEmpty()}">
+                  <img th:src="${child.authorProfileImageUrl}"
+                       th:alt="${child.authorDisplayName}"
+                       class="comment__avatarImg"
+                       style="width:100%; height:100%;"/>
+                </div>
+                <div class="comment__meta">
+                  <div class="comment__topline">
+                    <span class="comment__name" style="font-size:13px;" th:text="${child.authorDisplayName}">익명</span>
+
+                    <span
+                      th:if="${child.authorRoleTag == '작성자'}"
+                      class="comment__role"
+                      style="background:#eff6ff;color:#2563eb;border-color:rgba(37,99,235,0.2);font-size:11px;"
+                    >작성자</span>
+                    <span
+                      th:if="${child.authorRoleTag == '멘토'}"
+                      class="comment__role"
+                      style="background:#ecfdf5;color:#16a34a;border-color:rgba(22,163,74,0.18);font-size:11px;"
+                    >멘토</span>
+
+                    <!-- 수정되지 않았으면 생성시간만 표시 -->
+                    <span class="comment__time" style="font-size:11px;"
+                          th:if="${child.updatedAt == null || #temporals.format(child.updatedAt, 'yyyy-MM-dd HH:mm').equals(#temporals.format(child.createdAt, 'yyyy-MM-dd HH:mm'))}"
+                          th:text="${#temporals.format(child.createdAt, 'yyyy-MM-dd HH:mm')}">방금 전</span>
+                    <!-- 수정되었으면 수정시간만 표시 -->
+                    <span class="comment__time" style="font-size:11px;"
+                          th:if="${child.updatedAt != null && !#temporals.format(child.updatedAt, 'yyyy-MM-dd HH:mm').equals(#temporals.format(child.createdAt, 'yyyy-MM-dd HH:mm'))}"
+                          th:text="'수정: ' + ${#temporals.format(child.updatedAt, 'yyyy-MM-dd HH:mm')}">방금 전</span>
+                  </div>
+                </div>
+              </div>
+              <div class="comment__right">
+                <button
+                  th:if="${isAuthenticated}"
+                  class="comment__iconBtn"
+                  style="height:28px; padding:0 8px;"
+                  th:classappend="${child.likedByMe ? 'iconbtn--active' : ''}"
+                  th:attr="data-comment-id=${child.commentId}, data-liked=${child.likedByMe}"
+                  onclick="toggleCommentLike(this)"
+                >
+                  <span class="comment__icon" style="font-size:12px;" th:text="${child.likedByMe ? '❤️' : '🤍'}">🤍</span>
+                  <span class="comment__iconCount" style="font-size:11px;" th:text="${child.likeCount}">0</span>
+                </button>
+
+                <div th:if="${child.mine}" class="comment__menuWrap">
+                  <button class="comment__iconBtn comment__menuBtn" style="height:28px;" onclick="toggleCommentMenu(this)">⋮</button>
+                  <div class="comment__menu" style="display:none;">
+                    <div class="comment__menuList">
+                      <button class="comment__menuItem" onclick="showEditForm(this)" th:attr="data-comment-id=${child.commentId}">수정</button>
+                      <button class="comment__menuItem comment__menuItem--danger" onclick="deleteComment(this)" th:attr="data-comment-id=${child.commentId}">삭제</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="comment__body" style="font-size:13px;" th:text="${child.content}">대댓글 내용</div>
+
+            <!-- 수정 입력 폼 (숨김) -->
+            <div class="comment__editor" style="display:none;">
+              <textarea class="comment__editorInput"></textarea>
+              <div class="comment__editorActions">
+                <button class="btn btn--ghost" onclick="hideEditForm(this)">취소</button>
+                <button class="btn btn--primary" onclick="submitEdit(this)" th:attr="data-comment-id=${child.commentId}">수정 완료</button>
+              </div>
+            </div>
+          </div>
+        </th:block>
+      </div>
+
+      <div th:if="${comments.isEmpty()}" class="comment-placeholder">
+        댓글이 없습니다.
+      </div>
+    </section>
+
+    <!-- Hidden 데이터 -->
+    <input type="hidden" id="postId" th:value="${post.postId}"/>
+    <input type="hidden" id="isAuthenticated" th:value="${isAuthenticated}"/>
+  </section>
+</main>
+
+<script th:inline="javascript">
+  /*<![CDATA[*/
+  const postId = [[${post.postId}]];
+  const isAuthenticated = [[${isAuthenticated}]];
+
+  // === 파일 미리보기 ===
+  function previewFile(element) {
+    const url = element.getAttribute('data-url');
+    const type = element.getAttribute('data-type');
+    const name = element.getAttribute('data-name');
+
+    const previewContainer = document.getElementById('filePreview');
+    const previewContent = document.getElementById('previewContent');
+    const previewTitle = document.getElementById('previewTitle');
+
+    previewTitle.textContent = name;
+    previewContent.innerHTML = '';
+
+    if (type.startsWith('image/')) {
+      const img = document.createElement('img');
+      img.src = url;
+      img.className = 'attachments__previewImage';
+      previewContent.appendChild(img);
+    } else if (type === 'application/pdf') {
+      const iframe = document.createElement('iframe');
+      iframe.src = url;
+      iframe.className = 'attachments__previewFrame';
+      previewContent.appendChild(iframe);
+    } else if (type.startsWith('text/') || type === 'application/json') {
+      fetch(url)
+        .then(res => res.text())
+        .then(text => {
+          const pre = document.createElement('pre');
+          pre.className = 'attachments__previewText';
+          pre.textContent = text;
+          previewContent.appendChild(pre);
+        })
+        .catch(() => {
+          previewContent.innerHTML = '<div class="attachments__previewUnsupported">텍스트를 불러올 수 없습니다.</div>';
+        });
+    } else {
+      previewContent.innerHTML = `
+        <div class="attachments__previewUnsupported">
+          <div class="attachments__previewUnsupportedText">미리보기를 지원하지 않는 파일 형식입니다.</div>
+          <a href="${url}" target="_blank" class="attachments__previewLink">다운로드 / 새 창에서 열기</a>
+        </div>
+      `;
+    }
+
+    previewContainer.style.display = 'block';
+
+    // 스크롤 이동
+    previewContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  function closePreview() {
+    const previewContainer = document.getElementById('filePreview');
+    previewContainer.style.display = 'none';
+    document.getElementById('previewContent').innerHTML = '';
+  }
+
+  // === 스크랩 토글 (AJAX) ===
+  document.getElementById('scrapBtn')?.addEventListener('click', function() {
+    if (!isAuthenticated) {
+      alert('로그인이 필요합니다.');
+      window.location.href = '/auth/login';
+      return;
+    }
+
+    const button = this; // this 바인딩 문제 해결
+    const isScraped = button.getAttribute('data-scraped') === 'true';
+    const method = isScraped ? 'DELETE' : 'POST';
+
+    fetch(`/api/board/posts/${postId}/scrap`, {
+      method: method,
+      credentials: 'include',
+      headers: {'Content-Type': 'application/json'}
+    })
+      .then(r => {
+        console.log('스크랩 응답 상태:', r.status, r.ok);
+        if (!r.ok) {
+          return r.text().then(text => {
+            console.error('스크랩 실패 응답:', text);
+            throw new Error('HTTP ' + r.status);
+          });
+        }
+        return r.json();
+      })
+      .then(response => {
+        console.log('스크랩 전체 응답:', response);
+
+        // CommonResponse 구조: { code, message, data: { postId, scrappedByMe, scrapCount } }
+        const data = response.data;
+
+        if (!data || typeof data.scrappedByMe === 'undefined' || typeof data.scrapCount === 'undefined') {
+          console.error('응답 데이터 구조 오류:', response);
+          throw new Error('Invalid response structure');
+        }
+
+        const newScraped = data.scrappedByMe;
+        const newCount = data.scrapCount;
+
+        button.setAttribute('data-scraped', newScraped);
+        button.classList.toggle('iconbtn--active', newScraped);
+        button.querySelector('.iconbtn__icon').textContent = newScraped ? '📌' : '🔖';
+        button.querySelector('.iconbtn__count').textContent = newCount;
+      })
+      .catch(err => {
+        console.error('스크랩 에러:', err);
+        alert('스크랩 처리에 실패했습니다.');
+      });
+  });
+
+  // === 댓글 작성 (AJAX) ===
+  document.getElementById('commentSubmitBtn')?.addEventListener('click', function() {
+    const content = document.getElementById('commentContent').value.trim();
+    if (!content) {
+      alert('댓글 내용을 입력하세요.');
+      return;
+    }
+
+    fetch(`/api/board/posts/${postId}/comments`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({content: content})
+    })
+      .then(r => r.ok ? r.json() : Promise.reject(r))
+      .then(() => {
+        // alert 제거하고 바로 리로드
+        location.reload();
+      })
+      .catch(() => alert('댓글 작성에 실패했습니다.'));
+  });
+
+  // === 답글 폼 토글 ===
+  function showReplyForm(btn) {
+    const commentEl = btn.closest('.comment');
+    const replyForm = commentEl.querySelector('.comment__reply');
+    replyForm.style.display = 'block';
+
+    // 메뉴 닫기
+    const menu = btn.closest('.comment__menu');
+    if (menu) menu.style.display = 'none';
+  }
+
+  function hideReplyForm(btn) {
+    const replyForm = btn.closest('.comment__reply');
+    replyForm.style.display = 'none';
+    replyForm.querySelector('textarea').value = '';
+  }
+
+  // === 답글 작성 ===
+  function submitReply(btn) {
+    const parentId = btn.getAttribute('data-parent-id');
+    const replyForm = btn.closest('.comment__reply');
+    const content = replyForm.querySelector('textarea').value.trim();
+
+    if (!content) {
+      alert('답글 내용을 입력하세요.');
+      return;
+    }
+
+    fetch(`/api/board/posts/${postId}/comments`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        content: content,
+        parentCommentId: parseInt(parentId)
+      })
+    })
+      .then(r => r.ok ? r.json() : Promise.reject(r))
+      .then(() => {
+        // alert 제거하고 바로 리로드
+        location.reload();
+      })
+      .catch(() => alert('답글 작성에 실패했습니다.'));
+  }
+
+  // === 댓글 수정 폼 토글 ===
+  function showEditForm(btn) {
+    const commentEl = btn.closest('.comment');
+    const bodyEl = commentEl.querySelector('.comment__body');
+    const editForm = commentEl.querySelector('.comment__editor');
+    const textarea = editForm.querySelector('textarea');
+
+    // 기존 내용 불러오기
+    textarea.value = bodyEl.textContent;
+
+    bodyEl.style.display = 'none';
+    editForm.style.display = 'block';
+
+    // 메뉴 닫기
+    const menu = btn.closest('.comment__menu');
+    if (menu) menu.style.display = 'none';
+  }
+
+  function hideEditForm(btn) {
+    const commentEl = btn.closest('.comment');
+    const bodyEl = commentEl.querySelector('.comment__body');
+    const editForm = commentEl.querySelector('.comment__editor');
+
+    bodyEl.style.display = 'block';
+    editForm.style.display = 'none';
+  }
+
+  // === 댓글 수정 제출 ===
+  function submitEdit(btn) {
+    const commentId = btn.getAttribute('data-comment-id');
+    const editForm = btn.closest('.comment__editor');
+    const content = editForm.querySelector('textarea').value.trim();
+
+    if (!content) {
+      alert('내용을 입력하세요.');
+      return;
+    }
+
+    fetch(`/api/board/comments/${commentId}`, {
+      method: 'PATCH',
+      credentials: 'include',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({content: content})
+    })
+      .then(r => r.ok ? r.json() : Promise.reject(r))
+      .then(() => {
+        // alert 제거하고 바로 리로드
+        location.reload();
+      })
+      .catch(() => alert('수정에 실패했습니다.'));
+  }
+
+  // === 댓글 좋아요 토글 ===
+  function toggleCommentLike(btn) {
+    const commentId = btn.getAttribute('data-comment-id');
+
+    fetch(`/api/board/comments/${commentId}/likes/toggle`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: {'Content-Type': 'application/json'}
+    })
+      .then(r => r.ok ? r.json() : Promise.reject(r))
+      .then(() => {
+        const isLiked = btn.getAttribute('data-liked') === 'true';
+        const newLiked = !isLiked;
+        btn.setAttribute('data-liked', newLiked);
+        btn.classList.toggle('iconbtn--active', newLiked);
+        btn.querySelector('.comment__icon').textContent = newLiked ? '❤️' : '🤍';
+
+        const countEl = btn.querySelector('.comment__iconCount');
+        const count = parseInt(countEl.textContent) || 0;
+        countEl.textContent = newLiked ? count + 1 : count - 1;
+      })
+      .catch(() => alert('좋아요 처리에 실패했습니다.'));
+  }
+
+  // === 댓글 채택 ===
+  function acceptComment(btn) {
+    const commentId = btn.getAttribute('data-comment-id');
+    if (!confirm('이 답변을 채택하시겠습니까?')) return;
+
+    fetch(`/api/board/posts/${postId}/accept`, {
+      method: 'PATCH',
+      credentials: 'include',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({commentId: parseInt(commentId)})
+    })
+      .then(r => r.ok ? r.json() : Promise.reject(r))
+      .then(() => {
+        alert('답변이 채택되었습니다.');
+        location.reload();
+      })
+      .catch(() => alert('채택에 실패했습니다.'));
+  }
+
+  // === 댓글 삭제 ===
+  function deleteComment(btn) {
+    const commentId = btn.getAttribute('data-comment-id');
+    if (!confirm('정말 삭제하시겠습니까?')) return;
+
+    fetch(`/api/board/comments/${commentId}`, {
+      method: 'DELETE',
+      credentials: 'include'
+    })
+      .then(r => r.ok ? r.json() : Promise.reject(r))
+      .then(() => {
+        alert('댓글이 삭제되었습니다.');
+        location.reload();
+      })
+      .catch(() => alert('삭제에 실패했습니다.'));
+  }
+
+  // === 댓글 메뉴 토글 ===
+  function toggleCommentMenu(btn) {
+    const menu = btn.nextElementSibling;
+    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+  }
+
+  // === 게시글 메뉴 토글 ===
+  document.getElementById('postMenuBtn')?.addEventListener('click', () => {
+    const menu = document.getElementById('postMenu');
+    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+  });
+
+  // === 게시글 삭제 ===
+  document.getElementById('deletePostBtn')?.addEventListener('click', () => {
+    if (!confirm('정말 삭제하시겠습니까?')) return;
+
+    fetch(`/api/board/posts/${postId}`, {
+      method: 'DELETE',
+      credentials: 'include'
+    })
+      .then(r => r.ok ? r.json() : Promise.reject(r))
+      .then(() => {
+        alert('삭제되었습니다.');
+        window.location.href = '/board/posts';
+      })
+      .catch(() => alert('삭제에 실패했습니다.'));
+  });
+
+  // === 외부 클릭 시 메뉴 닫기 ===
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.post__menuWrap')) {
+      document.getElementById('postMenu')?.style && (document.getElementById('postMenu').style.display = 'none');
+    }
+    document.querySelectorAll('.comment__menu').forEach(menu => {
+      if (!e.target.closest('.comment__menuWrap')) {
+        menu.style.display = 'none';
+      }
+    });
+  });
+  /*]]>*/
+</script>
 </body>
 </html>

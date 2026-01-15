@@ -1,0 +1,409 @@
+<!-- src/main/resources/templates/board/post-edit.html -->
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <title>질문 수정하기</title>
+  <link rel="stylesheet" href="/css/board/board-post.css"/>
+</head>
+<body>
+<main class="page">
+  <section class="shell">
+    <article class="card board-post-form-wrap">
+      <div class="board-post-form-card">
+        <header class="board-post-form-header">
+          <h1 class="board-post-form-title">질문 수정하기</h1>
+          <p class="board-post-form-subtitle">기존 내용을 수정할 수 있습니다.</p>
+        </header>
+
+        <form id="editForm" autocomplete="off">
+          <div class="group">
+            <label class="board-post-label" for="title">제목</label>
+            <input
+              id="title"
+              name="title"
+              class="board-post-input"
+              type="text"
+              placeholder="제목을 입력하세요"
+              maxlength="255"
+            />
+          </div>
+
+          <div class="group">
+            <label class="board-post-label" for="consultingTag">분야</label>
+            <select id="consultingTag" name="consultingTag" class="board-post-select">
+              <option value="">선택하세요</option>
+              <option th:each="t : ${consultingTags}" th:value="${t.name()}" th:text="${t.description}"></option>
+            </select>
+          </div>
+
+          <div class="group">
+            <div class="row-head">
+              <label class="board-post-label">기술 스택</label>
+            </div>
+
+            <div class="board-post-tag-box">
+              <div class="board-post-tag-list" id="skillTagBox">
+                <label th:each="tag : ${skillTags}" class="board-post-tag-item">
+                  <input
+                    type="checkbox"
+                    name="skillTagIds"
+                    class="board-post-tag-checkbox"
+                    th:value="${tag.id}"
+                    th:attr="data-name=${tag.name}"
+                  />
+                  <span class="board-post-tag-name" th:text="${tag.name}"></span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="group">
+            <label class="board-post-label" for="skillTagIdString">태그 추가(쉼표로 구분)</label>
+            <input
+              id="skillTagIdString"
+              name="skillTagIdString"
+              class="board-post-input"
+              type="text"
+              placeholder="예: Java, Spring, Docker"
+              th:value="${skillTagIdString}"
+            />
+            <div class="board-post-hint">
+              예: Java, Spring, JPA (기존 기술 스택 외에 추가로 입력)
+            </div>
+            <div id="duplicateWarning" class="board-post-error" style="display:none;">
+              중복된 태그가 있습니다: <span id="duplicateList"></span>
+            </div>
+          </div>
+
+          <div class="group">
+            <label class="board-post-label" for="content">본문</label>
+            <textarea
+              id="content"
+              name="content"
+              class="board-post-textarea"
+              rows="12"
+              placeholder="내용을 입력하세요"
+            ></textarea>
+          </div>
+
+          <div class="group">
+            <label class="board-post-label">첨부파일</label>
+
+            <div class="board-upload">
+              <div class="board-upload__inner board-upload__inner--readonly">
+                <div class="board-upload__icon">🔒</div>
+                <div class="board-upload__text">첨부파일은 수정할 수 없습니다.</div>
+                <div class="board-upload__sub">파일 수정은 게시글을 삭제 후 재작성으로 가능합니다.</div>
+              </div>
+
+              <div id="existingFiles" class="board-upload__list"></div>
+            </div>
+          </div>
+
+          <div class="board-post-actions">
+            <button id="cancelBtn" type="button" class="btn btn--ghost">취소</button>
+            <button id="saveBtn" type="submit" class="btn btn--primary">저장</button>
+          </div>
+        </form>
+
+        <input type="hidden" id="postId" th:value="${postId}"/>
+      </div>
+    </article>
+  </section>
+</main>
+
+<script>
+  (function () {
+    const postId = document.getElementById("postId")?.value;
+
+    function pick(obj, path, fallback) {
+      try {
+        const v = path
+          .split(".")
+          .reduce((acc, key) => (acc == null ? null : acc[key]), obj);
+        return v ?? fallback;
+      } catch (e) {
+        return fallback;
+      }
+    }
+
+    function getApiData(res) {
+      return (res && res.data != null) ? res.data : res;
+    }
+
+    function fetchJson(url, options) {
+      const base = {
+        credentials: "include",
+        headers: {
+          Accept: "application/json",
+          ...(options?.headers || {}),
+        },
+      };
+      return fetch(url, {...base, ...(options || {})}).then((r) =>
+        r.ok ? r.json() : Promise.reject(r),
+      );
+    }
+
+    // === 중복 태그 검증 ===
+    function checkDuplicateTags() {
+      const checkedTags = Array.from(document.querySelectorAll('input[name="skillTagIds"]:checked'))
+        .map(cb => String(cb.getAttribute("data-name") || "").trim().toLowerCase())
+        .filter(name => name.length > 0);
+
+      const textInput = document.getElementById("skillTagIdString").value || "";
+      const textTags = textInput
+        .split(",")
+        .map(s => s.trim().toLowerCase())
+        .filter(s => s.length > 0);
+
+      const duplicates = textTags.filter(tag => checkedTags.includes(tag));
+
+      const warning = document.getElementById("duplicateWarning");
+      const duplicateList = document.getElementById("duplicateList");
+
+      if (duplicates.length > 0) {
+        duplicateList.textContent = duplicates.join(", ");
+        warning.style.display = "block";
+        return false;
+      } else {
+        warning.style.display = "none";
+        return true;
+      }
+    }
+
+    document.getElementById("skillTagIdString")?.addEventListener("input", checkDuplicateTags);
+    document.querySelectorAll('input[name="skillTagIds"]').forEach(cb => {
+      cb.addEventListener("change", checkDuplicateTags);
+    });
+
+    function setCheckedSkillTagsFromPost(post) {
+      const checkboxList = Array.from(
+        document.querySelectorAll('input[name="skillTagIds"]'),
+      );
+      checkboxList.forEach((cb) => (cb.checked = false));
+
+      const idCandidates = []
+        .concat(pick(post, "skillTagIds", []))
+        .concat(pick(post, "tagIds", []))
+        .filter((x) => x != null);
+
+      if (Array.isArray(idCandidates) && idCandidates.length > 0) {
+        const idSet = new Set(idCandidates.map((v) => String(v)));
+        checkboxList.forEach((cb) => {
+          if (idSet.has(String(cb.value))) cb.checked = true;
+        });
+        return;
+      }
+
+      const objList = pick(post, "skillTags", null) || pick(post, "tags", null) || [];
+      if (Array.isArray(objList) && objList.length > 0) {
+        const ids = objList
+          .map((t) =>
+            t && typeof t === "object"
+              ? t.id ?? t.skillTagId ?? t.tagId ?? null
+              : null,
+          )
+          .filter((v) => v != null)
+          .map((v) => String(v));
+
+        if (ids.length > 0) {
+          const idSet = new Set(ids);
+          checkboxList.forEach((cb) => {
+            if (idSet.has(String(cb.value))) cb.checked = true;
+          });
+          return;
+        }
+
+        const names = objList
+          .map((t) =>
+            t && typeof t === "object" ? t.name ?? t.tagName ?? "" : String(t),
+          )
+          .map((s) => String(s || "").trim())
+          .filter((s) => s.length > 0);
+
+        if (names.length > 0) {
+          const nameSet = new Set(names);
+          checkboxList.forEach((cb) => {
+            const n = String(cb.getAttribute("data-name") || "").trim();
+            if (nameSet.has(n)) cb.checked = true;
+          });
+        }
+        return;
+      }
+
+      const nameCandidates = []
+        .concat(pick(post, "skillTagNames", []))
+        .concat(pick(post, "tagNames", []))
+        .map((s) => String(s || "").trim())
+        .filter((s) => s.length > 0);
+
+      if (nameCandidates.length > 0) {
+        const nameSet = new Set(nameCandidates);
+        checkboxList.forEach((cb) => {
+          const n = String(cb.getAttribute("data-name") || "").trim();
+          if (nameSet.has(n)) cb.checked = true;
+        });
+      }
+    }
+
+    function renderExistingFiles(post) {
+      const wrap = document.getElementById("existingFiles");
+      if (!wrap) return;
+
+      const files =
+        pick(post, "files", null) ||
+        pick(post, "attachments", null) ||
+        pick(post, "commonFiles", null) ||
+        [];
+
+      if (!Array.isArray(files) || files.length === 0) {
+        wrap.innerHTML = "";
+        return;
+      }
+
+      wrap.innerHTML = "";
+      files.forEach((f) => {
+        const fileName = f?.fileName ?? f?.originFileName ?? f?.name ?? "첨부파일";
+        const fileUrl = f?.fileUrl ?? f?.url ?? "";
+
+        const chip = document.createElement("div");
+        chip.className = "filechip";
+
+        chip.innerHTML = `
+          <div class="filechip__left">
+            <div class="filechip__name">${escapeHtml(fileName)}</div>
+            <div class="filechip__meta">첨부파일</div>
+          </div>
+          ${
+          fileUrl
+            ? `<a class="btn btn--ghost" href="${escapeAttr(fileUrl)}" target="_blank" rel="noopener">열기</a>`
+            : ""
+        }
+        `;
+
+        wrap.appendChild(chip);
+      });
+    }
+
+    function escapeHtml(s) {
+      return String(s)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function escapeAttr(s) {
+      return String(s).replaceAll('"', "&quot;").replaceAll("'", "&#039;");
+    }
+
+    if (!postId) {
+      alert("게시글 ID가 없습니다.");
+      window.location.href = "/board/posts";
+      return;
+    }
+
+    document.getElementById("cancelBtn")?.addEventListener("click", () => {
+      window.location.href = "/board/posts/" + postId;
+    });
+
+    // 게시글 정보 로드
+    fetchJson("/api/board/posts/" + postId, {headers: {}})
+      .then((res) => {
+        const post = getApiData(res) || {};
+
+        document.getElementById("title").value = pick(post, "title", "");
+        document.getElementById("content").value = pick(post, "content", "");
+
+        const consultingRaw =
+          pick(post, "consultingTag", null) ??
+          pick(post, "boardConsulting", null) ??
+          pick(post, "consultingTagSummary.code", null) ??
+          pick(post, "consultingTagSummary", null);
+
+        const consultingValue =
+          (consultingRaw &&
+            typeof consultingRaw === "object" &&
+            (consultingRaw.code ?? consultingRaw.name)) ||
+          (typeof consultingRaw === "string" ? consultingRaw : "");
+
+        const select = document.getElementById("consultingTag");
+        if (select && consultingValue) select.value = String(consultingValue);
+
+        setCheckedSkillTagsFromPost(post);
+        renderExistingFiles(post);
+      })
+      .catch(() => {
+        alert("게시글 정보를 불러오지 못했습니다.");
+        window.location.href = "/board/posts";
+      });
+
+    // 수정 제출
+    document.getElementById("editForm")?.addEventListener("submit", (e) => {
+      e.preventDefault();
+
+      if (!checkDuplicateTags()) {
+        alert("중복된 태그를 제거해주세요.");
+        return;
+      }
+
+      const title = String(document.getElementById("title")?.value || "").trim();
+      const content = String(document.getElementById("content")?.value || "").trim();
+      const consultingTag = String(
+        document.getElementById("consultingTag")?.value || "",
+      ).trim();
+
+      if (!title) {
+        alert("제목은 공백일 수 없습니다.");
+        return;
+      }
+      if (!content) {
+        alert("내용은 공백일 수 없습니다.");
+        return;
+      }
+      if (!consultingTag) {
+        alert("상담분야는 필수입니다.");
+        return;
+      }
+
+      const skillTagIds = Array.from(
+        document.querySelectorAll('input[name="skillTagIds"]:checked')
+      ).map(cb => parseInt(cb.value));
+
+      const skillTagIdString = String(document.getElementById("skillTagIdString")?.value || "").trim();
+      const skillTagNames = skillTagIdString
+        .split(",")
+        .map(s => s.trim())
+        .filter(s => s.length > 0);
+
+      fetchJson("/api/board/posts/" + postId, {
+        method: "PATCH",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          title,
+          content,
+          consultingTag,
+          skillTagIds,
+          skillTagNames
+        }),
+      })
+        .then(() => {
+          alert("수정되었습니다.");
+          window.location.href = "/board/posts/" + postId;
+        })
+        .catch((err) => {
+          if (err && err.status === 401) {
+            alert("로그인이 필요합니다.");
+            window.location.href = "/auth/login";
+            return;
+          }
+          alert("게시글 수정에 실패했습니다.");
+        });
+    });
+  })();
+</script>
+</body>
+</html>

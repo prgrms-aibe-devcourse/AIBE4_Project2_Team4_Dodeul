@@ -29,3 +29,7 @@ springdoc:
   # 기본 미디어 타입 설정 (JSON)
   default-consumes-media-type: application/json
   default-produces-media-type: application/json
+  jpa:
+    properties:
+      hibernate:
+        default_batch_fetch_size: 100

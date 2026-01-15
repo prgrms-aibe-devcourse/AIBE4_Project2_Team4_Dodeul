@@ -70,6 +70,12 @@ public enum ErrorCode implements BaseCode {
     // *가장 자주 커스텀 메시지를 덮어씌워서 사용하게 될 코드*
     RESOURCE_CONFLICT(HttpStatus.CONFLICT, "요청을 처리할 수 없는 상태입니다."),
 
+    // 매칭 가능 여부 검증 시 발생하는 예외
+    MENTOR_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 멘토입니다."),
+    MENTEE_MATCHING_LIMIT_EXCEEDED(HttpStatus.CONFLICT, "멘티의 진행 중인 상담 수가 최대입니다."),
+    MENTOR_MATCHING_LIMIT_EXCEEDED(HttpStatus.CONFLICT, "멘토의 진행 중인 상담 수가 최대입니다."),
+    MENTOR_CONSULTATION_DISABLED(HttpStatus.CONFLICT, "멘토가 상담을 비활성화하였습니다."),
+
     // ====================================================
     // 500 Internal Server Error (서버 터짐)
     // ====================================================

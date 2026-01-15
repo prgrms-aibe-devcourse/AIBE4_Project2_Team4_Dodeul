@@ -15,15 +15,16 @@ public class MemberDto {
     public static MemberDto of(Member member) {
         if (member == null) {
             return MemberDto.builder()
-                    .nickname("(알 수 없음)")
-                    //                .profileUrl(null) // 프로필 이미지가 없을 때 기본 이미지 설정 필요
-                    .build();
+                .nickname("(알 수 없음)")
+                .build();
         }
 
+        String url = (member.getProfile() != null) ? member.getProfile().getProfileUrl() : null;
+
         return MemberDto.builder()
-                .memberId(member.getId())
-                .nickname(member.getNickname())
-                //            .profileUrl(member.getProfileUrl())
-                .build();
+            .memberId(member.getId())
+            .nickname(member.getNickname())
+            .profileUrl(url)
+            .build();
     }
 }

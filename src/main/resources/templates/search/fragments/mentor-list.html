@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<div th:fragment="mentorList(mentors)">
+
+  <div id="mentorGrid" class="mentor-grid">
+    <div th:if="${mentors.isEmpty()}" class="no-result-message">
+      <p style="font-size: 1.1rem; margin-bottom: 8px;">조건에 맞는 멘토가 없습니다.</p>
+      <p style="font-size: 0.9rem;">다른 검색어나 필터로 다시 시도해보세요.</p>
+    </div>
+
+    <th:block th:unless="${mentors.isEmpty()}" th:each="mentor : ${mentors}">
+      <th:block th:replace="~{search/fragments/mentor-card :: mentorCard(${mentor}, 'checkAvailability')}"></th:block>
+    </th:block>
+  </div>
+
+  <div class="pagination-container" th:if="${!mentors.isEmpty() && mentors.totalPages > 1}">
+    <nav aria-label="Page navigation">
+      <ul class="pagination"
+          th:with="curr=${mentors.number}, total=${mentors.totalPages},
+                         start=${T(java.lang.Math).max(0, curr - 2)},
+                         end=${T(java.lang.Math).min(total - 1, curr + 2)}">
+
+        <li>
+          <button th:onclick="|searchMentors(${curr - 1})|" th:disabled="${curr == 0}"
+                  class="page-btn" th:style="${curr == 0 ? 'opacity: 0.5; cursor: default;' : ''}">&laquo;
+          </button>
+        </li>
+
+        <li th:each="page : ${#numbers.sequence(start, end)}">
+          <button th:onclick="|searchMentors(${page})|" class="page-btn"
+                  th:classappend="${page == curr} ? 'active'"
+                  th:text="${page + 1}">1
+          </button>
+        </li>
+
+        <li>
+          <button th:onclick="|searchMentors(${curr + 1})|" th:disabled="${curr == total - 1}"
+                  class="page-btn" th:style="${curr == total - 1 ? 'opacity: 0.5; cursor: default;' : ''}">&raquo;
+          </button>
+        </li>
+      </ul>
+    </nav>
+  </div>
+
+  <input type="hidden" id="serverTotalCount" th:value="${mentors.totalElements}">
+</div>
+</html>

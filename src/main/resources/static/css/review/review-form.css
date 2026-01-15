@@ -1,0 +1,103 @@
+/* =========================================
+   Review Form Custom Styles
+   ========================================= */
+
+.review-form-container {
+  max-width: 650px;
+  margin: 40px auto;
+}
+
+/* 폼 헤더 문구 스타일 */
+.review-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.review-header h3 {
+  font-size: 1.75rem;
+  color: var(--color-text-primary);
+  margin-bottom: 12px;
+}
+
+.review-header p {
+  color: var(--color-text-secondary);
+}
+
+.highlight-mentee {
+  color: var(--color-status-info);
+  font-weight: 700;
+}
+
+.highlight-mentor {
+  color: var(--color-text-primary);
+  font-weight: 700;
+}
+
+/* 추천 라디오 버튼 커스텀 */
+.recommend-selector .btn-check:checked + .btn-outline-success {
+  background-color: var(--color-status-success);
+  border-color: var(--color-status-success);
+  color: var(--color-text-inverse);
+  box-shadow: var(--shadow-sm);
+}
+
+.recommend-selector .btn-check:checked + .btn-outline-danger {
+  background-color: var(--color-status-danger);
+  border-color: var(--color-status-danger);
+  color: var(--color-text-inverse);
+  box-shadow: var(--shadow-sm);
+}
+
+.recommend-selector .btn-outline-success,
+.recommend-selector .btn-outline-danger {
+  border-width: 1.5px;
+  font-weight: 600;
+  padding: 1.2rem 0;
+  transition: all 0.2s ease;
+}
+
+/* 텍스트 영역 스타일 (공통 모달 텍스트 영역 스타일 차용) */
+.review-textarea {
+  background-color: var(--color-bg-page);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-md);
+  padding: 1.2rem;
+  width: 100%;
+  resize: none;
+  min-height: 200px;
+  font-family: inherit;
+  line-height: 1.6;
+  transition: all 0.2s ease;
+}
+
+.review-textarea:focus {
+  background-color: var(--color-bg-surface);
+  border-color: var(--color-brand-primary);
+  box-shadow: 0 0 0 3px rgba(33, 37, 41, 0.05);
+  outline: none;
+}
+
+/* 글자수 카운터 */
+.char-counter {
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+  margin-top: 8px;
+}
+
+.char-counter.limit-reached {
+  color: var(--color-status-danger);
+  font-weight: 600;
+}
+
+/* 버튼 영역 */
+.form-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 32px;
+}
+
+.btn-submit {
+  padding: 1rem;
+  font-size: 1.1rem;
+}

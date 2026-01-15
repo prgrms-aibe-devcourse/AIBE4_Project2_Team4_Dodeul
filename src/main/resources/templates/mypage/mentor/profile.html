@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{common/layout/mentor}">
+
+<head>
+  <th:block layout:fragment="head">
+    <title>DODEUL | 멘토 프로필</title>
+    <link rel="stylesheet" href="/css/mypage/dashboard.css">
+    <style>
+      #profileAvatar {
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+      }
+    </style>
+  </th:block>
+</head>
+
+<body>
+<div layout:fragment="page">
+  <div class="dashboard-header">
+    <h2 class="fw-bold" style="margin-bottom:8px;">프로필</h2>
+    <p class="text-small" style="margin-bottom:16px;">멘토 프로필 정보를 확인할 수 있습니다.</p>
+  </div>
+
+  <!-- 상단 프로필 카드 -->
+  <section class="card-custom" style="margin-bottom:16px;">
+    <div class="dashboard-profile">
+      <div class="dashboard-avatar-lg" id="profileAvatar"></div>
+
+      <div style="flex:1;">
+        <div class="fw-bold" id="mentorName" style="margin-bottom:4px;">-</div>
+        <div class="text-small" id="mentorMeta">직무 · 연차 / 상담 가능 분야</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 자기소개 -->
+  <section class="card-custom" style="margin-bottom:16px;">
+    <div class="fw-bold" style="margin-bottom:10px;">자기소개</div>
+    <div id="mentorBio" class="text-small" style="white-space:pre-line;">불러오는 중…</div>
+  </section>
+
+  <!-- 기술 스택 -->
+  <section class="card-custom" style="margin-bottom:16px;">
+    <div class="fw-bold" style="margin-bottom:10px;">기술 스택</div>
+    <div id="mentorSkills"><span class="text-small">불러오는 중…</span></div>
+  </section>
+
+  <!-- 상담 가능 분야 -->
+  <section class="card-custom" style="margin-bottom:16px;">
+    <div class="fw-bold" style="margin-bottom:10px;">상담 가능 분야</div>
+    <div id="mentorConsultings"><span class="text-small">불러오는 중…</span></div>
+  </section>
+
+  <div style="display:flex; justify-content:flex-end; margin-top:16px;">
+    <a class="btn-outline-custom" href="/mentor/profile/edit">수정</a>
+  </div>
+
+  <p id="profileError" style="color:#d33; margin-top:12px;"></p>
+</div>
+
+<th:block layout:fragment="script">
+  <script>
+    function escapeHtml(s) {
+      return String(s ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", "&#039;");
+    }
+
+    function renderTags(root, arr) {
+      if (!arr || arr.length === 0) {
+        root.innerHTML = `<span class="text-small">-</span>`;
+        return;
+      }
+      root.innerHTML = arr.map(t => `<span class="tag tag--read-only">${escapeHtml(t)}</span>`).join('');
+    }
+
+    function setAvatar(url) {
+      const avatar = document.getElementById('profileAvatar');
+      if (!avatar) return;
+
+      if (url) {
+        const cacheBusted = url + (url.includes('?') ? '&' : '?') + 't=' + Date.now();
+        avatar.style.backgroundImage = `url(${cacheBusted})`;
+      } else {
+        avatar.style.backgroundImage = 'none';
+      }
+    }
+
+    (async function () {
+      const err = document.getElementById('profileError');
+
+      try {
+        const res = await fetch('/api/mypage/mentor/profile', {credentials: 'same-origin'});
+        const json = await res.json().catch(() => null);
+        if (!res.ok) {
+          err.textContent = json?.message || '프로필 정보를 불러오지 못했습니다.';
+          return;
+        }
+
+        const data = json?.data || {};
+
+        document.getElementById('mentorName').textContent = data.nickname ? `${data.nickname} 멘토` : '멘토';
+
+        const job = data.job ?? '-';
+        const years = data.careerYears;
+        const yearsText = (years === null || years === undefined || years === '') ? '-' : `${years}년차`;
+
+        const consultings = (data.consultingTags && data.consultingTags.length) ? data.consultingTags : [];
+        const consultingText = consultings.length ? consultings.join(', ') : '-';
+
+        document.getElementById('mentorMeta').textContent =
+          `${job} · ${yearsText} / ${consultingText}`;
+
+        document.getElementById('mentorBio').textContent =
+          data.intro ?? '자기소개가 아직 등록되지 않았습니다.';
+
+        renderTags(document.getElementById('mentorSkills'), data.skillTags ?? []);
+        renderTags(document.getElementById('mentorConsultings'), data.consultingTags ?? []);
+
+        setAvatar(data.profileUrl);
+
+      } catch (e) {
+        err.textContent = '서버와 통신할 수 없습니다.';
+        console.error(e);
+      }
+    })();
+  </script>
+</th:block>
+
+</body>
+</html>

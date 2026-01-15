@@ -30,8 +30,6 @@ public class ConsultingApplication extends BaseEntity {
     @Column(name = "consulting_tag", nullable = false)
     private ConsultingTag consultingTag;
 
-    // [수정 포인트] ManyToMany 삭제 -> OneToMany로 변경
-    // 타겟이 SkillTag가 아니라, 중간 테이블인 ApplicationSkillTag가 됩니다.
     @OneToMany(mappedBy = "consultingApplication", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ApplicationSkillTag> applicationSkillTags = new ArrayList<>();
 
@@ -44,7 +42,7 @@ public class ConsultingApplication extends BaseEntity {
         String title,
         String content,
         ConsultingTag consultingTag,
-        String fileUrl) { // 빌더에서 리스트는 뺐습니다 (생성 시점엔 보통 비어있으므로)
+        String fileUrl) {
         this.menteeId = menteeId;
         this.title = title;
         this.content = content;
@@ -55,6 +53,18 @@ public class ConsultingApplication extends BaseEntity {
     // 스킬 태그를 추가하는 비즈니스 메서드 (Service에서 사용)
     public void addSkillTag(ApplicationSkillTag applicationSkillTag) {
         this.applicationSkillTags.add(applicationSkillTag);
-//        applicationSkillTag.setConsultingApplication(this); // 양방향 연결
+    }
+
+    // [추가됨] 상담 신청서 내용 수정 메서드
+    public void update(String title, String content, ConsultingTag consultingTag, String fileUrl) {
+        this.title = title;
+        this.content = content;
+        this.consultingTag = consultingTag;
+        this.fileUrl = fileUrl;
+    }
+
+    // [추가됨] 스킬 태그 초기화 (수정 시 기존 태그를 비우기 위함)
+    public void clearSkillTags() {
+        this.applicationSkillTags.clear();
     }
 }

@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "mentor_profiles")
 @EntityListeners(AuditingEntityListener.class)
-public class MentorProfile {
+public class MentorProfile implements Profile {
 
     @Id
     @Column(name = "mentor_id")
@@ -29,9 +29,6 @@ public class MentorProfile {
     @Column(name = "career_years")
     private Integer careerYears;
 
-    @Column(name = "consultation_enabled", nullable = false)
-    private boolean consultationEnabled;
-
     @Column(name = "profile_url", columnDefinition = "TEXT")
     private String profileUrl;
 
@@ -40,6 +37,18 @@ public class MentorProfile {
 
     @Column(name = "job", length = 50)
     private String job;
+
+    @Column(name = "consultation_enabled", nullable = false)
+    private boolean consultationEnabled;
+
+    @Column(name = "response_rate", nullable = false)
+    private Double responseRate = 0.0;
+
+    @Column(name = "recommend_count", nullable = false)
+    private Long recommendCount = 0L;
+
+    @Column(name = "completed_matching_count", nullable = false)
+    private Long completedMatchingCount = 0L;
 
     @CreatedDate
     @Column(name = "created_at", updatable = false)
@@ -52,7 +61,12 @@ public class MentorProfile {
     public static MentorProfile create(Member member) {
         MentorProfile profile = new MentorProfile();
         profile.member = member;
-        profile.consultationEnabled = false;
+
+        // 기본적으로 상담 신청을 받는 상태(ON)
+        profile.consultationEnabled = true;
+
+        profile.recommendCount = 0L;
+        profile.completedMatchingCount = 0L;
         return profile;
     }
 
@@ -68,5 +82,21 @@ public class MentorProfile {
         this.job = job;
         this.careerYears = careerYears;
         this.consultationEnabled = consultationEnabled;
+    }
+
+    public void updateResponseRate(double responseRate) {
+        this.responseRate = responseRate;
+    }
+
+    public void increaseRecommendCount() {
+        this.recommendCount++;
+    }
+
+    public void increaseCompletedMatchingCount() {
+        this.completedMatchingCount++;
+    }
+
+    public void changeConsultationEnabled(boolean enabled) {
+        this.consultationEnabled = enabled;
     }
 }

@@ -1,8 +1,11 @@
 package org.aibe4.dodeul.global.exception;
 
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.aibe4.dodeul.global.response.CommonResponse;
 import org.aibe4.dodeul.global.response.enums.ErrorCode;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
@@ -21,6 +24,7 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 import java.util.NoSuchElementException;
 
 @Slf4j
+@Order(Ordered.HIGHEST_PRECEDENCE)
 @RestControllerAdvice(annotations = RestController.class)
 public class GlobalRestExceptionHandler {
 
@@ -33,6 +37,22 @@ public class GlobalRestExceptionHandler {
      * 비즈니스 로직 에러(CustomException) 처리가 필요할 때 이곳에 작성
      * 작성 시 @ExceptionHandler(CustomException.class) 어노테이션을 사용
      */
+
+    /**
+     * 비즈니스 로직 예외 처리 (CustomException)
+     * Service 계층에서 명시적으로 발생시킨 비즈니스 예외를 처리
+     * ErrorCode에 정의된 HTTP 상태 코드와 메시지를 그대로 응답에 반영
+     * CommonResponse 형식으로 통일된 에러 응답을 반환
+     */
+    @ExceptionHandler(BusinessException.class)
+    public CommonResponse<Void> handleBusinessException(
+        BusinessException e,
+        HttpServletResponse response
+    ) {
+        ErrorCode errorCode = e.getErrorCode();
+        response.setStatus(errorCode.getHttpStatus().value());
+        return CommonResponse.fail(errorCode, e.getDetailMessage());
+    }
 
     /**
      * 잘못된 형식의 인자

@@ -1,0 +1,426 @@
+<!-- src/main/resources/templates/board/post-form.html -->
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <title>질문 작성하기</title>
+  <link rel="stylesheet" href="/css/board/board-post.css"/>
+</head>
+
+<body>
+<main class="page">
+  <section class="shell">
+    <article class="card board-post-form-wrap">
+      <div class="board-post-form-card">
+        <header class="board-post-form-header">
+          <h1 class="board-post-form-title">질문 작성하기</h1>
+          <p class="board-post-form-subtitle">질문을 구체적으로 작성하면 더 좋은 답변을 받을 수 있어요.</p>
+        </header>
+
+        <form
+          id="createForm"
+          th:action="@{/board/posts}"
+          th:object="${form}"
+          method="post"
+          enctype="multipart/form-data"
+          autocomplete="off"
+        >
+          <!-- 제목 -->
+          <div class="group">
+            <label class="board-post-label" for="title">제목</label>
+            <input
+              id="title"
+              type="text"
+              th:field="*{title}"
+              placeholder="제목을 입력하세요"
+              maxlength="255"
+              class="board-post-input"
+            />
+            <div
+              th:if="${#fields.hasErrors('title')}"
+              th:errors="*{title}"
+              class="board-post-error"
+            ></div>
+          </div>
+
+          <!-- 분야 -->
+          <div class="group">
+            <label class="board-post-label" for="consultingTag">분야</label>
+            <select
+              id="consultingTag"
+              th:field="*{consultingTag}"
+              class="board-post-select"
+            >
+              <option value="">선택하세요</option>
+              <option
+                th:each="t : ${consultingTags}"
+                th:value="${t.name()}"
+                th:text="${t.description}"
+              ></option>
+            </select>
+            <div
+              th:if="${#fields.hasErrors('consultingTag')}"
+              th:errors="*{consultingTag}"
+              class="board-post-error"
+            ></div>
+          </div>
+
+          <!-- 기술 스택 -->
+          <div class="group">
+            <div class="row-head">
+              <label class="board-post-label">기술 스택</label>
+            </div>
+
+            <div class="board-post-tag-box">
+              <div class="board-post-tag-list" id="skillTagBox">
+                <label th:each="tag : ${skillTags}" class="board-post-tag-item">
+                  <input
+                    type="checkbox"
+                    name="skillTagIds"
+                    class="board-post-tag-checkbox"
+                    th:value="${tag.id}"
+                    th:attr="data-name=${tag.name}"
+                    th:checked="${form.skillTagIds != null && #lists.contains(form.skillTagIds, tag.id)}"
+                  />
+                  <span class="board-post-tag-name" th:text="${tag.name}"></span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- 태그 추가 -->
+          <div class="group">
+            <label class="board-post-label" for="skillTagIdString">태그 추가(쉼표로 구분)</label>
+            <input
+              id="skillTagIdString"
+              name="skillTagIdString"
+              class="board-post-input"
+              type="text"
+              placeholder="예: Java, Spring, Docker"
+              th:value="${skillTagIdString}"
+            />
+            <div class="board-post-hint">
+              예: Java, Spring, JPA (기존 기술 스택 외에 추가로 입력)
+            </div>
+            <div id="duplicateWarning" class="board-post-error" style="display:none;">
+              중복된 태그가 있습니다: <span id="duplicateList"></span>
+            </div>
+          </div>
+
+          <!-- 본문 -->
+          <div class="group">
+            <label class="board-post-label" for="content">본문</label>
+            <textarea
+              id="content"
+              th:field="*{content}"
+              rows="12"
+              placeholder="내용을 입력하세요"
+              class="board-post-textarea"
+            ></textarea>
+            <div
+              th:if="${#fields.hasErrors('content')}"
+              th:errors="*{content}"
+              class="board-post-error"
+            ></div>
+          </div>
+
+          <!-- 첨부파일 -->
+          <div class="group">
+            <label class="board-post-label">첨부파일</label>
+
+            <div id="uploadBox" class="board-upload">
+              <input
+                type="file"
+                id="files"
+                name="files"
+                multiple
+                accept=".jpg,.jpeg,.png,.gif,.pdf,.txt,.ppt,.pptx"
+                class="board-upload__input"
+              />
+
+              <div id="uploadInner" class="board-upload__inner">
+                <div class="board-upload__icon">📎</div>
+                <div class="board-upload__text">파일 선택</div>
+                <div class="board-upload__sub">최대 5개, 각 10MB 이하 (이미지/PDF/TXT/PPT)</div>
+              </div>
+
+              <div id="fileList" class="board-upload__list" aria-live="polite"></div>
+            </div>
+
+            <div class="board-post-hint">
+              드래그 앤 드롭이나 첨부 파일을 선택해주세요.
+            </div>
+          </div>
+
+          <!-- 액션 -->
+          <div class="board-post-actions">
+            <button id="cancelBtn" type="button" class="btn btn--ghost">취소</button>
+            <button type="submit" class="btn btn--primary">등록</button>
+          </div>
+        </form>
+
+      </div>
+    </article>
+  </section>
+</main>
+
+<script>
+  // === 취소 ===
+  document.getElementById('cancelBtn')?.addEventListener('click', () => {
+    window.location.href = '/board/posts';
+  });
+
+  // === 중복 태그 검증 ===
+  function checkDuplicateTags() {
+    const checkedTags = Array.from(document.querySelectorAll('input[name="skillTagIds"]:checked'))
+      .map(cb => String(cb.getAttribute("data-name") || "").trim().toLowerCase())
+      .filter(name => name.length > 0);
+
+    const textInput = document.getElementById("skillTagIdString").value || "";
+    const textTags = textInput
+      .split(",")
+      .map(s => s.trim().toLowerCase())
+      .filter(s => s.length > 0);
+
+    const duplicates = textTags.filter(tag => checkedTags.includes(tag));
+
+    const warning = document.getElementById("duplicateWarning");
+    const duplicateList = document.getElementById("duplicateList");
+
+    if (duplicates.length > 0) {
+      duplicateList.textContent = duplicates.join(", ");
+      warning.style.display = "block";
+      return false;
+    } else {
+      warning.style.display = "none";
+      return true;
+    }
+  }
+
+  document.getElementById("skillTagIdString")?.addEventListener("input", checkDuplicateTags);
+  document.querySelectorAll('input[name="skillTagIds"]').forEach(cb => {
+    cb.addEventListener("change", checkDuplicateTags);
+  });
+
+  // === 폼 제출 전 유효성 검사 (파일/태그 유지용) ===
+  document.getElementById("createForm")?.addEventListener("submit", (e) => {
+    // 1. 중복 태그 검사
+    if (!checkDuplicateTags()) {
+      e.preventDefault();
+      alert("중복된 태그를 제거해주세요.");
+      return false;
+    }
+
+    // 2. 필수값 검사 (제목, 분야, 본문)
+    const title = document.getElementById("title").value.trim();
+    const consultingTag = document.getElementById("consultingTag").value;
+    const content = document.getElementById("content").value.trim();
+
+    if (!title) {
+      e.preventDefault();
+      alert("제목을 입력해주세요.");
+      document.getElementById("title").focus();
+      return false;
+    }
+
+    if (!consultingTag) {
+      e.preventDefault();
+      alert("분야를 선택해주세요.");
+      document.getElementById("consultingTag").focus();
+      return false;
+    }
+
+    if (!content) {
+      e.preventDefault();
+      alert("본문을 입력해주세요.");
+      document.getElementById("content").focus();
+      return false;
+    }
+
+    if (content.length < 10) {
+      e.preventDefault();
+      alert("본문은 10자 이상 입력해야 합니다.");
+      document.getElementById("content").focus();
+      return false;
+    }
+  });
+
+  // === 파일 업로드 ===
+  const MAX_FILES = 5;
+  const MAX_SIZE = 10 * 1024 * 1024;
+  const ALLOWED_EXT = /(\.jpg|\.jpeg|\.png|\.gif|\.pdf|\.txt|\.ppt|\.pptx)$/i;
+
+  const input = document.getElementById("files");
+  const uploadBox = document.getElementById("uploadBox");
+  const uploadInner = document.getElementById("uploadInner");
+
+  // 현재 선택된 파일들을 저장하는 배열 (DataTransfer 대신 사용)
+  let currentFiles = [];
+
+  function formatBytes(bytes) {
+    if (!bytes && bytes !== 0) return "";
+    const units = ["B", "KB", "MB", "GB"];
+    let b = bytes, i = 0;
+    while (b >= 1024 && i < units.length - 1) {
+      b /= 1024;
+      i += 1;
+    }
+    return (i === 0 ? b : b.toFixed(1)) + units[i];
+  }
+
+  function escapeHtml(s) {
+    return String(s)
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  function validateFiles(fileList) {
+    if (!fileList || fileList.length === 0) return true;
+    if (fileList.length > MAX_FILES) {
+      alert("첨부파일은 최대 5개까지 가능합니다.");
+      return false;
+    }
+    for (const file of fileList) {
+      if (file.size > MAX_SIZE) {
+        alert(`${file.name}의 크기가 10MB를 초과합니다.`);
+        return false;
+      }
+      if (!ALLOWED_EXT.exec(file.name)) {
+        alert(`${file.name}는 허용되지 않는 파일 형식입니다.`);
+        return false;
+      }
+    }
+    return true;
+  }
+
+  // 중복 제거 (파일명 기준)
+  function removeDuplicateFiles(fileList) {
+    const seen = new Map();
+    const result = [];
+
+    for (const file of fileList) {
+      if (!seen.has(file.name)) {
+        seen.set(file.name, true);
+        result.push(file);
+      }
+    }
+
+    return result;
+  }
+
+  function getFileIcon(type) {
+    if (type.includes('pdf')) return '📄';
+    if (type.includes('presentation') || type.includes('powerpoint')) return '📊';
+    if (type.includes('image')) return '🖼️';
+    if (type.includes('text')) return '📝';
+    return '📎';
+  }
+
+  function getFileTypeClass(type) {
+    if (type.includes('pdf')) return 'type-pdf';
+    if (type.includes('presentation') || type.includes('powerpoint')) return 'type-ppt';
+    if (type.includes('image')) return 'type-image';
+    if (type.includes('text')) return 'type-text';
+    return '';
+  }
+
+  function renderFileList() {
+    const list = document.getElementById("fileList");
+    if (!list) return;
+
+    list.innerHTML = "";
+    if (currentFiles.length === 0) return;
+
+    currentFiles.forEach((f, idx) => {
+      const chip = document.createElement("div");
+      const typeClass = getFileTypeClass(f.type);
+      const icon = getFileIcon(f.type);
+
+      chip.className = `filechip ${typeClass}`;
+      chip.innerHTML = `
+        <div class="filechip__left">
+          <div class="filechip__icon">${icon}</div>
+          <div class="filechip__info">
+            <div class="filechip__name">${escapeHtml(f.name)}</div>
+            <div class="filechip__meta">${formatBytes(f.size)}</div>
+          </div>
+        </div>
+        <button type="button" class="filechip__remove" aria-label="파일 제거" data-idx="${idx}">×</button>
+      `;
+      list.appendChild(chip);
+    });
+
+    list.querySelectorAll(".filechip__remove").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const removeIdx = Number(btn.getAttribute("data-idx"));
+        currentFiles.splice(removeIdx, 1);
+        updateInputFiles();
+        renderFileList();
+      });
+    });
+  }
+
+  function updateInputFiles() {
+    if (!input) return;
+    const dt = new DataTransfer();
+    currentFiles.forEach((f) => dt.items.add(f));
+    input.files = dt.files;
+  }
+
+  function addFiles(newFiles) {
+    // 기존 파일 + 새 파일 병합
+    const merged = currentFiles.concat(newFiles);
+
+    // 중복 제거
+    const uniqueFiles = removeDuplicateFiles(merged);
+
+    // 유효성 검사
+    if (!validateFiles(uniqueFiles)) {
+      // 실패 시 input 초기화 (기존 파일 유지)
+      updateInputFiles();
+      return;
+    }
+
+    currentFiles = uniqueFiles;
+    updateInputFiles();
+    renderFileList();
+  }
+
+  // 클릭으로 파일 선택
+  uploadInner?.addEventListener("click", () => input?.click());
+
+  input?.addEventListener("change", () => {
+    const newFiles = input.files ? Array.from(input.files) : [];
+    if (newFiles.length === 0) return;
+
+    addFiles(newFiles);
+  });
+
+  // Drag & Drop
+  if (uploadBox && input) {
+    uploadBox.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      uploadBox.classList.add("is-dragover");
+    });
+
+    uploadBox.addEventListener("dragleave", () => {
+      uploadBox.classList.remove("is-dragover");
+    });
+
+    uploadBox.addEventListener("drop", (e) => {
+      e.preventDefault();
+      uploadBox.classList.remove("is-dragover");
+
+      const dropped = e.dataTransfer && e.dataTransfer.files ? Array.from(e.dataTransfer.files) : [];
+      if (dropped.length === 0) return;
+
+      addFiles(dropped);
+    });
+  }
+</script>
+</body>
+</html>

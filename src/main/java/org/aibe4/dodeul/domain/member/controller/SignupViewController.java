@@ -1,15 +1,19 @@
 package org.aibe4.dodeul.domain.member.controller;
 
 import jakarta.servlet.http.HttpSession;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.aibe4.dodeul.domain.member.model.dto.AuthSessionKeys;
+import org.aibe4.dodeul.domain.member.model.dto.request.SignupRequest;
 import org.aibe4.dodeul.domain.member.model.enums.Role;
 import org.aibe4.dodeul.domain.member.service.MemberService;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
 @RequiredArgsConstructor
@@ -29,12 +33,28 @@ public class SignupViewController {
 
     @PostMapping("/signup")
     public String signup(
-            @RequestParam String email, @RequestParam String password, HttpSession session) {
+        @Valid @ModelAttribute SignupRequest request,
+        BindingResult bindingResult,
+        HttpSession session,
+        Model model
+    ) {
         Role role = (Role) session.getAttribute(AuthSessionKeys.SELECTED_ROLE);
         if (role == null) return "redirect:/onboarding/role";
 
-        memberService.registerLocal(email, password, role);
+        // 비밀번호 확인 검증
+        if (request.password() != null && request.confirmPassword() != null
+            && !request.password().equals(request.confirmPassword())) {
+            bindingResult.rejectValue("confirmPassword", "password.mismatch", "비밀번호가 일치하지 않습니다.");
+        }
 
+        if (bindingResult.hasErrors()) {
+            model.addAttribute("form", request);
+            return "auth/signup";
+        }
+
+        memberService.registerLocal(request.email(), request.password(), request.confirmPassword(), role);
+
+        session.removeAttribute(AuthSessionKeys.SELECTED_ROLE);
         return "redirect:/auth/login";
     }
 }

@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{common/layout/mentee}">
+
+<head>
+  <th:block layout:fragment="head">
+    <title>DODEUL | 멘티 상담 내역</title>
+    <link rel="stylesheet" href="/css/mypage/dashboard.css">
+  </th:block>
+</head>
+
+<body>
+<div layout:fragment="page">
+
+  <div class="dashboard-header">
+    <h2 class="fw-bold" style="margin-bottom:8px;">상담 내역</h2>
+    <p class="text-small" style="margin-bottom:16px;">상담 신청/진행/완료 내역을 확인할 수 있습니다.</p>
+  </div>
+
+  <!-- 필터 -->
+  <section class="card-custom" style="margin-bottom:16px;">
+    <div class="fw-bold" style="margin-bottom:10px;">필터</div>
+    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+      <button class="tag tag--selectable tag--active" type="button" data-filter="all">전체</button>
+      <button class="tag tag--selectable" type="button" data-filter="PENDING">대기중</button>
+      <button class="tag tag--selectable" type="button" data-filter="APPROVED">승인됨</button>
+      <button class="tag tag--selectable" type="button" data-filter="REJECTED">거절됨</button>
+      <button class="tag tag--selectable" type="button" data-filter="CANCELED">취소함</button>
+      <button class="tag tag--selectable" type="button" data-filter="TIMEOUT">자동 취소</button>
+      <button class="tag tag--selectable" type="button" data-filter="REVIEW">리뷰 대기</button>
+      <button class="tag tag--selectable" type="button" data-filter="COMPLETED">완료</button>
+    </div>
+  </section>
+
+  <!-- 리스트 -->
+  <section>
+    <div class="fw-bold" style="margin-bottom:10px;">상담 목록</div>
+
+    <div class="card-custom dashboard-list" id="sessionList" style="margin:0;">
+      <div class="dashboard-row">
+        <div class="text-small">불러오는 중…</div>
+      </div>
+    </div>
+
+    <p id="sessionError" style="color:#d33; margin-top:12px;"></p>
+  </section>
+
+</div>
+
+<th:block layout:fragment="script">
+  <script>
+    async function apiRequest(url, options = {}) {
+      const res = await fetch(url, {
+        credentials: 'same-origin',
+        headers: {'accept': 'application/json', ...(options.headers || {})},
+        ...options
+      });
+
+      const json = await res.json().catch(() => null);
+
+      const code = json?.code ?? res.status;
+      const message = json?.message ?? `요청 실패(${res.status})`;
+
+      if (code === 401) {
+        alert('로그인이 필요합니다.');
+        location.href = '/';
+        throw new Error('UNAUTHORIZED');
+      }
+      if (code === 403) {
+        alert(message || '접근 권한이 없습니다.');
+        location.href = '/';
+        throw new Error('FORBIDDEN');
+      }
+
+      if (!res.ok || (typeof code === 'number' && code >= 400)) {
+        const err = new Error(message);
+        err.code = code;
+        err.payload = json;
+        throw err;
+      }
+
+      return json;
+    }
+
+    // ---------- utils ----------
+    function escapeHtml(s) {
+      return String(s ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", "&#039;");
+    }
+
+    function formatDateTime(v) {
+      if (!v) return '-';
+      return String(v).slice(0, 16);
+    }
+
+    // ---------- team UI status/badge ----------
+    function badgeHtml(uiStatus) {
+      if (uiStatus === 'PENDING') return '<span class="status-badge status-pending">대기중</span>';
+      if (uiStatus === 'APPROVED') return '<span class="status-badge status-approved">승인됨</span>';
+      if (uiStatus === 'REJECTED') return '<span class="status-badge status-rejected">거절됨</span>';
+      if (uiStatus === 'CANCELED') return '<span class="status-badge status-canceled">취소함</span>';
+      if (uiStatus === 'TIMEOUT') return '<span class="status-badge status-timeout">자동 취소</span>';
+      if (uiStatus === 'REVIEW') return '<span class="status-badge status-review">리뷰 대기</span>';
+      if (uiStatus === 'COMPLETED') return '<span class="status-badge status-completed">완료</span>';
+      return '<span class="status-badge status-canceled">-</span>';
+    }
+
+    function roomHref(matchingId) {
+      return `/consultations/room/${matchingId}`;
+    }
+
+    function applicationHref(matchingId) {
+      return `/consulting-applications/${matchingId}`;
+    }
+
+    function canCancel(uiStatus) {
+      return uiStatus === 'PENDING'; // WAITING만 취소 가능
+    }
+
+    // 리뷰 대기(INREVIEW) 상태일 때 "리뷰 작성" 버튼 노출
+    function canComplete(uiStatus) {
+      return uiStatus === 'REVIEW';
+    }
+
+    function mapApiStatusToUi(apiStatus) {
+      switch (apiStatus) {
+        case 'WAITING':
+          return 'PENDING';
+        case 'MATCHED':
+          return 'APPROVED';
+        case 'REJECTED':
+          return 'REJECTED';
+        case 'CANCELED':
+          return 'CANCELED';
+        case 'TIMEOUT':
+          return 'TIMEOUT';
+        case 'INREVIEW':
+          return 'REVIEW';
+        case 'COMPLETED':
+          return 'COMPLETED';
+        default:
+          return 'PENDING';
+      }
+    }
+
+    // ---------- render ----------
+    function render(listEl, items, onCancel, onComplete) {
+      if (!items || items.length === 0) {
+        listEl.innerHTML = `<div class="dashboard-row"><div class="text-small">상담 내역이 없습니다.</div></div>`;
+        return;
+      }
+
+      listEl.innerHTML = items.map(it => {
+        const title = escapeHtml(it.title);
+        const counterpart = escapeHtml(it.counterpartName);
+        const time = escapeHtml(formatDateTime(it.createdAt));
+        const badge = badgeHtml(it.uiStatus);
+
+        const enterBtn = (it.uiStatus === 'APPROVED')
+          ? `<a class="btn-primary-custom" style="padding:8px 10px; font-size:12px;" href="${escapeHtml(roomHref(it.matchingId))}">입실</a>`
+          : '';
+
+        const applicationBtn = `
+          <a class="btn-outline-custom"
+             style="padding:8px 10px; font-size:12px;"
+             href="${escapeHtml(applicationHref(it.matchingId))}"
+             data-application-btn="true"
+             data-matching-id="${escapeHtml(it.matchingId)}">
+            신청서 조회
+          </a>
+        `;
+
+        const cancelBtn = canCancel(it.uiStatus)
+          ? `
+            <button class="btn-outline-custom"
+                    style="padding:8px 10px; font-size:12px;"
+                    type="button"
+                    data-cancel-btn="true"
+                    data-matching-id="${escapeHtml(it.matchingId)}">
+              신청 취소
+            </button>
+          `
+          : '';
+
+        const completeBtn = canComplete(it.uiStatus)
+          ? `
+            <button class="btn-primary-custom"
+                    style="padding:8px 10px; font-size:12px;"
+                    type="button"
+                    data-complete-btn="true"
+                    data-matching-id="${escapeHtml(it.matchingId)}">
+              리뷰 작성(완료)
+            </button>
+          `
+          : '';
+
+        return `
+          <div class="dashboard-row">
+            <div>
+              <div class="dashboard-row-title">${title}</div>
+              <div class="dashboard-row-sub">${counterpart} · ${time}</div>
+            </div>
+            <div class="dashboard-row-right">
+              ${badge}
+              ${enterBtn}
+              ${applicationBtn}
+              ${cancelBtn}
+              ${completeBtn}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // 신청 취소
+      listEl.querySelectorAll('[data-cancel-btn="true"]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const id = Number(btn.getAttribute('data-matching-id'));
+          if (!id) return;
+
+          const ok = confirm('신청을 취소할까요?');
+          if (!ok) return;
+
+          await onCancel(id);
+        });
+      });
+
+      // 리뷰 작성 완료
+      listEl.querySelectorAll('[data-complete-btn="true"]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const id = Number(btn.getAttribute('data-matching-id'));
+          if (!id) return;
+
+          const ok = confirm('리뷰 작성 완료 처리할까요?');
+          if (!ok) return;
+
+          await onComplete(id);
+        });
+      });
+    }
+
+    // ---------- main ----------
+    (async function () {
+      const listEl = document.getElementById('sessionList');
+      const errEl = document.getElementById('sessionError');
+
+      let allItems = [];
+      let currentFilter = 'all';
+
+      function setActive(btn) {
+        document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('tag--active'));
+        btn.classList.add('tag--active');
+      }
+
+      function filteredItems() {
+        if (currentFilter === 'all') return allItems;
+        return allItems.filter(x => x.uiStatus === currentFilter);
+      }
+
+      async function load() {
+        errEl.textContent = '';
+        listEl.innerHTML = `<div class="dashboard-row"><div class="text-small">불러오는 중…</div></div>`;
+
+        const json = await apiRequest('/api/matchings');
+        const rows = Array.isArray(json?.data) ? json.data : [];
+
+        allItems = rows.map(x => ({
+          matchingId: x.matchingId,
+          title: x.applicationTitle,
+          counterpartName: x.counterpartNickname,
+          createdAt: x.createdAt,
+          uiStatus: mapApiStatusToUi(x.status),
+          rawStatus: x.status
+        }));
+
+        render(listEl, filteredItems(), cancelMatching, completeMatching);
+      }
+
+      async function cancelMatching(matchingId) {
+        try {
+          errEl.textContent = '';
+          await apiRequest(`/api/matchings/${matchingId}/cancellation`, {method: 'POST'});
+          await load();
+        } catch (e) {
+          console.error(e);
+          errEl.textContent = e?.message ?? '신청 취소에 실패했습니다.';
+        }
+      }
+
+      async function completeMatching(matchingId) {
+        try {
+          errEl.textContent = '';
+          await apiRequest(`/api/matchings/${matchingId}/completion`, {method: 'POST'});
+          await load();
+        } catch (e) {
+          console.error(e);
+          errEl.textContent = e?.message ?? '완료 처리에 실패했습니다.';
+        }
+      }
+
+      document.querySelectorAll('[data-filter]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          currentFilter = btn.getAttribute('data-filter');
+          setActive(btn);
+          render(listEl, filteredItems(), cancelMatching, completeMatching);
+        });
+      });
+
+      try {
+        await load();
+      } catch (e) {
+        console.error(e);
+        errEl.textContent = e?.message ?? '서버와 통신할 수 없습니다.';
+      }
+    })();
+  </script>
+</th:block>
+
+</body>
+</html>

@@ -1,0 +1,340 @@
+<!-- src/main/resources/templates/mypage/mentor/scraps.html -->
+<!DOCTYPE html>
+<html
+  lang="ko"
+  xmlns:th="http://www.thymeleaf.org"
+  xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+  layout:decorate="~{common/layout/mentor}"
+>
+<head>
+  <th:block layout:fragment="head">
+    <title>DODEUL | 멘토 스크랩</title>
+    <link rel="stylesheet" href="/css/mypage/dashboard.css"/>
+    <style>
+      .tag-chip {
+        display: inline-flex;
+        align-items: center;
+        height: 22px;
+        padding: 0 8px;
+        border-radius: 999px;
+        border: 1px solid rgba(37, 99, 235, 0.18);
+        background: rgba(37, 99, 235, 0.06);
+        color: #2563eb;
+        font-size: 11px;
+        font-weight: 700;
+        white-space: nowrap;
+        margin-right: 4px;
+        margin-bottom: 4px;
+      }
+
+      .tag-chip--more {
+        border-color: rgba(17, 24, 39, 0.12);
+        background: rgba(17, 24, 39, 0.04);
+        color: rgba(17, 24, 39, 0.7);
+      }
+
+      .dashboard-row-tags {
+        margin-top: 6px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0;
+        overflow: hidden;
+      }
+    </style>
+  </th:block>
+</head>
+
+<body>
+<div layout:fragment="page">
+  <div class="dashboard-header">
+    <h2 class="fw-bold" style="margin-bottom: 8px">스크랩</h2>
+    <p class="text-small" style="margin-bottom: 16px">
+      스크랩한 항목을 확인할 수 있습니다.
+    </p>
+  </div>
+
+  <!-- 필터 -->
+  <section class="card-custom" style="margin-bottom: 16px">
+    <div class="fw-bold" style="margin-bottom: 10px">필터</div>
+    <div id="filterContainer" style="display: flex; gap: 8px; flex-wrap: wrap">
+      <button
+        class="tag tag--selectable tag--active"
+        type="button"
+        data-filter="all"
+      >
+        전체
+      </button>
+      <!-- 동적 태그 필터가 여기에 추가됨 -->
+    </div>
+  </section>
+
+  <!-- 리스트 -->
+  <section>
+    <div class="fw-bold" style="margin-bottom: 10px">스크랩 목록</div>
+
+    <div class="card-custom dashboard-list" id="scrapList" style="margin: 0">
+      <div class="dashboard-row">
+        <div class="text-small">불러오는 중…</div>
+      </div>
+    </div>
+
+    <p id="scrapError" style="color: #d33; margin-top: 12px"></p>
+  </section>
+</div>
+
+<th:block layout:fragment="script">
+  <script>
+    function escapeHtml(s) {
+      return String(s ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function hrefByItem(item) {
+      if (item.type === "post") return "/board/posts/" + item.id;
+      return "#";
+    }
+
+    // 태그 레이아웃 조정 (한 줄 넘어가면 +N 처리)
+    function adjustTagLayout() {
+      document.querySelectorAll('.dashboard-row-tags').forEach(container => {
+        const chips = Array.from(container.querySelectorAll('.tag-chip:not(.tag-chip--more)'));
+        if (chips.length === 0) return;
+
+        // 초기화: 모두 표시
+        chips.forEach(c => c.style.display = 'inline-flex');
+        let moreChip = container.querySelector('.tag-chip--more');
+        if (moreChip) moreChip.remove();
+
+        // 줄바꿈 감지
+        const firstTop = chips[0].offsetTop;
+        let hiddenCount = 0;
+        let breakIndex = -1;
+
+        for (let i = 0; i < chips.length; i++) {
+          if (chips[i].offsetTop > firstTop) {
+            breakIndex = i;
+            break;
+          }
+        }
+
+        if (breakIndex !== -1) {
+          // 줄바꿈 발생 시점부터 숨김
+          for (let i = breakIndex; i < chips.length; i++) {
+            chips[i].style.display = 'none';
+            hiddenCount++;
+          }
+
+          // +N 칩 추가
+          if (hiddenCount > 0) {
+            moreChip = document.createElement('span');
+            moreChip.className = 'tag-chip tag-chip--more';
+            moreChip.textContent = '+' + hiddenCount;
+            container.appendChild(moreChip);
+
+            // +N 칩이 줄바꿈되면 하나 더 숨김
+            if (moreChip.offsetTop > firstTop) {
+              moreChip.remove();
+              if (breakIndex > 0) {
+                chips[breakIndex - 1].style.display = 'none';
+                hiddenCount++;
+
+                moreChip = document.createElement('span');
+                moreChip.className = 'tag-chip tag-chip--more';
+                moreChip.textContent = '+' + hiddenCount;
+                container.appendChild(moreChip);
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // 태그 HTML 생성 (모두 렌더링, 이후 JS로 조정)
+    function renderTags(tags, activeTag) {
+      if (!tags || tags.length === 0) return "";
+
+      let displayTags = [...tags];
+
+      // 활성 태그가 있고 목록에 포함되어 있다면 맨 앞으로 이동
+      if (activeTag && activeTag !== 'all' && displayTags.includes(activeTag)) {
+        displayTags = displayTags.filter(t => t !== activeTag);
+        displayTags.unshift(activeTag);
+      }
+
+      return `<div class="dashboard-row-tags">` +
+        displayTags.map(t => `<span class="tag-chip">${escapeHtml(t)}</span>`).join("") +
+        `</div>`;
+    }
+
+    function render(listEl, items, onUnscrap, activeTag) {
+      if (!items || items.length === 0) {
+        listEl.innerHTML = `<div class="dashboard-row"><div class="text-small">스크랩한 항목이 없습니다.</div></div>`;
+        return;
+      }
+
+      listEl.innerHTML = items
+        .map((it) => {
+          const title = escapeHtml(it.title);
+          const sub = escapeHtml(it.subText ?? "");
+          const href = hrefByItem(it);
+          const tagsHtml = renderTags(it.tags, activeTag);
+
+          return `
+          <div class="dashboard-row">
+            <div style="flex: 1; min-width: 0; padding-right: 10px;">
+              <div class="dashboard-row-title">${title}</div>
+              <div class="dashboard-row-sub">${sub}</div>
+              ${tagsHtml}
+            </div>
+            <div class="dashboard-row-right">
+              <a class="btn-outline-custom" style="padding:8px 10px; font-size:12px;" href="${escapeHtml(href)}">보기</a>
+              <button class="btn-outline-custom" style="padding:8px 10px; font-size:12px;" type="button"
+                      data-unscrap-id="${escapeHtml(it.id)}">
+                해제
+              </button>
+            </div>
+          </div>
+        `;
+        })
+        .join("");
+
+      listEl.querySelectorAll("[data-unscrap-id]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const id = Number(btn.getAttribute("data-unscrap-id"));
+          onUnscrap(id);
+        });
+      });
+
+      // 렌더링 후 레이아웃 조정
+      setTimeout(adjustTagLayout, 0);
+    }
+
+    function fetchJson(url, options) {
+      const base = {
+        credentials: "include",
+        headers: {
+          Accept: "application/json",
+          ...(options && options.headers ? options.headers : {}),
+        },
+      };
+      return fetch(url, {...base, ...(options || {})}).then((r) =>
+        r.ok ? r.json() : Promise.reject(r)
+      );
+    }
+
+    function getApiData(res) {
+      if (res && res.data != null) return res.data;
+      return res;
+    }
+
+    (function () {
+      const listEl = document.getElementById("scrapList");
+      const errEl = document.getElementById("scrapError");
+      const filterContainer = document.getElementById("filterContainer");
+
+      let allItems = [];
+      let currentFilter = "all";
+
+      function setActive(btn) {
+        filterContainer.querySelectorAll(".tag--selectable").forEach((b) => b.classList.remove("tag--active"));
+        btn.classList.add("tag--active");
+      }
+
+      function filteredItems() {
+        if (currentFilter === "all") return allItems;
+        // 태그 필터링
+        return allItems.filter((x) => x.tags && x.tags.includes(currentFilter));
+      }
+
+      function rerender() {
+        render(listEl, filteredItems(), (postId) => {
+          const ok = confirm("스크랩을 해제할까요?");
+          if (!ok) return;
+
+          fetchJson("/api/board/posts/" + postId + "/scrap", {method: "DELETE"})
+            .then(() => load())
+            .catch((err) => {
+              if (err && (err.status === 401 || err.status === 403)) {
+                alert("로그인이 필요합니다.");
+                return;
+              }
+              alert("스크랩 해제에 실패했습니다.");
+            });
+        }, currentFilter);
+      }
+
+      function renderFilters(items) {
+        // 모든 아이템에서 유니크한 태그 추출
+        const allTags = new Set();
+        items.forEach(item => {
+          if (item.tags) {
+            item.tags.forEach(t => allTags.add(t));
+          }
+        });
+
+        // 기존 필터 버튼 제거 (전체 버튼 제외)
+        const allBtn = filterContainer.querySelector('[data-filter="all"]');
+        filterContainer.innerHTML = '';
+        filterContainer.appendChild(allBtn);
+
+        // 태그가 없으면 전체 버튼만 표시
+        if (allTags.size === 0) {
+          return;
+        }
+
+        // 태그 버튼 생성
+        Array.from(allTags).sort().forEach(tag => {
+          const btn = document.createElement('button');
+          btn.className = 'tag tag--selectable';
+          btn.type = 'button';
+          btn.setAttribute('data-filter', tag);
+          btn.textContent = tag;
+          btn.onclick = () => {
+            currentFilter = tag;
+            setActive(btn);
+            rerender();
+          };
+          filterContainer.appendChild(btn);
+        });
+
+        // 전체 버튼 이벤트 재연결
+        allBtn.onclick = () => {
+          currentFilter = 'all';
+          setActive(allBtn);
+          rerender();
+        };
+      }
+
+      function load() {
+        errEl.textContent = "";
+        listEl.innerHTML = `<div class="dashboard-row"><div class="text-small">불러오는 중…</div></div>`;
+
+        fetchJson("/api/mypage/scraps", {method: "GET"})
+          .then((res) => {
+            const data = getApiData(res) || {};
+            const items = Array.isArray(data.items) ? data.items : [];
+            allItems = items;
+
+            renderFilters(allItems);
+            rerender();
+          })
+          .catch(() => {
+            errEl.textContent = "스크랩 목록을 불러올 수 없습니다.";
+            allItems = [];
+            rerender();
+          });
+      }
+
+      // 리사이즈 시 태그 레이아웃 재조정
+      window.addEventListener('resize', adjustTagLayout);
+
+      load();
+    })();
+  </script>
+</th:block>
+</body>
+</html>

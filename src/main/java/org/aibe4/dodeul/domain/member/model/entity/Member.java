@@ -8,11 +8,21 @@ import lombok.NoArgsConstructor;
 import org.aibe4.dodeul.domain.common.model.entity.BaseEntity;
 import org.aibe4.dodeul.domain.member.model.enums.Provider;
 import org.aibe4.dodeul.domain.member.model.enums.Role;
+import org.hibernate.annotations.BatchSize;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity(name = "members")
 public class Member extends BaseEntity {
+
+    @OneToOne(mappedBy = "member", fetch = FetchType.LAZY)
+    private MentorProfile mentorProfile;
+
+    @OneToOne(mappedBy = "member", fetch = FetchType.LAZY)
+    private MenteeProfile menteeProfile;
 
     @Column(nullable = false, length = 255, unique = true)
     private String email;
@@ -34,14 +44,23 @@ public class Member extends BaseEntity {
     @Column(nullable = false, length = 20, unique = true)
     private String nickname;
 
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
+    @BatchSize(size = 50)
+    private List<MemberConsultingTag> consultingTags = new ArrayList<>();
+
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
+    @BatchSize(size = 50)
+    private List<MemberSkillTag> skillTags = new ArrayList<>();
+
     @Builder
     private Member(
-            String email,
-            String passwordHash,
-            Provider provider,
-            String providerId,
-            Role role,
-            String nickname) {
+        String email,
+        String passwordHash,
+        Provider provider,
+        String providerId,
+        Role role,
+        String nickname
+    ) {
         this.email = email;
         this.passwordHash = passwordHash;
         this.provider = provider;
@@ -52,5 +71,12 @@ public class Member extends BaseEntity {
 
     public void updateNickname(String nickname) {
         this.nickname = nickname;
+    }
+
+    public Profile getProfile() {
+        if (this.role == Role.MENTOR) {
+            return this.mentorProfile;
+        }
+        return this.menteeProfile;
     }
 }

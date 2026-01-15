@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{common/layout/base}"
+      th:with="title='멘토 찾기 | DODEUL'">
+
+<th:block layout:fragment="head">
+  <link rel="stylesheet" th:href="@{/css/search/mentor-search.css}">
+
+  <style>
+    .main.container {
+      max-width: 100% !important;
+      padding-left: 0 !important;
+      padding-right: 0 !important;
+    }
+
+    .container-wide {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 40px;
+    }
+  </style>
+</th:block>
+
+<section layout:fragment="content">
+  <div class="container-wide">
+    <th:block th:replace="~{search/fragments/mentor-search-area :: mentorSearch}"></th:block>
+  </div>
+</section>
+
+<th:block layout:fragment="script">
+</th:block>
+</html>

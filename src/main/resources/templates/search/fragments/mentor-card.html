@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<div th:fragment="mentorCard(mentor, actionFunction)" class="card-custom mentor-card-custom h-100 d-flex flex-column">
+  <div class="mentor-card-header">
+    <img th:src="${mentor.profileUrl != null ? mentor.profileUrl : '/images/default-profile.png'}"
+         th:alt="${mentor.nickname}"
+         class="mentor-card-avatar">
+    <div style="min-width: 0;">
+      <h3 class="mentor-card-title" th:title="${mentor.nickname}" th:text="${mentor.nickname}">닉네임</h3>
+      <p class="mentor-card-info" th:text="${mentor.job}">직무</p>
+      <p class="mentor-card-info" th:text="|${mentor.careerYears}년차|">N년차</p>
+    </div>
+  </div>
+
+  <div class="mentor-tags mb-3 flex-grow-1">
+        <span th:each="skill, iterStat : ${mentor.skillTags}"
+              th:if="${iterStat.index < 3}"
+              class="tag tag--read-only mentor-tag-small mb-1"
+              th:text="${skill}">Skill</span>
+  </div>
+
+  <div class="mentor-stats d-flex justify-content-between mb-3 text-small">
+    <span class="stat-item" title="추천 수">
+      <i class="bi bi-hand-thumbs-up me-1"></i>
+      <span th:text="${mentor.recommendCount}">0</span>
+    </span>
+    <span class="stat-item" title="진행한 상담">
+      <i class="bi bi-chat-square-text me-1"></i>
+      <span th:text="${mentor.completedMatchingCount}">0</span>회
+    </span>
+    <span class="stat-item" title="응답률">
+      <i class="bi bi-lightning-charge me-1"></i>
+      <span th:text="${mentor.responseRate}">0</span>%
+    </span>
+  </div>
+
+  <div class="d-grid gap-2 mentor-card-actions">
+    <a th:href="@{/mentor/public/{id}(id=${mentor.memberId})}" class="btn-outline-custom mentor-card-btn"
+       style="text-decoration: none; text-align: center;">프로필</a>
+
+    <button th:if="${mentor.status.name() == 'AVAILABLE'}"
+            th:data-action="${actionFunction}"
+            th:data-id="${mentor.memberId}"
+            th:data-name="${mentor.nickname}"
+            onclick="handleRequestConsultingAction(this)"
+            class="btn-primary-custom mentor-card-btn">
+      <span class="btn-text">상담신청</span>
+    </button>
+
+    <button th:if="${mentor.status.name() == 'FULL'}"
+            disabled class="btn-outline-custom status-timeout mentor-card-btn" style="cursor: not-allowed;">신청마감
+    </button>
+
+    <button th:if="${mentor.status.name() == 'OFF'}"
+            disabled class="btn-outline-custom status-canceled mentor-card-btn" style="cursor: not-allowed;">상담불가
+    </button>
+  </div>
+</div>
+</html>

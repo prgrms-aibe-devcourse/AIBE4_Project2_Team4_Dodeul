@@ -12,12 +12,17 @@
         integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB"
         crossorigin="anonymous">
 
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+
   <link rel="stylesheet" th:href="@{/css/global.css}">
+
+  <!-- 페이지별 head 확장 지점 -->
+  <th:block layout:fragment="head"></th:block>
 </head>
 
 <body>
 <!-- header -->
-<div th:replace="common/fragments/header :: header(${activeMenu})"></div>
+<div th:replace="~{common/fragments/header :: header(${activeMenu})}"></div>
 
 <!-- main -->
 <main class="container main">
@@ -26,8 +31,10 @@
 
 <!-- footer (override 가능) -->
 <div layout:fragment="footer">
-  <div th:replace="common/fragments/footer :: footerFull()"></div>
+  <div th:replace="~{common/fragments/footer :: footerFull()}"></div>
 </div>
+
+<th:block th:replace="~{common/fragments/modal-alert :: alertModal}"></th:block>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
