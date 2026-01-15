@@ -16,7 +16,12 @@ import org.aibe4.dodeul.domain.board.model.repository.BoardCommentLikeRepository
 import org.aibe4.dodeul.domain.board.model.repository.BoardCommentRepository;
 import org.aibe4.dodeul.domain.board.model.repository.BoardPostRepository;
 import org.aibe4.dodeul.domain.member.model.entity.Member;
+import org.aibe4.dodeul.domain.member.model.entity.MenteeProfile;
+import org.aibe4.dodeul.domain.member.model.entity.MentorProfile;
+import org.aibe4.dodeul.domain.member.model.enums.Role;
 import org.aibe4.dodeul.domain.member.model.repository.MemberRepository;
+import org.aibe4.dodeul.domain.member.model.repository.MenteeProfileRepository;
+import org.aibe4.dodeul.domain.member.model.repository.MentorProfileRepository;
 import org.aibe4.dodeul.global.response.enums.ErrorCode;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,6 +39,8 @@ public class BoardCommentService {
     private final BoardCommentRepository boardCommentRepository;
     private final BoardCommentLikeRepository boardCommentLikeRepository;
     private final MemberRepository memberRepository;
+    private final MentorProfileRepository mentorProfileRepository;
+    private final MenteeProfileRepository menteeProfileRepository;
 
     public BoardCommentListResponse getComments(Long postId, Long memberId) {
         BoardPost post =
@@ -62,6 +69,9 @@ public class BoardCommentService {
         }
         Map<Long, Member> memberMap = loadMemberMap(memberIds);
 
+        // 프로필 이미지 조회 (N+1 방지)
+        Map<Long, String> profileImageMap = loadProfileImageMap(memberIds, memberMap);
+
         List<Long> commentIds = comments.stream().map(BoardComment::getId).toList();
         Set<Long> likedIds = Collections.emptySet();
         if (memberId != null && !commentIds.isEmpty()) {
@@ -82,6 +92,7 @@ public class BoardCommentService {
                         memberId,
                         postAuthorId,
                         memberMap,
+                        profileImageMap,
                         acceptedId,
                         likedIds.contains(c.getId()),
                         true,
@@ -109,6 +120,7 @@ public class BoardCommentService {
                         memberId,
                         postAuthorId,
                         memberMap,
+                        profileImageMap,
                         acceptedId,
                         likedIds.contains(c.getId()),
                         false,
@@ -256,6 +268,7 @@ public class BoardCommentService {
         Long viewerMemberId,
         Long postAuthorId,
         Map<Long, Member> memberMap,
+        Map<Long, String> profileImageMap,
         Long acceptedId,
         boolean likedByMe,
         boolean isRoot,
@@ -276,6 +289,9 @@ public class BoardCommentService {
                 : "익명";
 
         String roleTag = resolveRoleTag(commentAuthorId, postAuthorId, author);
+
+        // 프로필 이미지 URL 조회
+        String profileImageUrl = commentAuthorId != null ? profileImageMap.get(commentAuthorId) : null;
 
         boolean isAccepted = acceptedId != null && Objects.equals(acceptedId, c.getId());
 
@@ -306,6 +322,7 @@ public class BoardCommentService {
             .authorDisplayName(nickname)
             .authorNickname(nickname)
             .authorRoleTag(roleTag)
+            .authorProfileImageUrl(profileImageUrl)
             .content(content)
             .commentStatus(c.getCommentStatus().name())
             .likeCount(c.getLikeCount() != null ? c.getLikeCount() : 0)
@@ -332,6 +349,60 @@ public class BoardCommentService {
             map.put(m.getId(), m);
         }
         return map;
+    }
+
+    /**
+     * 프로필 이미지 일괄 조회 (N+1 방지)
+     *
+     * @param memberIds 조회할 회원 ID 목록
+     * @param memberMap 이미 조회된 회원 정보 맵
+     * @return memberId -> profileImageUrl 맵
+     */
+    private Map<Long, String> loadProfileImageMap(Set<Long> memberIds, Map<Long, Member> memberMap) {
+        if (memberIds == null || memberIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        Map<Long, String> profileImageMap = new HashMap<>();
+
+        // Member의 Role에 따라 적절한 프로필에서 이미지 URL 조회
+        Set<Long> mentorIds = new HashSet<>();
+        Set<Long> menteeIds = new HashSet<>();
+
+        for (Long memberId : memberIds) {
+            Member member = memberMap.get(memberId);
+            if (member == null || member.getRole() == null) {
+                continue;
+            }
+
+            if (member.getRole() == Role.MENTOR) {
+                mentorIds.add(memberId);
+            } else if (member.getRole() == Role.MENTEE) {
+                menteeIds.add(memberId);
+            }
+        }
+
+        // 멘토 프로필 이미지 조회
+        if (!mentorIds.isEmpty()) {
+            List<MentorProfile> mentorProfiles = mentorProfileRepository.findAllById(mentorIds);
+            for (MentorProfile profile : mentorProfiles) {
+                if (profile.getProfileUrl() != null && !profile.getProfileUrl().isBlank()) {
+                    profileImageMap.put(profile.getId(), profile.getProfileUrl());
+                }
+            }
+        }
+
+        // 멘티 프로필 이미지 조회
+        if (!menteeIds.isEmpty()) {
+            List<MenteeProfile> menteeProfiles = menteeProfileRepository.findAllById(menteeIds);
+            for (MenteeProfile profile : menteeProfiles) {
+                if (profile.getProfileUrl() != null && !profile.getProfileUrl().isBlank()) {
+                    profileImageMap.put(profile.getId(), profile.getProfileUrl());
+                }
+            }
+        }
+
+        return profileImageMap;
     }
 
     private Long extractPostAuthorId(BoardPost post) {
