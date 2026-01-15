@@ -284,4 +284,39 @@ public interface MatchingSwaggerDocs {
     })
     @interface CompleteError {
     }
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "매칭 내역 조회 성공",
+            content = @Content(
+                schema = @Schema(implementation = CommonResponse.class),
+                examples = @ExampleObject("""
+                    {
+                        "code": 200,
+                        "message": "내 매칭 내역 조회를 성공했습니다.",
+                        "data": [
+                            {
+                                "matchingId": 10,
+                                "status": "WAITING",
+                                "applicationTitle": "백엔드 진로 상담 요청합니다",
+                                "counterpartNickname": "코딩하는호랑이",
+                                "counterpartProfileUrl": "https://dodeul-bucket/default.png",
+                                "createdAt": "2024-03-15T10:00:00"
+                            },
+                            {
+                                "matchingId": 8,
+                                "status": "COMPLETED",
+                                "applicationTitle": "자소서 첨삭 부탁드려요",
+                                "counterpartNickname": "코딩하는호랑이",
+                                "counterpartProfileUrl": "https://dodeul-bucket/default.png",
+                                "createdAt": "2024-03-01T14:00:00"
+                            }
+                        ]
+                    }
+                    """)
+            ))
+    })
+    @interface GetHistory {
+    }
 }
