@@ -1,13 +1,14 @@
 package org.aibe4.dodeul.domain.board.model.entity;
 
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.aibe4.dodeul.domain.board.model.enums.CommentStatus;
 import org.aibe4.dodeul.domain.common.model.entity.BaseEntity;
+
+import java.time.LocalDateTime;
 
 // import org.aibe4.dodeul.domain.member.model.entity.Member;
 
@@ -16,11 +17,6 @@ import org.aibe4.dodeul.domain.common.model.entity.BaseEntity;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class BoardComment extends BaseEntity {
-
-    // TODO: Member Entity 완성 후 @ManyToOne 관계로 변경
-    // @ManyToOne(fetch = FetchType.LAZY)
-    // @JoinColumn(name = "member_id", nullable = false)
-    // private Member member;
 
     @Column(name = "member_id", nullable = false)
     private Long memberId; // 임시 사용)
@@ -52,11 +48,11 @@ public class BoardComment extends BaseEntity {
 
     @Builder
     public BoardComment(
-            Long memberId,
-            BoardPost boardPost,
-            BoardComment parentComment,
-            BoardComment rootComment,
-            String content) {
+        Long memberId,
+        BoardPost boardPost,
+        BoardComment parentComment,
+        BoardComment rootComment,
+        String content) {
         this.memberId = memberId;
         this.boardPost = boardPost;
         this.parentComment = parentComment;

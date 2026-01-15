@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-@Tag(name = "BoardPost Detail", description = "게시판 게시글 상세 조회 API")
+@Tag(name = "Board", description = "게시판 게시글 상세 조회 API")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/board/posts")

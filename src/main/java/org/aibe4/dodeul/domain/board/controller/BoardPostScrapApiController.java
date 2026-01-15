@@ -22,7 +22,7 @@ import org.aibe4.dodeul.global.security.CustomUserDetails;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-@Tag(name = "BoardPost Scrap", description = "게시판 스크랩 API")
+@Tag(name = "Board", description = "게시판 스크랩 API")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api")

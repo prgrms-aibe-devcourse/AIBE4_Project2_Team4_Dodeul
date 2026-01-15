@@ -19,7 +19,7 @@ import org.aibe4.dodeul.global.security.CustomUserDetails;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-@Tag(name = "BoardPost Command", description = "게시판 게시글 수정/삭제 API")
+@Tag(name = "Board", description = "게시판 게시글 수정/삭제 API")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/board/posts")

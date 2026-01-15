@@ -19,7 +19,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-@Tag(name = "Board Comment API", description = "게시판 댓글 API")
+@Tag(name = "Board", description = "게시판 댓글 API")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/board")

@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@Tag(name = "BoardPost File", description = "공개 게시판(QnA) 게시글 첨부파일 API")
+@Tag(name = "Board", description = "공개 게시판(QnA) 게시글 첨부파일 API")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/board/posts")
