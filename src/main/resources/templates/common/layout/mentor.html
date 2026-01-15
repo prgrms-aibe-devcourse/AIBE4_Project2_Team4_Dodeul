@@ -7,7 +7,9 @@
 
 <main class="container layout" layout:fragment="content">
 
-  <div th:replace="~{common/fragments/sidebar :: sidebar('dashboard')}"></div>
+  <div layout:fragment="sidebar">
+    <div th:replace="~{common/fragments/sidebar :: sidebar('dashboard')}"></div>
+  </div>
 
   <section class="content">
     <div layout:fragment="page"></div>
