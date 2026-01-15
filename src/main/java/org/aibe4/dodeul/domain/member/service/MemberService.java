@@ -36,6 +36,12 @@ public class MemberService {
                 new BusinessException(ErrorCode.UNAUTHORIZED_ACCESS, "인증 정보가 유효하지 않습니다."));
     }
 
+    public Member getMemberOrThrowWithPessimisticLock(Long memberId) {
+        return memberRepository.findByIdWithPessimisticLock(memberId)
+            .orElseThrow(() ->
+                new BusinessException(ErrorCode.UNAUTHORIZED_ACCESS, "인증 정보가 유효하지 않습니다."));
+    }
+
     public boolean hasTemporaryNickname(Member member) {
         String nickname = member.getNickname();
         return nickname == null || nickname.isBlank() || nickname.startsWith("user_");
