@@ -111,12 +111,12 @@
       const message = json?.message ?? `요청 실패(${res.status})`;
 
       if (code === 401) {
-        alert('로그인이 필요합니다.');
+        showCommonModal('로그인이 필요합니다.');
         location.href = '/auth/login';
         throw new Error('UNAUTHORIZED');
       }
       if (code === 403) {
-        alert(message || '접근 권한이 없습니다.');
+        showCommonModal(message || '접근 권한이 없습니다.');
         location.href = '/';
         throw new Error('FORBIDDEN');
       }
@@ -247,8 +247,8 @@
           body: JSON.stringify(payload)
         });
 
-        alert('저장되었습니다.');
-        location.href = '/mentee/profile';
+        showCommonModal('저장되었습니다.');
+        setTimeout(() => location.href = '/mentee/profile', 300);
       } catch (e) {
         console.error(e);
         err.textContent = e?.message ?? '저장 중 오류가 발생했습니다.';

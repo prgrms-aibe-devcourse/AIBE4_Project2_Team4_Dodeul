@@ -290,7 +290,8 @@
               const next = !enabled;
               const label = next ? '상담을 받도록 전환' : '상담을 받지 않도록 전환';
 
-              if (!confirm(`${label}할까요?`)) return;
+              const isConfirmed = await showConfirmModal(`${label}할까요?`);
+              if (!isConfirmed) return;
 
               try {
                 btn.disabled = true;
@@ -307,7 +308,7 @@
                 location.reload();
               } catch (e) {
                 console.error(e);
-                alert(e?.message ?? '상담 상태 변경에 실패했습니다.');
+                showCommonModal(e?.message ?? '상담 상태 변경에 실패했습니다.');
               } finally {
                 btn.disabled = false;
               }
