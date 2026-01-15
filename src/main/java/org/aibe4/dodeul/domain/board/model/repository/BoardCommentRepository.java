@@ -2,6 +2,7 @@ package org.aibe4.dodeul.domain.board.model.repository;
 
 import org.aibe4.dodeul.domain.board.model.entity.BoardComment;
 import org.aibe4.dodeul.domain.board.model.enums.CommentStatus;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -11,6 +12,9 @@ import java.util.List;
 
 public interface BoardCommentRepository extends JpaRepository<BoardComment, Long> {
 
+    // 댓글 조회 시 N+1 방지 (작성자 정보 등은 Member 엔티티가 완성되면 추가 fetch join 필요)
+    // 현재는 BoardPost만 fetch join
+    @EntityGraph(attributePaths = {"boardPost"})
     @Query(
         """
             select c
