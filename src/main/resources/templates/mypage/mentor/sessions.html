@@ -116,7 +116,7 @@
     }
 
     function applicationHref(matchingId) {
-      return '/consulting-applications/ui-test';
+      return `/consulting-applications/${applicationId}/mentor-view`;
     }
 
 
@@ -173,7 +173,7 @@
         const applicationBtn = `
           <a class="btn-outline-custom"
              style="padding:8px 10px; font-size:12px;"
-             href="${escapeHtml(applicationHref(it.matchingId))}"
+             href="${escapeHtml(applicationHref(it.applicationId))}"
              data-application-btn="true"
              data-matching-id="${escapeHtml(it.matchingId)}">
             신청서 조회
@@ -276,6 +276,7 @@
 
         allItems = rows.map(x => ({
           matchingId: x.matchingId,
+          applicationId: x.applicationId,
           title: x.applicationTitle,
           counterpartName: x.counterpartNickname,
           createdAt: x.createdAt,

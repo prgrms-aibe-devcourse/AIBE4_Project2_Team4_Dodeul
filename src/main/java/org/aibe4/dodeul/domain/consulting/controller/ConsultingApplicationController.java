@@ -75,6 +75,16 @@ public class ConsultingApplicationController {
         return "consulting/application-detail";
     }
 
+    // [누락 주의] 아까 만든 멘토 전용 상세 조회
+    @GetMapping("/{applicationId}/mentor-view")
+    public String viewMentorApplicationDetail(@PathVariable Long applicationId, Model model) {
+        ConsultingApplicationDetailResponse response =
+            consultingApplicationService.getApplicationDetail(applicationId);
+
+        model.addAttribute("appDetail", response);
+        return "consulting/application-mento-detail";
+    }
+
     // 4. 수정 폼
     @GetMapping("/{applicationId}/edit")
     public String editForm(
