@@ -12,6 +12,8 @@ import org.aibe4.dodeul.domain.consulting.model.dto.ConsultingApplicationRequest
 import org.aibe4.dodeul.domain.consulting.model.entity.ApplicationSkillTag;
 import org.aibe4.dodeul.domain.consulting.model.entity.ConsultingApplication;
 import org.aibe4.dodeul.domain.consulting.model.repository.ConsultingApplicationRepository;
+import org.aibe4.dodeul.domain.matching.model.entity.Matching;
+import org.aibe4.dodeul.domain.matching.model.repository.MatchingRepository;
 import org.aibe4.dodeul.domain.member.model.repository.MemberRepository;
 import org.aibe4.dodeul.global.exception.BusinessException;
 import org.aibe4.dodeul.global.file.model.dto.response.FileUploadResponse;
@@ -38,7 +40,7 @@ public class ConsultingApplicationService {
     private final ApplicationValidatorService validatorService;
     private final FileService fileService;
     private final CommonFileRepository commonFileRepository; // 이 한 줄만 추가
-
+    private final MatchingRepository matchingRepository;
 
     // [수정] 닉네임 조회 로직 추가 버전
     public ConsultingApplicationDetailResponse getApplicationDetail(Long applicationId) {
@@ -75,7 +77,7 @@ public class ConsultingApplicationService {
         String fileUrl = null;
         if (request.getFile() != null && !request.getFile().isEmpty()) {
             try {
-                // ✅ 디버깅 로그 추가
+                // 디버깅 로그 추가
                 log.info("=== 파일 업로드 시도 ===");
                 log.info("파일명: {}", request.getFile().getOriginalFilename());
                 log.info("파일 크기: {}", request.getFile().getSize());
@@ -149,7 +151,7 @@ public class ConsultingApplicationService {
 
         String fileUrl = application.getFileUrl(); // 기본적으로 기존 URL 유지
 
-        // [수정] 파일이 새로 들어왔을 때만 업로드 및 CommonFile 저장 수행
+        // 파일이 새로 들어왔을 때만 업로드 및 CommonFile 저장 수행
         if (request.getFile() != null && !request.getFile().isEmpty()) {
             FileUploadResponse response = fileService.upload(request.getFile(), FileDomain.CONSULTING_APPLICATION.name());
             fileUrl = response.getFileUrl();
@@ -222,5 +224,39 @@ public class ConsultingApplicationService {
         }
         form.setTechTags(tags);
         return form;
+    }
+
+    public Long findApplicationIdByMatchingForMentee(Long matchingId, Long menteeId) {
+        Matching matching = matchingRepository.findById(matchingId)
+            .orElseThrow(() -> new NoSuchElementException("매칭을 찾을 수 없습니다: " + matchingId));
+
+        // 멘티 본인 매칭인지 검증
+        if (matching.getMentee() == null || matching.getMentee().getId() == null
+            || !matching.getMentee().getId().equals(menteeId)) {
+            throw new IllegalStateException("접근 권한이 없습니다.");
+        }
+
+        // 매칭에 연결된 신청서 id 반환
+        if (matching.getApplication() == null || matching.getApplication().getId() == null) {
+            throw new IllegalStateException("매칭에 연결된 신청서가 없습니다.");
+        }
+
+        return matching.getApplication().getId();
+    }
+
+    public Long findApplicationIdByMatchingForMentor(Long matchingId, Long mentorId) {
+        Matching matching = matchingRepository.findById(matchingId)
+            .orElseThrow(() -> new NoSuchElementException("매칭을 찾을 수 없습니다: " + matchingId));
+
+        if (matching.getMentor() == null || matching.getMentor().getId() == null
+            || !matching.getMentor().getId().equals(mentorId)) {
+            throw new IllegalStateException("접근 권한이 없습니다.");
+        }
+
+        if (matching.getApplication() == null || matching.getApplication().getId() == null) {
+            throw new IllegalStateException("매칭에 연결된 신청서가 없습니다.");
+        }
+
+        return matching.getApplication().getId();
     }
 }
