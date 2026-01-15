@@ -61,6 +61,9 @@ public class MyProfileService {
             .distinct()
             .toList();
 
+        // 프로필이 없으면(신규/미생성) 기본값은 "상담 가능(true)"로 내려줌
+        boolean consultationEnabled = (profile == null) ? true : profile.isConsultationEnabled();
+
         return MentorMyProfileResponse.builder()
             .memberId(member.getId())
             .nickname(member.getNickname())
@@ -68,7 +71,7 @@ public class MyProfileService {
             .intro(profile != null ? profile.getIntro() : null)
             .job(profile != null ? profile.getJob() : null)
             .careerYears(profile != null ? profile.getCareerYears() : null)
-            .consultationEnabled(profile != null ? profile.isConsultationEnabled() : null)
+            .consultationEnabled(consultationEnabled)
             .skillTags(skillTags)
             .consultingTags(consultingTags)
             .build();
