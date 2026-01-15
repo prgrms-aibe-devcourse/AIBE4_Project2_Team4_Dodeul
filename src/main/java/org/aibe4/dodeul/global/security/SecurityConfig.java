@@ -54,6 +54,15 @@ public class SecurityConfig {
                             "/demo/**")
                         .permitAll()
 
+                        // 게시판 목록 조회(GET) 공개 (최우선 적용)
+                        .requestMatchers(
+                            HttpMethod.GET,
+                            "/board",
+                            "/board/",
+                            "/board/posts",
+                            "/api/board/posts")
+                        .permitAll()
+
                         // 권한 우선 확인 구간 (permitAll보다 먼저 선언)
                         .requestMatchers("/onboarding/nickname/**")
                         .authenticated()
@@ -73,16 +82,11 @@ public class SecurityConfig {
                             "/api/search/mentors/**")
                         .permitAll()
 
-                        // 게시판 조회(GET) 공개 (목록/상세/댓글조회/첨부파일조회)
+                        // 게시판 상세 조회 및 기타 기능은 인증 필요
                         .requestMatchers(
-                            HttpMethod.GET,
-                            "/api/board/posts",
-                            "/api/board/posts/*",
-                            "/api/board/posts/*/comments",
-                            "/api/board/posts/*/files",
-                            "/board/posts",
-                            "/board/posts/*")
-                        .permitAll()
+                            "/api/board/posts/**",
+                            "/board/posts/**")
+                        .authenticated()
 
                         // 파일 조회(GET) 공개: 상세 화면에서 /api/files?domain=... 으로 조회하는 경우 대응
                         .requestMatchers(HttpMethod.GET, "/api/files")

@@ -115,8 +115,8 @@
       return `/consultations/matching/${matchingId}`;
     }
 
-    function applicationHref(matchingId, applicationId) {
-      return `/consulting-applications/${applicationId}/mentor-view`;
+    function applicationHref(matchingId) {
+      return `/consulting-applications/matching/${matchingId}/mentor-view`;
     }
 
 
@@ -173,7 +173,7 @@
         const applicationBtn = `
           <a class="btn-outline-custom"
              style="padding:8px 10px; font-size:12px;"
-             href="${escapeHtml(applicationHref(it.matchingId, it.applicationId))}"
+             href="${escapeHtml(applicationHref(it.matchingId))}"
              data-application-btn="true"
              data-matching-id="${escapeHtml(it.matchingId)}">
             신청서 조회
@@ -228,8 +228,11 @@
           const id = Number(btn.getAttribute('data-matching-id'));
           if (!id) return;
 
-          const ok = confirm('이 상담을 수락할까요?');
-          if (!ok) return;
+          const isConfirmed = await showConfirmModal(`이 상담을 수락할까요?`);
+
+          if (!isConfirmed) {
+            return;
+          }
 
           await onAccept(id);
         });
@@ -241,8 +244,11 @@
           const id = Number(btn.getAttribute('data-matching-id'));
           if (!id) return;
 
-          const ok = confirm('이 상담을 거절할까요?');
-          if (!ok) return;
+          const isConfirmed = await showConfirmModal(`이 상담을 거절할까요?`);
+
+          if (!isConfirmed) {
+            return;
+          }
 
           await onReject(id);
         });

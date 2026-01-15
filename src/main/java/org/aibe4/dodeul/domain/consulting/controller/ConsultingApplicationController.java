@@ -151,4 +151,48 @@ public class ConsultingApplicationController {
         consultingApplicationService.deleteApplication(applicationId, user.getMemberId());
         return "redirect:/";
     }
+
+    @GetMapping("/matching/{matchingId}")
+    public String getApplicationDetailByMatching(
+        @PathVariable Long matchingId,
+        @AuthenticationPrincipal CustomUserDetails user,
+        Model model
+    ) {
+        if (user == null) {
+            throw new IllegalStateException("로그인이 필요합니다.");
+        }
+
+        Long applicationId =
+            consultingApplicationService.findApplicationIdByMatchingForMentee(
+                matchingId,
+                user.getMemberId()
+            );
+
+        ConsultingApplicationDetailResponse response =
+            consultingApplicationService.getApplicationDetail(applicationId);
+
+        model.addAttribute("appDetail", response);
+        return "consulting/application-detail";
+    }
+
+    @GetMapping("/matching/{matchingId}/mentor-view")
+    public String getApplicationDetailByMatchingForMentor(
+        @PathVariable Long matchingId,
+        @AuthenticationPrincipal CustomUserDetails user,
+        Model model
+    ) {
+        if (user == null) throw new IllegalStateException("로그인이 필요합니다.");
+
+        Long applicationId =
+            consultingApplicationService.findApplicationIdByMatchingForMentor(
+                matchingId,
+                user.getMemberId()
+            );
+
+        ConsultingApplicationDetailResponse response =
+            consultingApplicationService.getApplicationDetail(applicationId);
+
+        model.addAttribute("appDetail", response);
+        return "consulting/application-mento-detail";
+    }
 }

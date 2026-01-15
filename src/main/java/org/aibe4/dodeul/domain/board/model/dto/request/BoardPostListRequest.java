@@ -13,22 +13,23 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Schema(description = "게시글 목록 조회 요청 (필터)")
 public class BoardPostListRequest {
 
-    @Schema(description = "상담 분야(카테고리)")
+    @Schema(description = "상담 분야(카테고리)", example = "CAREER")
     private ConsultingTag consultingTag;
 
-    @Schema(description = "스킬 태그 ID 목록")
+    @Schema(description = "스킬 태그 ID 목록", example = "[1, 2]")
     private List<Long> tagIds;
 
     @Schema(
         description = "게시글 상태(ALL/OPEN/CLOSED) (없거나 잘못되면 OPEN으로 처리)",
-        example = "ALL")
+        example = "OPEN")
     private String status;
 
-    @Schema(description = "검색 키워드", example = "JPA N+1")
+    @Schema(description = "검색 키워드", example = "JPA")
     private String keyword;
 
-    @Schema(description = "정렬 기준(LATEST/LIKES/SCRAPS)", example = "LATEST")
+    @Schema(description = "정렬 기준(LATEST/VIEWS/SCRAPS)", example = "LATEST")
     private String sort;
 }

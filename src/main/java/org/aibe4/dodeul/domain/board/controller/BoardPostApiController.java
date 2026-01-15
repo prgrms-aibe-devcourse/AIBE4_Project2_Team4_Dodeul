@@ -34,7 +34,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@Tag(name = "BoardPost", description = "공개 게시판(QnA) 게시글 API")
+@Tag(name = "Board", description = "공개 게시판(QnA) 게시글 API")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/board/posts")

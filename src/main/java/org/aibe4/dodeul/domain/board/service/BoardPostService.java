@@ -49,7 +49,6 @@ public class BoardPostService {
         Page<BoardPostListResponse> page =
             boardPostRepository.findPosts(normalized, memberId, pageable);
 
-        // ✅ 목록 댓글 수 0 문제 해결: postIds 묶어서 한 번에 count 조회 후 주입
         List<Long> postIds =
             page.getContent().stream()
                 .map(BoardPostListResponse::getPostId)
