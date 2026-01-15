@@ -1,0 +1,22 @@
+/* 탭 콘텐츠 영역 높이 확보 */
+.tab-content {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.tab-pane {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.scroll-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem;
+}
+
+.nav-tabs .nav-link { color: #666; font-weight: bold; border: none; transition: 0.2s; }
+.nav-tabs .nav-link.active { color: var(--color-primary); background: #fff; border-bottom: 2px solid var(--color-primary); }
