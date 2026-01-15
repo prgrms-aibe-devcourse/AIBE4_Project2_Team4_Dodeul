@@ -14,6 +14,7 @@ import org.aibe4.dodeul.domain.member.model.entity.Member;
 import org.aibe4.dodeul.domain.member.model.enums.Role;
 import org.aibe4.dodeul.domain.member.service.MemberQueryService;
 import org.aibe4.dodeul.domain.member.service.MemberService;
+import org.aibe4.dodeul.domain.member.service.MentorProfileService;
 import org.aibe4.dodeul.global.exception.BusinessException;
 import org.aibe4.dodeul.global.response.enums.ErrorCode;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -49,6 +50,7 @@ public class MatchingService {
     private final MatchingRepository matchingRepository;
 
     private final MemberService memberService;
+    private final MentorProfileService mentorProfileService;
     private final MemberQueryService memberQueryService;
     private final ConsultingApplicationService applicationService;
 
@@ -100,7 +102,7 @@ public class MatchingService {
         }
 
         double responseRate = Math.round(rawRate * 100 * 10) / 10.0;
-        memberQueryService.updateMentorResponseRate(mentorId, responseRate);
+        mentorProfileService.updateMentorResponseRate(mentorId, responseRate);
     }
 
     @Transactional

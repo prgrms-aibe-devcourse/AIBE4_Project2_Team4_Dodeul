@@ -1,5 +1,6 @@
 package org.aibe4.dodeul.domain.member.service;
 
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.aibe4.dodeul.domain.member.model.entity.MentorProfile;
 import org.aibe4.dodeul.domain.member.model.repository.MentorProfileRepository;
@@ -11,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class MentorProfileService {
 
     private final MentorProfileRepository mentorProfileRepository;
@@ -34,5 +36,29 @@ public class MentorProfileService {
             );
 
         profile.changeConsultationEnabled(enabled);
+    }
+
+    @Transactional
+    public void updateMentorResponseRate(Long mentorId, double responseRate) {
+        MentorProfile mentorProfile = mentorProfileRepository.findById(mentorId)
+            .orElseThrow(() -> new EntityNotFoundException("멘토 프로필 없음"));
+
+        mentorProfile.updateResponseRate(responseRate);
+    }
+
+    @Transactional
+    public void increaseRecommendCount(Long mentorId) {
+        MentorProfile mentorProfile = mentorProfileRepository.findById(mentorId)
+            .orElseThrow(() -> new EntityNotFoundException("멘토 프로필 없음"));
+
+        mentorProfile.increaseRecommendCount();
+    }
+
+    @Transactional
+    public void increaseCompletedMatchingCount(Long mentorId) {
+        MentorProfile mentorProfile = mentorProfileRepository.findById(mentorId)
+            .orElseThrow(() -> new EntityNotFoundException("멘토 프로필 없음"));
+
+        mentorProfile.increaseCompletedMatchingCount();
     }
 }
