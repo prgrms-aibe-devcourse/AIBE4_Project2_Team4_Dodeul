@@ -102,7 +102,7 @@ public class FileService {
         }
 
         if (p.contains("chat")) {
-            return IMAGE_COMMON;
+            return union(IMAGE_COMMON, DOC_COMMON);
         }
 
         // 미지정 prefix는 안전하게 이미지+문서만 허용

@@ -105,6 +105,26 @@ public class CommonFile {
         );
     }
 
+    public static CommonFile ofChatMessage(
+        Long messageId,
+        String fileUrl,
+        String originFileName,
+        String contentType,
+        Long fileSize
+    ) {
+        if (messageId == null) {
+            throw new IllegalArgumentException("메시지 ID는 필수입니다.");
+        }
+        return new CommonFile(
+            FileDomain.CHAT_MESSAGE,
+            messageId,
+            requireText(fileUrl, "파일 URL은 필수입니다."),
+            requireText(originFileName, "원본 파일명은 필수입니다."),
+            requireText(contentType, "콘텐츠 타입은 필수입니다."),
+            fileSize
+        );
+    }
+
     private static String requireText(String v, String msg) {
         if (v == null || v.isBlank()) {
             throw new IllegalArgumentException(msg);
