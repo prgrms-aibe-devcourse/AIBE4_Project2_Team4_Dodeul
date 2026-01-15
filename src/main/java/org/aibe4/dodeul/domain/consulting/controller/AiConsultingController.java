@@ -1,5 +1,6 @@
 package org.aibe4.dodeul.domain.consulting.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.aibe4.dodeul.domain.consulting.service.AiConsultingService;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -12,6 +13,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/ai")
 @RequiredArgsConstructor
+@Tag(name = "Consulting", description = "상담 관련 API (AI 초안 및 신청서)")
 public class AiConsultingController {
 
     private final AiConsultingService aiConsultingService;
