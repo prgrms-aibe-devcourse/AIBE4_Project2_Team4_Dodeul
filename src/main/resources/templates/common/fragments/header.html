@@ -26,16 +26,17 @@
       <div sec:authorize="isAuthenticated()"
            style="display:flex; align-items:center; gap:12px;">
 
-        <!-- 프로필 아이콘 -->
-        <img th:src="@{/css/icons/usericon.svg}"
+        <!-- 프로필 아이콘: JS가 src를 교체할 수 있도록 id 부여 -->
+        <img id="headerProfileImg"
+             th:src="@{/css/icons/usericon.svg}"
              alt="profile"
-             style="width:32px; height:32px; border-radius:50%; background:#f2f2f2; padding:4px;"/>
+             style="width:32px; height:32px; border-radius:50%; background:#f2f2f2; padding:4px; object-fit:cover;"/>
 
-        <!-- 유저 이름 (현재는 email) -->
-        <span style="font-weight:600;"
-              sec:authentication="principal.nickname">
-          user
-        </span>
+        <!-- role을 JS가 읽도록 숨김 값으로 렌더 -->
+        <span id="headerUserRole" sec:authentication="principal.role" style="display:none;">ROLE</span>
+
+        <!-- 유저 이름 -->
+        <span style="font-weight:600;" sec:authentication="principal.nickname">user</span>
 
         <!-- 로그아웃 -->
         <form th:action="@{/logout}" method="post" style="margin:0;">
@@ -50,6 +51,46 @@
 
     </div>
   </div>
+
+  <!-- 헤더 자동 반영 스크립트 -->
+  <script sec:authorize="isAuthenticated()">
+    (async function () {
+      try {
+        const roleEl = document.getElementById('headerUserRole');
+        const imgEl = document.getElementById('headerProfileImg');
+        if (!roleEl || !imgEl) return;
+
+        const role = (roleEl.textContent || '').trim(); // "MENTOR" or "MENTEE"
+        let url = null;
+
+        if (role === 'MENTOR') url = '/api/mypage/mentor/profile';
+        else if (role === 'MENTEE') url = '/api/mypage/mentee/profile';
+        else return;
+
+        const res = await fetch(url, {
+          credentials: 'same-origin',
+          headers: {'accept': 'application/json'}
+        });
+
+        const json = await res.json().catch(() => null);
+        if (!res.ok) return;
+
+        const profileUrl = json?.data?.profileUrl;
+        if (!profileUrl) return;
+
+        // 캐시 방지
+        const cacheBusted = profileUrl + (profileUrl.includes('?') ? '&' : '?') + 't=' + Date.now();
+
+        imgEl.src = cacheBusted;
+        imgEl.style.padding = '0px';
+        imgEl.style.background = 'none';
+        imgEl.style.objectFit = 'cover';
+      } catch (e) {
+        console.debug('header profile image sync failed', e);
+      }
+    })();
+  </script>
+
 </header>
 
 </body>
