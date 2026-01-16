@@ -9,6 +9,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -18,5 +20,9 @@ public class MentorSearchService {
 
     public Page<MentorSearchResponse> searchMentors(MentorSearchCondition condition, Pageable pageable) {
         return memberRepository.searchMentors(condition, pageable);
+    }
+
+    public List<MentorSearchResponse> findPopularMentors() {
+        return memberRepository.findPopularMentors();
     }
 }

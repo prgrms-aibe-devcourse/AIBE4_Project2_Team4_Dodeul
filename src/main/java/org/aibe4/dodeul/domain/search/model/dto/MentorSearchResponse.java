@@ -36,6 +36,9 @@ public class MentorSearchResponse {
     @Schema(description = "경력(년차)", example = "5")
     private int careerYears;
 
+    @Schema(description = "자기소개", example = "백엔드를 정말 잘합니다.")
+    private String intro;
+
     @Schema(description = "기술 스택 목록", example = "[\"Spring Boot\", \"JPA\", \"Docker\"]")
     private List<String> skillTags;
 
@@ -72,6 +75,7 @@ public class MentorSearchResponse {
             .profileUrl(profile.getProfileUrl())
             .job(profile.getJob())
             .careerYears(profile.getCareerYears())
+            .intro(profile.getIntro())
             .skillTags(member.getSkillTags().stream()
                 .map(mst -> mst.getSkillTag().getName()).toList())
             .consultingTags(member.getConsultingTags().stream()

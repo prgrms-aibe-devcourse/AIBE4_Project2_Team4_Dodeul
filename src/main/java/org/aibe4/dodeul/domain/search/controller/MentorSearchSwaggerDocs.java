@@ -64,4 +64,60 @@ public interface MentorSearchSwaggerDocs {
     })
     @interface SearchMentors {
     }
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "인기 멘토 조회 성공",
+            content = @Content(
+                schema = @Schema(implementation = CommonResponse.class),
+                examples = @ExampleObject(value = """
+                    {
+                        "code": 200,
+                        "message": "성공",
+                        "data": [
+                            {
+                                "memberId": 10,
+                                "nickname": "스타멘토",
+                                "profileUrl": "https://example.com/profile1.jpg",
+                                "job": "BACKEND",
+                                "careerYears": 7,
+                                "intro": "스타멘토입니다."
+                                "skillTags": ["Spring Boot", "JPA"],
+                                "consultingTags": ["CAREER", "CODEREVIEW"],
+                                "recommendCount": 120,
+                                "completedMatchingCount": 150,
+                                "responseRate": 99.0,
+                                "status": "AVAILABLE"
+                            },
+                            {
+                                "memberId": 5,
+                                "nickname": "AI전문가",
+                                "profileUrl": null,
+                                "job": "AI_ENGINEER",
+                                "careerYears": 5,
+                                "intro": "AI 박사입니다."
+                                "skillTags": ["Python", "TensorFlow"],
+                                "consultingTags": ["CAREER"],
+                                "recommendCount": 98,
+                                "completedMatchingCount": 100,
+                                "responseRate": 95.5,
+                                "status": "FULL"
+                            }
+                        ]
+                    }
+                    """)
+            )),
+        @ApiResponse(responseCode = "500", description = "서버 오류",
+            content = @Content(
+                schema = @Schema(implementation = CommonResponse.class),
+                examples = @ExampleObject(
+                    name = "ServerError",
+                    summary = "서버 내부 오류",
+                    value = "{\"code\": 500, \"message\": \"서버 내부 오류가 발생했습니다.\", \"data\": null}"
+                )
+            ))
+    })
+    @interface PopularMentors {
+    }
 }
