@@ -8,6 +8,20 @@
   <th:block layout:fragment="head">
     <title>DODEUL | 멘토 프로필</title>
     <link rel="stylesheet" href="/css/mypage/dashboard.css">
+    <style>
+      /* 내 프로필과 동일하게 background-image 방식으로 통일 */
+      #mentorAvatar {
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+      }
+
+      /* 신청 버튼 로딩/비활성 상태 */
+      .btn-disabled {
+        opacity: .6;
+        pointer-events: none;
+      }
+    </style>
   </th:block>
 </head>
 
@@ -22,19 +36,20 @@
       </p>
     </div>
 
+    <!-- 상단 프로필 카드 -->
     <section class="card-custom" style="margin-bottom:16px;">
       <div class="dashboard-profile">
-        <div class="dashboard-avatar-lg" id="mentorAvatar"></div>
+        <div class="dashboard-avatar-lg" id="mentorAvatar" aria-label="멘토 프로필 이미지"></div>
 
         <div style="flex:1;">
           <div class="fw-bold" id="mentorName" style="margin-bottom:4px;">-</div>
-          <div class="text-small" id="mentorMeta">직무 / 경력 · 상담 분야</div>
+          <div class="text-small" id="mentorMeta">직무 · 연차 / 상담 가능 분야</div>
           <div class="text-small" id="mentorEnabled" style="margin-top:6px;"></div>
         </div>
 
         <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-end;">
-          <!-- 신청서 작성 URL에 맞춰 수정 -->
           <button class="btn-primary-custom"
+                  id="applyBtn"
                   th:if="${mentorId != null}"
                   th:data-mentor-id="${mentorId}"
                   onclick="checkAvailability(this.dataset.mentorId)">
@@ -47,16 +62,19 @@
       </div>
     </section>
 
+    <!-- 자기소개 -->
     <section class="card-custom" style="margin-bottom:16px;">
       <div class="fw-bold" style="margin-bottom:10px;">자기소개</div>
       <div id="mentorBio" class="text-small" style="white-space:pre-line;">불러오는 중…</div>
     </section>
 
+    <!-- 기술 스택 -->
     <section class="card-custom" style="margin-bottom:16px;">
       <div class="fw-bold" style="margin-bottom:10px;">기술 스택</div>
       <div id="mentorSkills"><span class="text-small">불러오는 중…</span></div>
     </section>
 
+    <!-- 상담 가능 분야 -->
     <section class="card-custom" style="margin-bottom:16px;">
       <div class="fw-bold" style="margin-bottom:10px;">상담 가능 분야</div>
       <div id="mentorConsultings"><span class="text-small">불러오는 중…</span></div>
@@ -68,6 +86,7 @@
 
 <th:block layout:fragment="script">
   <script th:inline="javascript">
+    // ===== 공통 유틸 =====
     async function apiRequest(url, options = {}) {
       const res = await fetch(url, {
         credentials: 'same-origin',
@@ -76,12 +95,18 @@
       });
 
       const json = await res.json().catch(() => null);
+
+      // CommonResponse 기반 방어 로직:
+      // - http status가 비정상
+      // - 또는 json.code가 숫자이고 400 이상
       const code = json?.code ?? res.status;
       const message = json?.message ?? `요청 실패(${res.status})`;
 
-      if (!res.ok || (typeof code === 'number' && code >= 400)) {
+      const numericCode = (typeof code === 'string') ? Number(code) : code;
+
+      if (!res.ok || (typeof numericCode === 'number' && !Number.isNaN(numericCode) && numericCode >= 400)) {
         const err = new Error(message);
-        err.code = code;
+        err.code = numericCode;
         err.payload = json;
         throw err;
       }
@@ -105,68 +130,169 @@
       root.innerHTML = arr.map(t => `<span class="tag tag--read-only">${escapeHtml(t)}</span>`).join('');
     }
 
+    function setAvatarBg(url) {
+      const avatar = document.getElementById('mentorAvatar');
+      if (!avatar) return;
+
+      if (url) {
+        // 캐시 무효화(t=timestamp)로 수정 직후에도 최신 이미지 반영
+        const cacheBusted = url + (url.includes('?') ? '&' : '?') + 't=' + Date.now();
+        avatar.style.backgroundImage = `url(${cacheBusted})`;
+      } else {
+        avatar.style.backgroundImage = 'none';
+      }
+    }
+
+    function setEnabledBadge(v) {
+      const el = document.getElementById('mentorEnabled');
+      if (!el) return;
+
+      if (v === false) {
+        el.innerHTML = `<span class="status-badge status-canceled">상담 비활성</span>`;
+      } else if (v === true) {
+        el.innerHTML = `<span class="status-badge status-completed">상담 가능</span>`;
+      } else {
+        el.textContent = '';
+      }
+    }
+
+    function setApplyButtonEnabled(isEnabled, reasonText = '') {
+      const btn = document.getElementById('applyBtn');
+      if (!btn) return;
+
+      if (isEnabled) {
+        btn.disabled = false;
+        btn.classList.remove('btn-disabled');
+        if (reasonText) btn.title = reasonText;
+        else btn.removeAttribute('title');
+      } else {
+        btn.disabled = true;
+        btn.classList.add('btn-disabled');
+        if (reasonText) btn.title = reasonText;
+      }
+    }
+
+    // ===== 서버에서 내려온 mentorId =====
     const mentorId = /*[[${mentorId}]]*/ 0;
 
+    // ===== 초기 로딩 =====
     (async function () {
       const errEl = document.getElementById('profileError');
 
       if (!mentorId) {
         errEl.textContent = '잘못된 접근입니다. (mentorId 누락)';
+        setApplyButtonEnabled(false, 'mentorId 누락');
         return;
       }
 
       try {
         const json = await apiRequest(`/api/public/mentor/${mentorId}`);
-        const data = json.data || {};
+        const data = json?.data || {};
 
-        document.getElementById('mentorName').textContent = data.nickname ?? '-';
+        // ---- 필드 호환 레이어(서버 DTO 변경 대비) ----
+        // consultingFields / consultingTags 둘 다 지원
+        const consultings = (data.consultingFields ?? data.consultingTags ?? []);
+        const consultingText = (Array.isArray(consultings) && consultings.length)
+          ? consultings.join(', ')
+          : '-';
 
         const job = data.job ?? '-';
-        const years = (data.careerYears != null) ? `${data.careerYears}년차` : '-';
-        const fields = (data.consultingFields && data.consultingFields.length)
-          ? data.consultingFields.join(', ')
-          : '-';
-        document.getElementById('mentorMeta').textContent = `${job} / ${years} · ${fields}`;
+        const years = data.careerYears;
+        const yearsText = (years === null || years === undefined || years === '') ? '-' : `${years}년차`;
 
+        // 닉네임 표기 통일
+        const nickname = data.nickname ?? '-';
+        document.getElementById('mentorName').textContent = (nickname && nickname !== '-') ? `${nickname} 멘토` : '멘토';
+
+        // 표기 포맷: 내 프로필과 동일
+        document.getElementById('mentorMeta').textContent =
+          `${job} · ${yearsText} / ${consultingText}`;
+
+        // 상담 가능/비활성 뱃지 + 버튼 비활성
+        setEnabledBadge(data.consultationEnabled);
         if (data.consultationEnabled === false) {
-          document.getElementById('mentorEnabled').innerHTML =
-            `<span class="status-badge status-canceled">상담 비활성</span>`;
-        } else if (data.consultationEnabled === true) {
-          document.getElementById('mentorEnabled').innerHTML =
-            `<span class="status-badge status-completed">상담 가능</span>`;
+          setApplyButtonEnabled(false, '상담이 비활성화된 멘토입니다.');
         } else {
-          document.getElementById('mentorEnabled').textContent = '';
+          setApplyButtonEnabled(true);
         }
 
+        // 소개
         document.getElementById('mentorBio').textContent =
           data.intro ?? '자기소개가 아직 등록되지 않았습니다.';
 
+        // 태그들
         renderTags(document.getElementById('mentorSkills'), data.skillTags ?? []);
-        renderTags(document.getElementById('mentorConsultings'), data.consultingFields ?? []);
+        renderTags(document.getElementById('mentorConsultings'), consultings ?? []);
 
-        if (data.profileUrl) {
-          document.getElementById('mentorAvatar').innerHTML =
-            `<img alt="profile" src="${escapeHtml(data.profileUrl)}" style="width:100%;height:100%;object-fit:cover;border-radius:999px;">`;
-        }
+        // 프로필 이미지(bg)
+        setAvatarBg(data.profileUrl);
 
       } catch (e) {
         console.error(e);
         errEl.textContent = e?.message ?? '프로필을 불러오지 못했습니다.';
+        setApplyButtonEnabled(false, '프로필 로딩 실패');
       }
     })();
 
-    // 매칭 가능 여부 확인 후 상담신청서 작성 페이지로 리다이렉트
-    function checkAvailability(mentorId) {
-      fetch(`/api/matchings/availability?mentorId=${mentorId}`)
-        .then(response => response.json())
-        .then(data => {
-          if (data.code >= 200 && data.code < 300) {
-            location.href = `/consulting-applications/form?mentorId=${mentorId}`;
-          } else {
-            showCommonModal(data.message || '현재 상담 신청이 불가능합니다.');
-          }
-        })
-        .catch(err => showCommonModal('서버 통신 중 오류가 발생했습니다.'));
+    // ===== 신청 흐름: 매칭 가능 여부 확인 후 신청서로 이동 =====
+    async function checkAvailability(mentorId) {
+      const btn = document.getElementById('applyBtn');
+      const originalText = btn ? btn.textContent : '';
+
+      try {
+        if (btn) {
+          btn.textContent = '확인 중...';
+          btn.classList.add('btn-disabled');
+          btn.disabled = true;
+        }
+
+        // availability API는 팀마다 CommonResponse를 쓰기도/안쓰기도 해서 방어적으로 처리
+        const res = await fetch(`/api/matchings/availability?mentorId=${encodeURIComponent(mentorId)}`, {
+          credentials: 'same-origin',
+          headers: {'accept': 'application/json'}
+        });
+        const json = await res.json().catch(() => null);
+
+        // 가능한 성공 판정 케이스들:
+        // 1) CommonResponse: code 2xx
+        // 2) { available: true } 또는 data.available 형태
+        const code = json?.code ?? res.status;
+        const numericCode = (typeof code === 'string') ? Number(code) : code;
+
+        const available =
+          (typeof json?.available === 'boolean' ? json.available : undefined) ??
+          (typeof json?.data?.available === 'boolean' ? json.data.available : undefined);
+
+        const okByCode =
+          res.ok && (typeof numericCode !== 'number' || Number.isNaN(numericCode) || (numericCode >= 200 && numericCode < 300));
+
+        if ((available === true) || (available === undefined && okByCode)) {
+          location.href = `/consulting-applications/form?mentorId=${encodeURIComponent(mentorId)}`;
+          return;
+        }
+
+        // 실패 메시지
+        const msg = json?.message || '현재 상담 신청이 불가능합니다.';
+        if (typeof showCommonModal === 'function') {
+          showCommonModal(msg);
+        } else {
+          alert(msg);
+        }
+
+      } catch (err) {
+        const msg = '서버 통신 중 오류가 발생했습니다.';
+        if (typeof showCommonModal === 'function') {
+          showCommonModal(msg);
+        } else {
+          alert(msg);
+        }
+      } finally {
+        if (btn) {
+          btn.textContent = originalText || '신청하기';
+          btn.classList.remove('btn-disabled');
+          btn.disabled = false;
+        }
+      }
     }
   </script>
 </th:block>
