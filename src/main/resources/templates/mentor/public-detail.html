@@ -9,7 +9,6 @@
     <title>DODEUL | 멘토 프로필</title>
     <link rel="stylesheet" href="/css/mypage/dashboard.css">
     <style>
-      /* 내 프로필과 동일하게 background-image 방식으로 통일 */
       #mentorAvatar {
         background-size: cover;
         background-position: center;
@@ -96,9 +95,6 @@
 
       const json = await res.json().catch(() => null);
 
-      // CommonResponse 기반 방어 로직:
-      // - http status가 비정상
-      // - 또는 json.code가 숫자이고 400 이상
       const code = json?.code ?? res.status;
       const message = json?.message ?? `요청 실패(${res.status})`;
 
@@ -172,7 +168,7 @@
       }
     }
 
-    // ===== 서버에서 내려온 mentorId =====
+    // ===== mentorId =====
     const mentorId = /*[[${mentorId}]]*/ 0;
 
     // ===== 초기 로딩 =====
@@ -190,7 +186,6 @@
         const data = json?.data || {};
 
         // ---- 필드 호환 레이어(서버 DTO 변경 대비) ----
-        // consultingFields / consultingTags 둘 다 지원
         const consultings = (data.consultingFields ?? data.consultingTags ?? []);
         const consultingText = (Array.isArray(consultings) && consultings.length)
           ? consultings.join(', ')
@@ -253,9 +248,6 @@
         });
         const json = await res.json().catch(() => null);
 
-        // 가능한 성공 판정 케이스들:
-        // 1) CommonResponse: code 2xx
-        // 2) { available: true } 또는 data.available 형태
         const code = json?.code ?? res.status;
         const numericCode = (typeof code === 'string') ? Number(code) : code;
 
