@@ -14,11 +14,28 @@
         background-position: center;
         background-repeat: no-repeat;
       }
+
+      /* 이니셜 아바타 스타일 */
+      #profileAvatar.avatar-initial {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        color: white !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-weight: 600 !important;
+        font-size: 32px !important;
+        line-height: 1 !important;
+      }
     </style>
   </th:block>
 </head>
 
 <body>
+
+<div layout:fragment="sidebar">
+  <div th:replace="~{common/fragments/sidebar :: sidebar('profile')}"></div>
+</div>
+
 <div layout:fragment="page">
   <div class="dashboard-header">
     <h2 class="fw-bold" style="margin-bottom:8px;">프로필</h2>
@@ -82,15 +99,21 @@
       root.innerHTML = arr.map(t => `<span class="tag tag--read-only">${escapeHtml(t)}</span>`).join('');
     }
 
-    function setAvatar(url) {
+    function setAvatar(url, nickname) {
       const el = document.getElementById('profileAvatar');
       if (!el) return;
 
       if (url) {
+        // 이미지가 있는 경우
         const cacheBusted = url + (url.includes('?') ? '&' : '?') + 't=' + Date.now();
         el.style.backgroundImage = `url(${cacheBusted})`;
+        el.classList.remove('avatar-initial');
+        el.textContent = '';
       } else {
+        // 이미지가 없는 경우 - 이니셜 표시
         el.style.backgroundImage = 'none';
+        el.classList.add('avatar-initial');
+        el.textContent = nickname ? nickname.substring(0, 1).toUpperCase() : 'U';
       }
     }
 
@@ -106,6 +129,7 @@
         }
 
         const data = json?.data || {};
+        const nickname = data.nickname || '멘티';
         document.getElementById('menteeName').textContent = data.nickname ? `${data.nickname} 멘티` : '멘티';
 
         const desiredJob = data.job ?? '-';
@@ -122,7 +146,7 @@
         renderTags(document.getElementById('menteeSkills'), data.skillTags ?? []);
         renderTags(document.getElementById('menteeConsultings'), data.consultingTags ?? []);
 
-        setAvatar(data.profileUrl);
+        setAvatar(data.profileUrl, nickname);
 
       } catch (e) {
         err.textContent = '서버와 통신할 수 없습니다.';

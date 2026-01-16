@@ -12,6 +12,11 @@
 </head>
 
 <body>
+
+<div layout:fragment="sidebar">
+  <div th:replace="~{common/fragments/sidebar :: sidebar('sessions')}"></div>
+</div>
+
 <div layout:fragment="page">
 
   <div class="dashboard-header">
@@ -168,7 +173,12 @@
 
         const applicationBtn = `
           <a class="btn-outline-custom"
-             style="padding:8px 10px; font-size:12px;"
+             style="
+               padding:8px 10px;
+               font-size:12px;
+               min-width:96px;
+               text-align:center;
+             "
              href="${escapeHtml(applicationHref(it.matchingId))}"
              data-application-btn="true"
              data-matching-id="${escapeHtml(it.matchingId)}">
@@ -201,18 +211,28 @@
           : '';
 
         return `
-          <div class="dashboard-row">
-            <div>
+          <div class="dashboard-row"
+               style="display:grid; grid-template-columns: 1fr 120px auto; align-items:center; column-gap:16px;">
+
+            <!-- 왼쪽: 제목/서브 -->
+            <div style="min-width:0;">
               <div class="dashboard-row-title">${title}</div>
               <div class="dashboard-row-sub">${counterpart} · ${time}</div>
             </div>
-            <div class="dashboard-row-right">
+
+            <!-- 가운데: 상태 배지 -->
+            <div style="display:flex; justify-content:center;">
               ${badge}
+            </div>
+
+            <!-- 오른쪽: 버튼들 (신청서 조회는 항상 마지막) -->
+            <div style="display:flex; align-items:center; gap:8px; justify-content:flex-end;">
               ${enterBtn}
-              ${applicationBtn}
               ${cancelBtn}
               ${completeBtn}
+              ${applicationBtn}
             </div>
+
           </div>
         `;
       }).join('');

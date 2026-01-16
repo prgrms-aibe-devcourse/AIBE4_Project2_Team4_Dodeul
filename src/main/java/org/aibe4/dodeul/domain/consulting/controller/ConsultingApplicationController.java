@@ -1,11 +1,17 @@
 package org.aibe4.dodeul.domain.consulting.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.aibe4.dodeul.domain.consulting.model.dto.ConsultingApplicationDetailResponse;
 import org.aibe4.dodeul.domain.consulting.model.dto.ConsultingApplicationRequest;
 import org.aibe4.dodeul.domain.consulting.model.enums.ConsultingTag;
 import org.aibe4.dodeul.domain.consulting.service.ConsultingApplicationService;
+import org.aibe4.dodeul.domain.matching.model.entity.Matching;
+import org.aibe4.dodeul.domain.matching.model.repository.MatchingRepository;
 import org.aibe4.dodeul.domain.member.service.MemberService;
 import org.aibe4.dodeul.global.security.CustomUserDetails;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -14,15 +20,21 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.NoSuchElementException;
+
 @Controller
 @RequestMapping("/consulting-applications")
 @RequiredArgsConstructor
+@Tag(name = "Consulting", description = "상담 신청 화면(HTML) 관련 Controller")
 public class ConsultingApplicationController {
 
     private final ConsultingApplicationService consultingApplicationService;
     private final MemberService memberService;
 
+    private final MatchingRepository matchingRepository;
+
     // 1. 작성 폼
+    @Operation(summary = "상담 신청 폼 이동", description = "상담 신청서를 작성하는 페이지를 반환합니다.")
     @GetMapping("/form")
     public String applicationForm(
         @RequestParam(value = "mentorId", required = false) Long mentorId,
@@ -40,6 +52,12 @@ public class ConsultingApplicationController {
     }
 
     // 2. 등록 처리
+    @Operation(summary = "상담 신청 등록 처리", description = "작성한 폼 데이터를 받아 DB에 저장하고 매칭 대기 화면으로 이동합니다.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "등록 성공 (화면 이동)"),
+        @ApiResponse(responseCode = "400", description = "잘못된 입력값 (제목 누락, 비속어 등)"),
+        @ApiResponse(responseCode = "401", description = "로그인 필요")
+    })
     @PostMapping
     public String registerApplication(
         @Valid @ModelAttribute("request") ConsultingApplicationRequest request,
@@ -62,21 +80,16 @@ public class ConsultingApplicationController {
             return "redirect:/matchings/new?applicationId=" + savedApplicationId;
 
         } catch (IllegalArgumentException e) {
-            // [추가된 부분] 비속어/정책 위반 예외 발생 시 처리
-
-            // 1. 에러 메시지 전달 (HTML에서 alert로 띄움)
+            // 비속어/정책 위반 예외 발생 시 처리
             model.addAttribute("errorMessage", e.getMessage());
-
-            // 2. 화면 구성을 위한 기본 데이터 다시 세팅
             model.addAttribute("consultingTags", ConsultingTag.values());
             model.addAttribute("formActionUrl", "/consulting-applications");
-
-            // 3. 입력했던 내용은 'request' 객체에 남아있으므로 그대로 폼으로 복귀
             return "consulting/application-form";
         }
     }
 
     // 3. 상세 조회
+    @Operation(summary = "상담 신청 상세 조회 (멘티용)", description = "신청한 상담의 상세 내용을 보여줍니다.")
     @GetMapping("/{applicationId}")
     public String getApplicationDetail(@PathVariable Long applicationId, Model model) {
         ConsultingApplicationDetailResponse response =
@@ -86,6 +99,7 @@ public class ConsultingApplicationController {
     }
 
     // [누락 주의] 아까 만든 멘토 전용 상세 조회
+    @Operation(summary = "상담 신청 상세 조회 (멘토용)", description = "멘토가 요청받은 상담 내용을 확인합니다.")
     @GetMapping("/{applicationId}/mentor-view")
     public String viewMentorApplicationDetail(@PathVariable Long applicationId, Model model) {
         ConsultingApplicationDetailResponse response =
@@ -96,6 +110,7 @@ public class ConsultingApplicationController {
     }
 
     // 4. 수정 폼
+    @Operation(summary = "상담 신청 수정 폼 이동", description = "기존에 작성한 내용을 수정하는 페이지로 이동합니다.")
     @GetMapping("/{applicationId}/edit")
     public String editForm(
         @PathVariable Long applicationId,
@@ -110,8 +125,7 @@ public class ConsultingApplicationController {
             throw new IllegalStateException("수정 권한이 없습니다.");
         }
 
-        // 3. [핵심 해결책] HTML 렌더링 에러 방지를 위해 빈 값 추가
-        // 수정 페이지 진입 시 mentorId와 mentorName이 없어서 발생하는 500 에러를 막아줍니다.
+        // 3. HTML 렌더링 에러 방지
         model.addAttribute("mentorId", null);
         model.addAttribute("mentorName", "");
 
@@ -123,6 +137,7 @@ public class ConsultingApplicationController {
     }
 
     // 5. 수정 처리
+    @Operation(summary = "상담 신청 수정 처리", description = "수정된 내용을 DB에 반영합니다.")
     @PostMapping("/{applicationId}/edit")
     public String updateApplication(
         @PathVariable Long applicationId,
@@ -143,6 +158,7 @@ public class ConsultingApplicationController {
     }
 
     // 6. 삭제 처리
+    @Operation(summary = "상담 신청 삭제", description = "상담 신청서를 삭제합니다.")
     @PostMapping("/{applicationId}/delete")
     public String deleteApplication(
         @PathVariable Long applicationId,
@@ -152,6 +168,7 @@ public class ConsultingApplicationController {
         return "redirect:/";
     }
 
+    @Operation(summary = "매칭 ID로 상세 조회 (멘티용)", description = "매칭 정보를 통해 신청서 상세 내용을 조회합니다.")
     @GetMapping("/matching/{matchingId}")
     public String getApplicationDetailByMatching(
         @PathVariable Long matchingId,
@@ -170,11 +187,16 @@ public class ConsultingApplicationController {
 
         ConsultingApplicationDetailResponse response =
             consultingApplicationService.getApplicationDetail(applicationId);
+        Matching matching = matchingRepository.findById(matchingId)
+            .orElseThrow(() -> new NoSuchElementException("매칭을 찾을 수 없습니다: " + matchingId));
 
+        model.addAttribute("matchingId", matchingId);
+        model.addAttribute("matchingStatus", matching.getStatus().name());
         model.addAttribute("appDetail", response);
         return "consulting/application-detail";
     }
 
+    @Operation(summary = "매칭 ID로 상세 조회 (멘토용)", description = "매칭 정보를 통해 신청서 상세 내용을 조회합니다.")
     @GetMapping("/matching/{matchingId}/mentor-view")
     public String getApplicationDetailByMatchingForMentor(
         @PathVariable Long matchingId,
@@ -191,7 +213,11 @@ public class ConsultingApplicationController {
 
         ConsultingApplicationDetailResponse response =
             consultingApplicationService.getApplicationDetail(applicationId);
+        Matching matching = matchingRepository.findById(matchingId)
+            .orElseThrow(() -> new NoSuchElementException("매칭을 찾을 수 없습니다: " + matchingId));
 
+        model.addAttribute("matchingId", matchingId);
+        model.addAttribute("matchingStatus", matching.getStatus().name());
         model.addAttribute("appDetail", response);
         return "consulting/application-mento-detail";
     }

@@ -26,6 +26,7 @@ public class MatchingApiController {
     private final MatchingService matchingService;
 
     @Operation(summary = "내 매칭 내역 조회", description = "사용자의 모든 매칭 내역을 조회")
+    @MatchingSwaggerDocs.GetHistory
     @GetMapping
     public CommonResponse<List<MatchingHistoryResponse>> getMyMatchingHistory(
         @AuthenticationPrincipal CustomUserDetails userDetails) {
@@ -75,6 +76,7 @@ public class MatchingApiController {
     @PreAuthorize("hasRole('MENTOR')")
     @PostMapping("/{matchingId}/acceptance")
     public CommonResponse<MatchingStatusResponse> acceptMatching(
+        @Parameter(description = "매칭 ID", example = "1", required = true)
         @PathVariable Long matchingId,
         @AuthenticationPrincipal CustomUserDetails userDetails) {
 
@@ -88,6 +90,7 @@ public class MatchingApiController {
     @PreAuthorize("hasRole('MENTOR')")
     @PostMapping("/{matchingId}/rejection")
     public CommonResponse<MatchingStatusResponse> rejectMatching(
+        @Parameter(description = "매칭 ID", example = "1", required = true)
         @PathVariable Long matchingId,
         @AuthenticationPrincipal CustomUserDetails userDetails) {
 
@@ -101,6 +104,7 @@ public class MatchingApiController {
     @PreAuthorize("hasRole('MENTEE')")
     @PostMapping("/{matchingId}/cancellation")
     public CommonResponse<MatchingStatusResponse> cancelMatching(
+        @Parameter(description = "매칭 ID", example = "1", required = true)
         @PathVariable Long matchingId,
         @AuthenticationPrincipal CustomUserDetails userDetails) {
 
@@ -114,6 +118,7 @@ public class MatchingApiController {
     @PreAuthorize("hasAnyRole('MENTOR', 'MENTEE')")
     @PostMapping("/{matchingId}/finishing")
     public CommonResponse<MatchingStatusResponse> finishMatching(
+        @Parameter(description = "매칭 ID", example = "1", required = true)
         @PathVariable Long matchingId,
         @AuthenticationPrincipal CustomUserDetails userDetails) {
 
@@ -127,6 +132,7 @@ public class MatchingApiController {
     @PreAuthorize("hasRole('MENTEE')")
     @PostMapping("/{matchingId}/completion")
     public CommonResponse<MatchingStatusResponse> completeMatching(
+        @Parameter(description = "매칭 ID", example = "1", required = true)
         @PathVariable Long matchingId,
         @AuthenticationPrincipal CustomUserDetails userDetails) {
 

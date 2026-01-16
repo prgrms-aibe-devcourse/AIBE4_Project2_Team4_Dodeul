@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<div th:fragment="card(mentor)" class="card h-100 border-0 shadow-sm home-mentor-card">
+  <div class="card-body d-flex flex-column align-items-center text-center p-4">
+
+    <div class="mb-3 position-relative">
+
+      <img th:if="${not #strings.isEmpty(mentor.profileUrl)}"
+           th:src="${mentor.profileUrl}"
+           th:alt="${mentor.nickname}"
+           class="rounded-circle border"
+           style="width: 80px; height: 80px; object-fit: cover; aspect-ratio: 1/1;"
+           onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+
+      <div class="mentor-card-avatar--initial border"
+           th:style="${not #strings.isEmpty(mentor.profileUrl) ? 'display: none;' : 'display: flex;'}"
+           style="width: 80px; height: 80px; border-radius: 50%; font-size: 2rem;">
+        <span th:text="${mentor.nickname != null ? #strings.substring(mentor.nickname, 0, 1) : 'M'}">N</span>
+      </div>
+
+    </div>
+
+    <div class="fw-bold mb-1" style="font-size: 1.1rem; color: #333;" th:text="${mentor.nickname}">닉네임</div>
+
+    <p class="text-secondary small mb-3" th:text="${mentor.job}">직무</p>
+
+    <p class="text-muted small px-2 mb-4"
+       style="word-break: keep-all; min-height: 40px;">
+      "
+      <span th:text="${mentor.intro != null ? #strings.abbreviate(mentor.intro, 15) : '안녕하세요! 잘 부탁드립니다.'}">
+             한줄소개...
+           </span>
+      "
+    </p>
+
+    <div class="mt-auto d-flex flex-wrap justify-content-center gap-1">
+             <span th:each="skill, iterStat : ${mentor.skillTags}"
+                   th:if="${iterStat.index < 3}"
+                   class="badge bg-light text-secondary fw-normal border"
+                   th:text="${skill}">Skill</span>
+    </div>
+
+    <a th:href="@{/mentor/public/{id}(id=${mentor.memberId})}" class="stretched-link"></a>
+  </div>
+</div>
+</html>

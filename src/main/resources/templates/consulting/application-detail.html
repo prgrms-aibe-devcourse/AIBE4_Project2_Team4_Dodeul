@@ -64,15 +64,15 @@
              th:href="${appDetail.fileUrl}"
              class="text-decoration-none text-dark fw-bold"
              download>
-    <span
-      th:text="${#strings.contains(appDetail.fileUrl, '/') ? #strings.substringAfter(appDetail.fileUrl, '/') : appDetail.fileUrl}">
-        파일명.png
-    </span>
+        <span th:with="fileUrl=${appDetail.fileUrl}, lastIdx=${fileUrl.lastIndexOf('/')}"
+              th:text="${lastIdx != -1 ? fileUrl.substring(lastIdx + 1) : fileUrl}">
+            파일명.png
+        </span>
           </a>
 
           <span th:if="${appDetail.fileUrl == null or appDetail.fileUrl.isEmpty()}" class="text-muted small">
-     첨부된 파일이 없습니다.
-  </span>
+        첨부된 파일이 없습니다.
+    </span>
         </div>
 
       </div>
@@ -83,10 +83,13 @@
          class="btn btn-outline-secondary px-4">
         수정하기
       </a>
-      <a href="/" class="btn btn-outline-dark px-4">홈으로</a>
-    </div>
 
-  </div>
+      <button type="button"
+              class="btn btn-outline-dark px-4"
+              onclick="history.back()">
+        취소하기
+      </button>
+    </div>
 </section>
 </body>
 </html>

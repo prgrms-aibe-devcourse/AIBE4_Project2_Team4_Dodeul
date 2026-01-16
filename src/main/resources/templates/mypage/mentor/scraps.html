@@ -45,6 +45,11 @@
 </head>
 
 <body>
+
+<div layout:fragment="sidebar">
+  <div th:replace="~{common/fragments/sidebar :: sidebar('scraps')}"></div>
+</div>
+
 <div layout:fragment="page">
   <div class="dashboard-header">
     <h2 class="fw-bold" style="margin-bottom: 8px">스크랩</h2>

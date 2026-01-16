@@ -14,11 +14,28 @@
         background-position: center;
         background-repeat: no-repeat;
       }
+
+      /* 이니셜 아바타 스타일 */
+      #profileAvatar.avatar-initial {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        color: white !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-weight: 600 !important;
+        font-size: 32px !important;
+        line-height: 1 !important;
+      }
     </style>
   </th:block>
 </head>
 
 <body>
+
+<div layout:fragment="sidebar">
+  <div th:replace="~{common/fragments/sidebar :: sidebar('dashboard')}"></div>
+</div>
+
 <div layout:fragment="page">
   <div class="dashboard-header">
     <h2 class="fw-bold" style="margin-bottom:8px;">대시보드</h2>
@@ -164,15 +181,21 @@
         .replaceAll("'", "&#039;");
     }
 
-    function setAvatar(url) {
+    function setAvatar(url, nickname) {
       const el = document.getElementById('profileAvatar');
       if (!el) return;
 
       if (url) {
+        // 이미지가 있는 경우
         const cacheBusted = url + (url.includes('?') ? '&' : '?') + 't=' + Date.now();
         el.style.backgroundImage = `url(${cacheBusted})`;
+        el.classList.remove('avatar-initial');
+        el.textContent = '';
       } else {
+        // 이미지가 없는 경우 - 이니셜 표시
         el.style.backgroundImage = 'none';
+        el.classList.add('avatar-initial');
+        el.textContent = nickname ? nickname.substring(0, 1).toUpperCase() : 'U';
       }
     }
 
@@ -261,13 +284,14 @@
 
         if (profileRes.ok) {
           const p = profileJson?.data || {};
+          const nickname = p.nickname || '멘토';
           document.getElementById('mentorName').textContent = p.nickname ? `${p.nickname} 멘토` : '멘토';
 
           const job = p.job ?? '-';
           const fields = (p.consultingTags && p.consultingTags.length) ? p.consultingTags.join(', ') : '-';
           document.getElementById('mentorDesc').textContent = `${job} / ${fields}`;
 
-          setAvatar(p.profileUrl);
+          setAvatar(p.profileUrl, nickname);
 
           // 상담 상태 렌더링 + 토글 버튼 연결
           const enabled = !!p.consultationEnabled;
@@ -290,7 +314,8 @@
               const next = !enabled;
               const label = next ? '상담을 받도록 전환' : '상담을 받지 않도록 전환';
 
-              if (!confirm(`${label}할까요?`)) return;
+              const isConfirmed = await showConfirmModal(`${label}할까요?`);
+              if (!isConfirmed) return;
 
               try {
                 btn.disabled = true;
@@ -307,7 +332,7 @@
                 location.reload();
               } catch (e) {
                 console.error(e);
-                alert(e?.message ?? '상담 상태 변경에 실패했습니다.');
+                showCommonModal(e?.message ?? '상담 상태 변경에 실패했습니다.');
               } finally {
                 btn.disabled = false;
               }

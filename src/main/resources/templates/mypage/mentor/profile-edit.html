@@ -24,11 +24,28 @@
       .upload-status {
         font-size: 12px;
       }
+
+      /* 이니셜 아바타 스타일 */
+      #profileAvatar.avatar-initial {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        color: white !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-weight: 600 !important;
+        font-size: 32px !important;
+        line-height: 1 !important;
+      }
     </style>
   </th:block>
 </head>
 
 <body>
+
+<div layout:fragment="sidebar">
+  <div th:replace="~{common/fragments/sidebar :: sidebar('profile')}"></div>
+</div>
+
 <div layout:fragment="page">
 
   <div class="dashboard-header">
@@ -130,12 +147,12 @@
       const message = json?.message ?? `요청 실패(${res.status})`;
 
       if (code === 401) {
-        alert('로그인이 필요합니다.');
+        showCommonModal('로그인이 필요합니다.');
         location.href = '/auth/login';
         throw new Error('UNAUTHORIZED');
       }
       if (code === 403) {
-        alert(message || '접근 권한이 없습니다.');
+        showCommonModal(message || '접근 권한이 없습니다.');
         location.href = '/';
         throw new Error('FORBIDDEN');
       }
@@ -156,16 +173,22 @@
         .filter(Boolean);
     }
 
-    function setAvatar(url) {
+    function setAvatar(url, nickname) {
       const avatar = document.getElementById('profileAvatar');
       if (!avatar) return;
 
       if (url) {
+        // 이미지가 있는 경우
         avatar.style.backgroundImage = `url(${url})`;
         avatar.style.backgroundSize = 'cover';
         avatar.style.backgroundPosition = 'center';
+        avatar.classList.remove('avatar-initial');
+        avatar.textContent = '';
       } else {
+        // 이미지가 없는 경우 - 이니셜 표시
         avatar.style.backgroundImage = 'none';
+        avatar.classList.add('avatar-initial');
+        avatar.textContent = nickname ? nickname.substring(0, 1).toUpperCase() : 'U';
       }
     }
 
@@ -200,7 +223,8 @@
         }
 
         const url = json?.data;
-        setAvatar(url);
+        const nickname = document.getElementById('mentorName').textContent.replace(' 멘토', '');
+        setAvatar(url, nickname);
         status.textContent = '업로드 완료';
 
       } catch (err) {
@@ -223,6 +247,7 @@
         }
 
         const data = json?.data || {};
+        const nickname = data.nickname || '멘토';
         document.getElementById('mentorName').textContent = data.nickname ? `${data.nickname} 멘토` : '멘토';
 
         const job = data.job ?? '-';
@@ -234,7 +259,7 @@
           : '-';
         document.getElementById('mentorMeta').textContent = `${job} · ${yearsText} / ${fields}`;
 
-        setAvatar(data.profileUrl);
+        setAvatar(data.profileUrl, nickname);
 
         document.getElementById('jobInput').value = data.job ?? '';
         document.getElementById('careerYearsInput').value = (data.careerYears ?? '');
@@ -273,8 +298,8 @@
           body: JSON.stringify(payload)
         });
 
-        alert('저장되었습니다.');
-        location.href = '/mentor/profile';
+        showCommonModal('저장되었습니다.');
+        setTimeout(() => location.href = '/mentor/profile', 300);
       } catch (e) {
         console.error(e);
         err.textContent = e?.message ?? '저장 중 오류가 발생했습니다.';

@@ -14,11 +14,28 @@
         background-position: center;
         background-repeat: no-repeat;
       }
+
+      /* 이니셜 아바타 스타일 */
+      #profileAvatar.avatar-initial {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        color: white !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-weight: 600 !important;
+        font-size: 32px !important;
+        line-height: 1 !important;
+      }
     </style>
   </th:block>
 </head>
 
 <body>
+
+<div layout:fragment="sidebar">
+  <div th:replace="~{common/fragments/sidebar :: sidebar('dashboard')}"></div>
+</div>
+
 <div layout:fragment="page">
   <div class="dashboard-header">
     <h2 class="fw-bold" style="margin-bottom:8px;">대시보드</h2>
@@ -120,12 +137,12 @@
       const message = json?.message ?? `요청 실패(${res.status})`;
 
       if (code === 401) {
-        alert('로그인이 필요합니다.');
+        showCommonModal('로그인이 필요합니다.');
         location.href = '/';
         throw new Error('UNAUTHORIZED');
       }
       if (code === 403) {
-        alert(message || '접근 권한이 없습니다.');
+        showCommonModal(message || '접근 권한이 없습니다.');
         location.href = '/';
         throw new Error('FORBIDDEN');
       }
@@ -147,15 +164,21 @@
         .replaceAll("'", "&#039;");
     }
 
-    function setAvatar(url) {
+    function setAvatar(url, nickname) {
       const el = document.getElementById('profileAvatar');
       if (!el) return;
 
       if (url) {
+        // 이미지가 있는 경우
         const cacheBusted = url + (url.includes('?') ? '&' : '?') + 't=' + Date.now();
         el.style.backgroundImage = `url(${cacheBusted})`;
+        el.classList.remove('avatar-initial');
+        el.textContent = '';
       } else {
+        // 이미지가 없는 경우 - 이니셜 표시
         el.style.backgroundImage = 'none';
+        el.classList.add('avatar-initial');
+        el.textContent = nickname ? nickname.substring(0, 1).toUpperCase() : 'U';
       }
     }
 
@@ -229,13 +252,15 @@
         const profileJson = await profileRes.json().catch(() => null);
         if (profileRes.ok) {
           const p = profileJson?.data || {};
+          const nickname = p.nickname || '멘티';
           document.getElementById('menteeName').textContent = p.nickname ? `${p.nickname} 멘티` : '멘티';
 
           const job = p.job ?? '-';
           const fields = (p.consultingTags && p.consultingTags.length) ? p.consultingTags.join(', ') : '-';
           document.getElementById('menteeDesc').textContent = `${job} / ${fields}`;
 
-          setAvatar(p.profileUrl);
+          // 프로필 이미지 또는 이니셜 설정
+          setAvatar(p.profileUrl, nickname);
         }
       } catch (e) {
         console.error(e);

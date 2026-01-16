@@ -1,5 +1,7 @@
 package org.aibe4.dodeul.domain.member.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.aibe4.dodeul.domain.member.service.ProfileImageService;
 import org.aibe4.dodeul.global.response.CommonResponse;
@@ -13,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+@Tag(name = "Member", description = "회원/마이페이지 API")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/mypage")
@@ -20,6 +23,8 @@ public class ProfileImageApiController {
 
     private final ProfileImageService profileImageService;
 
+    @Operation(summary = "멘토 프로필 이미지 업로드", description = "멘토 프로필 이미지를 업로드하고 URL을 반환합니다.")
+    @MemberSwaggerDocs.UploadProfileImage
     @PreAuthorize("hasRole('MENTOR')")
     @PostMapping(value = "/mentor/profile-image", consumes = "multipart/form-data")
     public CommonResponse<String> uploadMentorProfileImage(
@@ -30,6 +35,8 @@ public class ProfileImageApiController {
         return CommonResponse.success(SuccessCode.UPDATE_SUCCESS, url, "멘토 프로필 이미지 업로드 성공");
     }
 
+    @Operation(summary = "멘티 프로필 이미지 업로드", description = "멘티 프로필 이미지를 업로드하고 URL을 반환합니다.")
+    @MemberSwaggerDocs.UploadProfileImage
     @PreAuthorize("hasRole('MENTEE')")
     @PostMapping(value = "/mentee/profile-image", consumes = "multipart/form-data")
     public CommonResponse<String> uploadMenteeProfileImage(

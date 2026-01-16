@@ -1,35 +1,195 @@
 <!DOCTYPE html>
-<html lang="ko"
+<html xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{common/layout/base}">
 
 <head>
   <title>DODEUL | 홈</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"/>
+
+  <style>
+    :root {
+      --color-primary: #0d6efd;
+      --color-bg-light: #f8f9fa;
+    }
+
+    /* 1. 히어로 섹션 */
+    .hero-section {
+      background-color: #fff;
+      padding: 80px 0;
+      overflow: hidden;
+    }
+
+    .hero-title {
+      font-size: 2.5rem;
+      font-weight: 800;
+      line-height: 1.3;
+      margin-bottom: 20px;
+      color: #333;
+      word-break: keep-all;
+    }
+
+    .hero-desc {
+      font-size: 1.1rem;
+      color: #666;
+      margin-bottom: 30px;
+      line-height: 1.6;
+      word-break: keep-all;
+    }
+
+    /* [수정] hero-image-container 스타일 삭제 */
+
+    /* [수정] 이미지 자체 스타일 */
+    .hero-image {
+      width: 100%;
+      max-width: 500px; /* 너무 커지지 않게 최대 너비 설정 */
+      height: auto;
+      border-radius: 24px; /* 컨테이너의 모서리 둥글게 */
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08); /* 컨테이너의 그림자 */
+      transition: transform 0.5s ease;
+      display: block; /* 가운데 정렬을 위해 */
+      margin: 0 auto; /* 가운데 정렬 */
+    }
+
+    .hero-image:hover {
+      transform: scale(1.02);
+    }
+
+    /* 2. 멘토 추천 섹션 */
+    .mentor-section {
+      background-color: var(--color-bg-light);
+      padding: 80px 0;
+    }
+
+    .section-title {
+      font-size: 1.75rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    /* Swiper 설정 */
+    .mentorSwiper {
+      padding-bottom: 50px !important;
+      padding-left: 10px;
+      padding-right: 10px;
+    }
+
+    /* 홈 화면 전용 카드 스타일 */
+    .home-mentor-card {
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      background: #fff;
+      border-radius: 20px;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    .home-mentor-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1) !important;
+    }
+
+    /* Swiper 네비게이션 버튼 */
+    .swiper-button-next, .swiper-button-prev {
+      color: var(--color-primary);
+      background: rgba(255, 255, 255, 0.9);
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      top: 45%;
+    }
+
+    .swiper-button-next:after, .swiper-button-prev:after {
+      font-size: 1.2rem;
+      font-weight: bold;
+    }
+
+    .swiper-pagination-bullet-active {
+      background-color: var(--color-primary);
+    }
+
+    /* 이니셜 아바타 스타일 (80px 기준) */
+    .mentor-card-avatar--initial {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 2rem;
+      text-align: center;
+      line-height: 1;
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      aspect-ratio: 1/1;
+    }
+  </style>
 </head>
 
 <body>
 <section layout:fragment="content">
-  <div class="container" style="padding: 48px 0;">
-    <h1 style="font-size: 2rem; font-weight: 800; margin-bottom: 12px;">
-      성장으로 이끄는 최고의 멘토를 만나보세요.
-    </h1>
 
-    <p style="color: #666; line-height: 1.6; margin-bottom: 20px;">
-      닉네임 온보딩 완료 후 이 페이지로 이동합니다. (임시 홈)
-    </p>
+  <section class="hero-section">
+    <div class="container">
+      <div class="row align-items-center">
+        <div class="col-lg-6 py-4">
+          <span class="badge bg-primary-subtle text-primary mb-3 px-3 py-2 rounded-pill fw-bold">DODEUL BETA</span>
+          <h1 class="hero-title">성장으로 이끄는<br>최고의 멘토를 만나보세요.</h1>
+          <p class="hero-desc">현직 개발자, 디자이너, PM이 당신의 고민을 들어줍니다.<br>막막한 취업/이직 준비, 두들과 함께 해결하세요.</p>
+          <div class="d-flex gap-3 mt-4">
+            <button type="button" class="btn btn-primary btn-lg rounded-pill px-5 fw-bold shadow-sm"
+                    onclick="checkAvailability()">
+              상담 신청하기
+            </button>
+            <a href="/search/mentors" class="btn btn-outline-secondary btn-lg rounded-pill px-5 fw-bold">
+              멘토 찾기
+            </a>
+          </div>
+        </div>
 
-    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-      <button type="button" class="btn-primary-custom" onclick="checkAvailability()">
-        상담 신청하기
-      </button>
+        <div class="col-lg-6 d-none d-lg-block text-center"><img th:src="@{/images/preview-1024x1024.png}"
+                                                                 alt="DODEUL Banner"
+                                                                 class="hero-image"></div>
+
+      </div>
     </div>
+  </section>
 
-  </div>
+  <section class="mentor-section">
+    <div class="container">
+      <div class="d-flex justify-content-between align-items-end mb-4">
+        <div>
+          <h2 class="section-title">🔥 지금 주목받는 멘토</h2>
+          <p class="text-secondary mb-0">검증된 현직자 멘토들의 생생한 조언을 들어보세요.</p>
+        </div>
+        <a href="/search/mentors" class="text-decoration-none fw-bold link-primary">
+          전체보기 <i class="bi bi-arrow-right"></i>
+        </a>
+      </div>
+
+      <div class="swiper mentorSwiper">
+        <div class="swiper-wrapper">
+
+          <div class="swiper-slide" th:each="mentor : ${mentors}">
+            <th:block th:replace="~{common/fragments/home-mentor-card :: card(${mentor})}"></th:block>
+          </div>
+
+        </div>
+
+        <div class="swiper-pagination"></div>
+
+        <div class="swiper-button-next"></div>
+        <div class="swiper-button-prev"></div>
+      </div>
+    </div>
+  </section>
 </section>
 
 <th:block layout:fragment="script">
+  <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+
   <script>
-    // 매칭 가능 여부 확인 후 상담신청서 작성 페이지로 리다이렉트
     function checkAvailability() {
       fetch(`/api/matchings/availability`)
         .then(response => response.json())
@@ -37,16 +197,49 @@
           if (data.code >= 200 && data.code < 300) {
             location.href = `/consulting-applications/form`;
           } else {
-            showCommonModal(data.message || '현재 상담 신청이 불가능합니다.');
+            if (typeof showCommonModal === 'function') {
+              showCommonModal(data.message || '현재 상담 신청이 불가능합니다.');
+            } else {
+              alert(data.message || '현재 상담 신청이 불가능합니다.');
+            }
           }
         })
         .catch(err => {
           console.error(err);
-          showCommonModal('서버 통신 중 오류가 발생했습니다.');
+          if (typeof showCommonModal === 'function') {
+            showCommonModal('서버 통신 중 오류가 발생했습니다.');
+          } else {
+            alert('서버 통신 중 오류가 발생했습니다.');
+          }
         });
     }
+
+    document.addEventListener('DOMContentLoaded', function () {
+      const mentorSwiper = new Swiper('.mentorSwiper', {
+        slidesPerView: 1,
+        spaceBetween: 20,
+        loop: true,
+        autoplay: {
+          delay: 3000,
+          disableOnInteraction: false,
+        },
+        pagination: {
+          el: '.swiper-pagination',
+          clickable: true,
+          dynamicBullets: true,
+        },
+        navigation: {
+          nextEl: '.swiper-button-next',
+          prevEl: '.swiper-button-prev',
+        },
+        breakpoints: {
+          576: {slidesPerView: 2, spaceBetween: 20},
+          992: {slidesPerView: 3, spaceBetween: 24},
+          1200: {slidesPerView: 4, spaceBetween: 24},
+        },
+      });
+    });
   </script>
 </th:block>
 </body>
 </html>
-<!--// 106번 재커밋-->

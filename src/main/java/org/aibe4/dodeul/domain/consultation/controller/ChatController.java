@@ -35,7 +35,7 @@ public class ChatController {
             throw new AccessDeniedException(ErrorCode.ACCESS_DENIED.getMessage());
         }
 
-        MessageDto savedMessage = chatService.saveMessage(request, userDetails.getMemberId());
+        MessageDto savedMessage = chatService.saveMessage(request, memberId);
 
         messagingTemplate.convertAndSend("/topic/room/" + request.getRoomId(), savedMessage);
     }
