@@ -10,6 +10,8 @@ import org.aibe4.dodeul.domain.consulting.model.dto.ConsultingApplicationDetailR
 import org.aibe4.dodeul.domain.consulting.model.dto.ConsultingApplicationRequest;
 import org.aibe4.dodeul.domain.consulting.model.enums.ConsultingTag;
 import org.aibe4.dodeul.domain.consulting.service.ConsultingApplicationService;
+import org.aibe4.dodeul.domain.matching.model.entity.Matching;
+import org.aibe4.dodeul.domain.matching.model.repository.MatchingRepository;
 import org.aibe4.dodeul.domain.member.service.MemberService;
 import org.aibe4.dodeul.global.security.CustomUserDetails;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -17,6 +19,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.NoSuchElementException;
 
 @Controller
 @RequestMapping("/consulting-applications")
@@ -26,6 +30,8 @@ public class ConsultingApplicationController {
 
     private final ConsultingApplicationService consultingApplicationService;
     private final MemberService memberService;
+
+    private final MatchingRepository matchingRepository;
 
     // 1. 작성 폼
     @Operation(summary = "상담 신청 폼 이동", description = "상담 신청서를 작성하는 페이지를 반환합니다.")
@@ -181,7 +187,11 @@ public class ConsultingApplicationController {
 
         ConsultingApplicationDetailResponse response =
             consultingApplicationService.getApplicationDetail(applicationId);
+        Matching matching = matchingRepository.findById(matchingId)
+            .orElseThrow(() -> new NoSuchElementException("매칭을 찾을 수 없습니다: " + matchingId));
 
+        model.addAttribute("matchingId", matchingId);
+        model.addAttribute("matchingStatus", matching.getStatus().name());
         model.addAttribute("appDetail", response);
         return "consulting/application-detail";
     }
@@ -203,7 +213,11 @@ public class ConsultingApplicationController {
 
         ConsultingApplicationDetailResponse response =
             consultingApplicationService.getApplicationDetail(applicationId);
+        Matching matching = matchingRepository.findById(matchingId)
+            .orElseThrow(() -> new NoSuchElementException("매칭을 찾을 수 없습니다: " + matchingId));
 
+        model.addAttribute("matchingId", matchingId);
+        model.addAttribute("matchingStatus", matching.getStatus().name());
         model.addAttribute("appDetail", response);
         return "consulting/application-mento-detail";
     }

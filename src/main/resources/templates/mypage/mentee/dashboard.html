@@ -125,12 +125,12 @@
       const message = json?.message ?? `요청 실패(${res.status})`;
 
       if (code === 401) {
-        alert('로그인이 필요합니다.');
+        showCommonModal('로그인이 필요합니다.');
         location.href = '/';
         throw new Error('UNAUTHORIZED');
       }
       if (code === 403) {
-        alert(message || '접근 권한이 없습니다.');
+        showCommonModal(message || '접근 권한이 없습니다.');
         location.href = '/';
         throw new Error('FORBIDDEN');
       }

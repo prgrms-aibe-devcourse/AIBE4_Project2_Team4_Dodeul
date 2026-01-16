@@ -1,127 +1,184 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{common/layout/mentor}">
+
 <head>
-  <meta charset="UTF-8">
-  <title>상담 신청 상세</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
-  <style>
-    body {
-      font-family: 'Noto Sans KR', sans-serif;
-    }
-  </style>
+  <th:block layout:fragment="head">
+    <title>DODEUL | 상담 신청 상세</title>
+    <link rel="stylesheet" href="/css/mypage/dashboard.css">
+    <style>
+      .detail-title { font-size: 1.25rem; font-weight: 700; margin-bottom: 8px; }
+      .detail-section-title { font-weight: 700; margin-bottom: 10px; }
+      .detail-content { white-space: pre-line; }
+      .tag-dark {
+        display: inline-block;
+        background: #334155;
+        color: #fff;
+        padding: 0.4rem 1rem;
+        border-radius: 999px;
+        font-size: 0.85rem;
+        margin-right: 0.5rem;
+        margin-bottom: 0.5rem;
+      }
+      .profile-chip {
+        width: 44px; height: 44px;
+        border-radius: 50%;
+        background: #adb5bd;
+        display: flex; align-items: center; justify-content: center;
+        color: #fff; font-weight: 700;
+        flex: 0 0 44px;
+      }
+      .stack { display:flex; flex-wrap:wrap; gap:8px; }
+      .divider { border-top: 1px solid var(--color-border); margin: 24px 0; }
+    </style>
+  </th:block>
 </head>
-<body class="bg-gray-50">
 
-<header class="bg-white border-b border-gray-200">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-    <div class="flex items-center gap-8">
-      <a href="/" class="text-xl font-bold text-gray-900">DoDeul</a>
-      <nav class="flex gap-6 text-sm font-medium text-gray-500">
-        <a href="/" class="hover:text-gray-900">홈</a>
-        <a href="/consulting-applications" class="hover:text-gray-900">상담 관리</a>
-      </nav>
-    </div>
-    <div>
-      <span class="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-white">MY</span>
-    </div>
-  </div>
-</header>
+<body>
+<div layout:fragment="page">
 
-<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-
-  <div class="mb-6 text-sm text-gray-500">
-    홈 > 상담 관리 > 신청 내역 > <span class="font-bold text-gray-900">상담 신청 상세</span>
+  <div class="dashboard-header">
+    <h2 class="fw-bold" style="margin-bottom:8px;">상담 신청 상세</h2>
+    <p class="text-small" style="margin-bottom:16px;">신청서 내용을 확인하고 수락/거절을 처리할 수 있습니다.</p>
   </div>
 
-  <div class="flex flex-col lg:flex-row gap-6">
+  <div class="layout" style="gap:24px;">
+    <!-- 좌측 카드 -->
+    <aside class="sidebar" style="width: 320px;">
+      <div class="sidebar-title">멘티 정보</div>
 
-    <aside class="w-full lg:w-1/4">
-      <div class="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
-        <div class="flex items-center gap-4 mb-6">
-          <div class="w-12 h-12 rounded-full bg-gray-400 flex items-center justify-center text-white text-lg font-bold">
-            <span th:text="${#strings.substring(appDetail.menteeName, 0, 1)}">김</span>
-          </div>
-          <div>
-            <h3 class="font-bold text-gray-900" th:text="${appDetail.menteeName}">김멘티</h3>
-            <p class="text-xs text-gray-500">취업 준비생 / 백엔드 지망</p>
-          </div>
+      <div style="display:flex; gap:12px; align-items:center; margin-bottom:16px;">
+        <div class="profile-chip">
+          <span th:text="${#strings.substring(appDetail.menteeName, 0, 1)}">김</span>
         </div>
 
-        <div class="border-t border-gray-100 pt-4">
-          <div class="flex justify-between items-center">
-            <span class="text-sm text-gray-600">현재 상태</span>
-            <span
-              class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200">
-                                대기중
-                            </span>
-          </div>
+        <div>
+          <div class="fw-bold" th:text="${appDetail.menteeName}">김멘티</div>
+          <div class="text-small">취업 준비생 / 백엔드 지망</div>
         </div>
+      </div>
+
+      <div style="border-top:1px solid var(--color-border); padding-top:12px; display:flex; justify-content:space-between; align-items:center;">
+        <span class="text-small">현재 상태</span>
+
+        <!-- 상태를 matchingStatus로 렌더링 -->
+        <span th:switch="${matchingStatus}">
+          <span th:case="'WAITING'" class="status-badge status-pending">대기중</span>
+          <span th:case="'MATCHED'" class="status-badge status-approved">승인됨</span>
+          <span th:case="'REJECTED'" class="status-badge status-rejected">거절됨</span>
+          <span th:case="'CANCELED'" class="status-badge status-canceled">취소함</span>
+          <span th:case="'TIMEOUT'" class="status-badge status-timeout">자동 취소</span>
+          <span th:case="'INREVIEW'" class="status-badge status-review">리뷰 대기</span>
+          <span th:case="'COMPLETED'" class="status-badge status-completed">완료</span>
+          <span th:case="*" class="status-badge status-canceled">-</span>
+        </span>
       </div>
     </aside>
 
-    <section class="w-full lg:w-3/4">
-      <div class="bg-white rounded-lg border border-gray-200 p-8 shadow-sm">
+    <!-- 우측 본문 -->
+    <section class="content" style="padding: 0; border: none; box-shadow:none; background:transparent;">
+      <div class="card-custom">
 
-        <div class="mb-6">
-          <h2 class="text-lg font-bold text-gray-900 mb-2">기본 정보</h2>
-          <div class="flex flex-wrap gap-2">
-        <span th:each="tag : ${appDetail.skillTags}"
-              class="px-3 py-1 rounded-full text-sm bg-slate-700 text-white"
-              th:text="${tag}">
-            Java
-        </span>
+        <div style="margin-bottom:16px;">
+          <div class="detail-section-title">기본 정보</div>
+          <div class="stack">
+            <span th:each="tag : ${appDetail.skillTags}"
+                  class="tag-dark"
+                  th:text="${tag}">Java</span>
           </div>
         </div>
 
-        <div class="mb-8">
-          <h1 class="text-2xl font-bold text-gray-900" th:text="${appDetail.title}">
+        <div style="margin-bottom:16px;">
+          <div class="detail-title" th:text="${appDetail.title}">
             JPA N+1 문제 해결 조언을 구하고 싶습니다.
-          </h1>
+          </div>
         </div>
 
-        <div class="mb-8">
-          <h3 class="text-base font-semibold text-gray-900 mb-2">내용</h3>
-          <div class="prose max-w-none text-gray-700 whitespace-pre-line" th:text="${appDetail.content}">
+        <div style="margin-bottom:16px;">
+          <div class="fw-bold" style="margin-bottom:8px;">내용</div>
+          <div class="text-small detail-content" th:text="${appDetail.content}">
             내용이 들어갑니다...
           </div>
         </div>
 
-        <div class="mb-8" th:if="${appDetail.fileUrl != null}">
-          <h3 class="text-base font-semibold text-gray-900 mb-2">첨부 파일 및 링크</h3>
-          <a th:href="${appDetail.fileUrl}" download
-             class="inline-flex items-center gap-2 text-blue-600 hover:underline">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path>
-            </svg>
-            <span>첨부파일 다운로드</span>
+        <div style="margin-bottom:16px;" th:if="${appDetail.fileUrl != null}">
+          <div class="fw-bold" style="margin-bottom:8px;">첨부 파일 및 링크</div>
+          <a class="text-small" th:href="${appDetail.fileUrl}" download>
+            첨부파일 다운로드
           </a>
         </div>
 
-        <hr class="border-gray-200 my-8">
+        <div class="divider"></div>
 
-        <div class="flex justify-end gap-3">
-          <form th:action="@{/consulting-applications/{id}/reject(id=${appDetail.id})}" method="post">
-            <button type="submit"
-                    class="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded hover:bg-gray-50 font-medium transition"
-                    onclick="return confirm('정말 거절하시겠습니까?');">
-              거절하기
-            </button>
-          </form>
-
-          <form th:action="@{/consulting-applications/{id}/accept(id=${appDetail.id})}" method="post">
-            <button type="submit"
-                    class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 font-medium transition">
-              수락하기
-            </button>
-          </form>
+        <!-- WAITING(대기중)일 때만 버튼 노출 -->
+        <div style="display:flex; justify-content:flex-end; gap:12px;"
+             th:if="${matchingStatus == 'WAITING'}">
+          <button type="button" id="btnReject" class="btn-outline-custom">
+            거절하기
+          </button>
+          <button type="button" id="btnAccept" class="btn-primary-custom">
+            수락하기
+          </button>
         </div>
 
       </div>
     </section>
   </div>
-</main>
+
+</div>
+
+<th:block layout:fragment="script">
+  <script th:inline="javascript">
+    const matchingId = [[${matchingId}]];
+    const matchingStatus = [[${matchingStatus}]]; // 문자열 (WAITING, MATCHED...)
+
+    async function apiRequest(url, options = {}) {
+      const res = await fetch(url, {
+        credentials: 'same-origin',
+        headers: {'accept': 'application/json', ...(options.headers || {})},
+        ...options
+      });
+
+      const json = await res.json().catch(() => null);
+      const code = json?.code ?? res.status;
+      const message = json?.message ?? `요청 실패(${res.status})`;
+
+      if (!res.ok || (typeof code === 'number' && code >= 400)) {
+        throw new Error(message);
+      }
+
+      return json;
+    }
+
+    document.getElementById('btnReject')?.addEventListener('click', async () => {
+      const ok = await showConfirmModal('정말 거절하시겠습니까?');
+      if (!ok) return;
+
+      try {
+        await apiRequest(`/api/matchings/${matchingId}/rejection`, { method: 'POST' });
+        showCommonModal('거절 처리되었습니다.');
+        setTimeout(() => location.href = '/mentor/sessions', 300);
+      } catch (e) {
+        showCommonModal(e?.message ?? '거절 처리에 실패했습니다.');
+      }
+    });
+
+    document.getElementById('btnAccept')?.addEventListener('click', async () => {
+      const ok = await showConfirmModal('이 상담을 수락할까요?');
+      if (!ok) return;
+
+      try {
+        await apiRequest(`/api/matchings/${matchingId}/acceptance`, { method: 'POST' });
+        showCommonModal('수락 처리되었습니다.');
+        setTimeout(() => location.href = '/mentor/sessions', 300);
+      } catch (e) {
+        showCommonModal(e?.message ?? '수락 처리에 실패했습니다.');
+      }
+    });
+  </script>
+</th:block>
 
 </body>
 </html>
