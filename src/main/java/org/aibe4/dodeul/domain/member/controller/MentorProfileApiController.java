@@ -1,5 +1,7 @@
 package org.aibe4.dodeul.domain.member.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.aibe4.dodeul.domain.member.model.dto.request.ConsultationEnabledRequest;
@@ -14,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+@Tag(name = "Member", description = "회원/마이페이지 API")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/mentor/profile")
@@ -21,6 +24,8 @@ public class MentorProfileApiController {
 
     private final MentorProfileService mentorProfileService;
 
+    @Operation(summary = "멘토 상담 가능 상태 변경", description = "멘토의 상담 가능 여부를 활성/비활성화 합니다.")
+    @MemberSwaggerDocs.ToggleConsultationEnabled
     @PreAuthorize("hasRole('MENTOR')")
     @PatchMapping("/consultation-enabled")
     public CommonResponse<Void> updateConsultationEnabled(

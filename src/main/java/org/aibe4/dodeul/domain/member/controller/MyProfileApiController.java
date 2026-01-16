@@ -1,5 +1,7 @@
 package org.aibe4.dodeul.domain.member.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.aibe4.dodeul.domain.member.model.dto.request.MenteeProfileUpdateRequest;
 import org.aibe4.dodeul.domain.member.model.dto.request.MentorProfileUpdateRequest;
@@ -13,6 +15,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+@Tag(name = "Member", description = "회원/마이페이지 API")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/mypage")
@@ -21,6 +24,8 @@ public class MyProfileApiController {
     private final MyProfileService myProfileService;
 
     // 멘토 내 프로필 조회
+    @Operation(summary = "멘토 내 프로필 조회")
+    @MemberSwaggerDocs.GetProfile
     @PreAuthorize("hasRole('MENTOR')")
     @GetMapping("/mentor/profile")
     public CommonResponse<MentorMyProfileResponse> getMentorProfile(
@@ -31,6 +36,8 @@ public class MyProfileApiController {
     }
 
     // 멘토 프로필 수정
+    @Operation(summary = "멘토 프로필 수정")
+    @MemberSwaggerDocs.UpdateProfile
     @PreAuthorize("hasRole('MENTOR')")
     @PatchMapping("/mentor/profile")
     public CommonResponse<Void> updateMentor(
@@ -42,6 +49,8 @@ public class MyProfileApiController {
     }
 
     // 멘티 내 프로필 조회
+    @Operation(summary = "멘티 내 프로필 조회")
+    @MemberSwaggerDocs.GetProfile
     @PreAuthorize("hasRole('MENTEE')")
     @GetMapping("/mentee/profile")
     public CommonResponse<MenteeMyProfileResponse> getMenteeProfile(
@@ -52,6 +61,8 @@ public class MyProfileApiController {
     }
 
     // 멘티 프로필 수정
+    @Operation(summary = "멘티 프로필 수정")
+    @MemberSwaggerDocs.UpdateProfile
     @PreAuthorize("hasRole('MENTEE')")
     @PatchMapping("/mentee/profile")
     public CommonResponse<Void> updateMentee(

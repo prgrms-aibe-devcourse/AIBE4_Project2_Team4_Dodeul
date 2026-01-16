@@ -1,5 +1,7 @@
 package org.aibe4.dodeul.domain.member.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.aibe4.dodeul.domain.member.model.dto.response.MentorPublicProfileResponse;
 import org.aibe4.dodeul.domain.member.service.MentorPublicProfileService;
@@ -10,6 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+@Tag(name = "Member", description = "회원/마이페이지 API")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/public/mentor")
@@ -17,6 +20,8 @@ public class MentorPublicProfileApiController {
 
     private final MentorPublicProfileService mentorPublicProfileService;
 
+    @Operation(summary = "멘토 공개 프로필 조회", description = "mentorId로 멘토 공개 프로필 정보를 조회합니다.")
+    @MemberSwaggerDocs.PublicMentorProfile
     @GetMapping("/{mentorId}")
     public CommonResponse<MentorPublicProfileResponse> getMentorProfile(@PathVariable Long mentorId) {
         MentorPublicProfileResponse data = mentorPublicProfileService.getMentorPublicProfile(mentorId);
