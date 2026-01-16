@@ -1,5 +1,6 @@
 package org.aibe4.dodeul.domain.consulting.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/consulting-applications")
 @RequiredArgsConstructor
+@Tag(name = "Consulting", description = "상담 관련 API (AI 초안 및 신청서)") // 이 줄을 추가하세요
 public class ConsultingApplicationApiController {
 
     private final ConsultingApplicationService consultingApplicationService;
