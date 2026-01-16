@@ -5,7 +5,11 @@
 
 <header th:fragment="header(activeMenu)">
   <div class="container header-inner">
-    <a class="brand" th:href="@{/}">DODEUL</a>
+    <a class="brand" th:href="@{/}" style="display: flex; align-items: center;">
+      <img th:src="@{/images/logo.svg}"
+           alt="DODEUL"
+           style="height: 32px; width: auto;"/>
+    </a>
 
     <nav class="nav">
       <a th:href="@{/}" th:classappend="${activeMenu=='home'} ? 'active' : ''">홈</a>
