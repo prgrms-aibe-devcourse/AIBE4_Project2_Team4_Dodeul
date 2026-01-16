@@ -116,7 +116,7 @@ public class MatchingService {
         }
 
         Member mentee = memberService.getMemberOrThrow(menteeId);
-        Member mentor = memberService.getMemberOrThrow(request.getMentorId());
+        Member mentor = memberService.getMemberOrThrowWithPessimisticLock(request.getMentorId());
 
         if (mentee.getRole() != Role.MENTEE || mentor.getRole() != Role.MENTOR) {
             throw new IllegalArgumentException("멘토와 멘티의 역할이 올바르지 않습니다.");
