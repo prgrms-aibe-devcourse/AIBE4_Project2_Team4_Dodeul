@@ -1,5 +1,8 @@
 package org.aibe4.dodeul.domain.recommendation.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.aibe4.dodeul.domain.recommendation.model.dto.MentorRecommendationResponse;
 import org.aibe4.dodeul.domain.recommendation.service.MentorRecommendationService;
@@ -15,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+@Tag(name = "Recommendation", description = "멘토 추천 API")
 @RestController
 @RequestMapping("/api/recommendations")
 @RequiredArgsConstructor
@@ -22,10 +26,13 @@ public class MentorRecommendationRestController {
 
     private final MentorRecommendationService mentorRecommendationService;
 
+    @Operation(summary = "멘토 추천", description = "작성된 지원서(applicationId)를 기반으로 적합한 멘토를 추천")
+    @MentorRecommendationSwaggerDocs.RecommendMentors
     @PreAuthorize("hasRole('MENTEE')")
     @GetMapping("/mentors")
     public CommonResponse<List<MentorRecommendationResponse>> recommendMentors(
         @AuthenticationPrincipal CustomUserDetails userDetails,
+        @Parameter(description = "상담신청서 ID", example = "1", required = true)
         @RequestParam Long applicationId) {
 
         List<MentorRecommendationResponse> responses = mentorRecommendationService.recommendMentors(
