@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 @Tag(name = "Search", description = "멘토 검색 API")
 @RestController
 @RequestMapping("/api/search")
@@ -32,6 +34,14 @@ public class MentorSearchApiController {
         @PageableDefault(size = 10) Pageable pageable) {
 
         Page<MentorSearchResponse> result = mentorSearchService.searchMentors(condition, pageable);
+        return CommonResponse.success(SuccessCode.SUCCESS, result);
+    }
+
+    @Operation(summary = "인기 멘토 조회", description = "추천 수가 가장 많은 10명의 멘토를 조회")
+    @MentorSearchSwaggerDocs.PopularMentors
+    @GetMapping("/mentors/popular")
+    public CommonResponse<List<MentorSearchResponse>> findPopularMentors() {
+        List<MentorSearchResponse> result = mentorSearchService.findPopularMentors();
         return CommonResponse.success(SuccessCode.SUCCESS, result);
     }
 }
