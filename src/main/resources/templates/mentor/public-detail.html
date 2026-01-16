@@ -241,7 +241,6 @@
           btn.disabled = true;
         }
 
-        // availability API는 팀마다 CommonResponse를 쓰기도/안쓰기도 해서 방어적으로 처리
         const res = await fetch(`/api/matchings/availability?mentorId=${encodeURIComponent(mentorId)}`, {
           credentials: 'same-origin',
           headers: {'accept': 'application/json'}
