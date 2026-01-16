@@ -12,6 +12,11 @@
 </head>
 
 <body>
+
+<div layout:fragment="sidebar">
+  <div th:replace="~{common/fragments/sidebar :: sidebar('sessions')}"></div>
+</div>
+
 <div layout:fragment="page">
 
   <div class="dashboard-header">
