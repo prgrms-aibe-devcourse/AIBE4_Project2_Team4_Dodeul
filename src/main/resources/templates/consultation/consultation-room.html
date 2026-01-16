@@ -51,6 +51,21 @@
     #fileListContainer::-webkit-scrollbar-track {
       background-color: transparent;
     }
+
+    /* 이니셜 아바타 스타일 */
+    .chat-avatar-initial {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 16px;
+      border: 1px solid var(--color-border);
+    }
   </style>
 </head>
 
@@ -72,12 +87,16 @@
           <div class="chat-header">
             <div class="d-flex align-items-center">
               <div class="me-3">
+                <!-- 프로필 이미지가 없으면 닉네임 첫 글자 표시 -->
+                <div th:if="${opponent.profileUrl == null or #strings.isEmpty(opponent.profileUrl)}"
+                     class="chat-avatar-initial"
+                     th:text="${#strings.substring(opponent.nickname, 0, 1).toUpperCase()}">A</div>
+                <!-- 프로필 이미지가 있으면 이미지 표시 -->
                 <img th:if="${opponent.profileUrl != null and !#strings.isEmpty(opponent.profileUrl)}"
-                     th:src="${opponent.profileUrl}" class="rounded-circle" style="width: 40px; height: 40px; border: 1px solid var(--color-border); object-fit: cover;">
-                <div th:unless="${opponent.profileUrl != null and !#strings.isEmpty(opponent.profileUrl)}"
-                     class="bg-light rounded-circle d-flex align-items-center justify-content-center border" style="width: 40px; height: 40px;">
-                  <i class="bi bi-person-fill text-secondary fs-5"></i>
-                </div>
+                     th:src="${opponent.profileUrl}"
+                     th:alt="${opponent.nickname}"
+                     class="rounded-circle"
+                     style="width: 40px; height: 40px; border: 1px solid var(--color-border); object-fit: cover;">
               </div>
               <div class="d-flex align-items-center">
                 <div class="fw-bold me-2" th:text="${opponent.nickname}">닉네임</div>

@@ -443,3 +443,22 @@ footer {
 .status-timeout { background-color: #e9ecef; color: #495057; }
 .status-review { background-color: #e0cffc; color: #59359a; }
 .status-completed { background-color: #d1e7dd; color: #0f5132; }
+
+/* 멘토카드 이니셜 아바타 스타일 (추가) */
+.mentor-card-avatar--initial {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 24px;
+  object-fit: unset;
+  text-align: center;
+  line-height: 1;
+}
+
+/* 이미지가 있는 경우의 기본 스타일 유지 */
+.mentor-card-avatar:not(.mentor-card-avatar--initial) {
+  object-fit: cover;
+}
