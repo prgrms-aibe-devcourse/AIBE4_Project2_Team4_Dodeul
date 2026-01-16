@@ -3,12 +3,14 @@
 > **IT 현직자와 취준생 간의 정보 불균형을 해소하고, 심리적 장벽 없이 성장의 기회를 얻을 수 있도록 돕는 1:1 멘토링 매칭 플랫폼입니다.**
 
 [![Java](https://img.shields.io/badge/Java-17-orange?logo=java&logoColor=white)](https://www.oracle.com/java/)
-[![Spring Boot](https://img.shields.io/badge/SpringBoot-3.x-green?logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
+[![Spring Boot](https://img.shields.io/badge/SpringBoot-3.5-green?logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
 [![Spring Security](https://img.shields.io/badge/Spring_Security-6.x-6DB33F?logo=springsecurity&logoColor=white)](https://spring.io/projects/spring-security)
 [![MySQL](https://img.shields.io/badge/MySQL-8.0-4479A1?logo=mysql&logoColor=white)](https://www.mysql.com/)
 [![Hibernate](https://img.shields.io/badge/Hibernate-ORM-59666C?logo=hibernate&logoColor=white)](https://hibernate.org/)
-[![QueryDSL](https://img.shields.io/badge/QueryDSL-5.0-blue)](http://querydsl.com/)
-
+[![QueryDSL](https://img.shields.io/badge/QueryDSL-5.1-blue)](http://querydsl.com/)
+[![Thymeleaf](https://img.shields.io/badge/Thymeleaf-%23005F0F.svg?logo=Thymeleaf&logoColor=white)](https://www.thymeleaf.org/)
+[![Swagger](https://img.shields.io/badge/Swagger-3.x-85EA2D?logo=swagger&logoColor=black)](https://swagger.io/)
+[![Gradle](https://img.shields.io/badge/Gradle-8.x-02303A?logo=gradle&logoColor=white)](https://gradle.org/)
 ---
 
 ## 📝 목차 (Table of Contents)
