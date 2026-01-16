@@ -25,7 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/consulting-applications")
 @RequiredArgsConstructor
-@Tag(name = "Consulting-Page", description = "상담 신청 처리 REST API") // ✅ 그룹 이름 명시
+@Tag(name = "Consulting", description = "상담 신청 처리 REST API") // ✅ 그룹 이름 명시
 public class ConsultingApplicationApiController {
 
     private final ConsultingApplicationService consultingApplicationService;

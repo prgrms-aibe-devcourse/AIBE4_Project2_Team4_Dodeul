@@ -16,7 +16,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/ai")
 @RequiredArgsConstructor
-@Tag(name = "Consulting-Page", description = "AI 상담 초안 생성 API") // ✅ 그룹 이름 설정
+@Tag(name = "Consulting", description = "AI 상담 초안 생성 API") // ✅ 그룹 이름 설정
 public class AiConsultingController {
 
     private final AiConsultingService aiConsultingService;

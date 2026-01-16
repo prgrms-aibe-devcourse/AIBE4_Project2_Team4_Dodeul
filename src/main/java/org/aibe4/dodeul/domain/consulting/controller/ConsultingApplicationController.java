@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.*;
 @Controller
 @RequestMapping("/consulting-applications")
 @RequiredArgsConstructor
-@Tag(name = "Consulting-Page", description = "상담 신청 화면(HTML) 관련 Controller")
+@Tag(name = "Consulting", description = "상담 신청 화면(HTML) 관련 Controller")
 public class ConsultingApplicationController {
 
     private final ConsultingApplicationService consultingApplicationService;
