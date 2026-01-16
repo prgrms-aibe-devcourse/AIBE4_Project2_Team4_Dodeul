@@ -110,6 +110,53 @@ public class MentorSearchRepositoryImpl implements MentorSearchRepository {
         return PageableExecutionUtils.getPage(content, pageable, countQuery::fetchOne);
     }
 
+    @Override
+    public List<MentorSearchResponse> findPopularMentors() {
+
+        // 추천 수(recommendCount) 내림차순으로 상위 10명 멘토 조회
+        List<Member> members = queryFactory
+            .selectFrom(member)
+            .join(member.mentorProfile, mentorProfile).fetchJoin()
+            .where(member.role.eq(Role.MENTOR))
+            .orderBy(
+                mentorProfile.recommendCount.desc(),
+                member.id.desc()
+            )
+            .limit(10)
+            .fetch();
+
+        if (members.isEmpty()) {
+            return List.of();
+        }
+
+        List<Long> memberIds = members.stream()
+            .map(Member::getId)
+            .toList();
+
+        List<Tuple> countResults = queryFactory
+            .select(matching.mentor.id, matching.count())
+            .from(matching)
+            .where(
+                matching.mentor.id.in(memberIds),
+                matching.status.in(MatchingStatus.WAITING, MatchingStatus.MATCHED)
+            )
+            .groupBy(matching.mentor.id)
+            .fetch();
+
+        Map<Long, Long> matchingCounts = countResults.stream()
+            .collect(Collectors.toMap(
+                tuple -> tuple.get(matching.mentor.id),
+                tuple -> tuple.get(matching.count())
+            ));
+
+        return members.stream()
+            .map(m -> {
+                Long count = matchingCounts.getOrDefault(m.getId(), 0L);
+                return MentorSearchResponse.from(m, count);
+            })
+            .collect(Collectors.toList());
+    }
+
     private BooleanExpression nicknameContains(String keyword) {
         return StringUtils.hasText(keyword) ? member.nickname.contains(keyword) : null;
     }

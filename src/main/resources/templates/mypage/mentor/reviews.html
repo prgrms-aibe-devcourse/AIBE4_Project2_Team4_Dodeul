@@ -34,6 +34,11 @@
 </head>
 
 <body>
+
+<div layout:fragment="sidebar">
+  <div th:replace="~{common/fragments/sidebar :: sidebar('reviews')}"></div>
+</div>
+
 <div layout:fragment="page">
 
   <div class="dashboard-header">

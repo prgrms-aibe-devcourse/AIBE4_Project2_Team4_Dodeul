@@ -1,5 +1,7 @@
 package org.aibe4.dodeul.domain.search.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.aibe4.dodeul.domain.search.model.dto.MentorSearchCondition;
 import org.aibe4.dodeul.domain.search.model.dto.MentorSearchResponse;
@@ -14,6 +16,9 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
+@Tag(name = "Search", description = "멘토 검색 API")
 @RestController
 @RequestMapping("/api/search")
 @RequiredArgsConstructor
@@ -21,12 +26,22 @@ public class MentorSearchApiController {
 
     private final MentorSearchService mentorSearchService;
 
+    @Operation(summary = "멘토 검색", description = "조건에 맞는 멘토 목록을 페이징하여 조회")
+    @MentorSearchSwaggerDocs.SearchMentors
     @GetMapping("/mentors")
     public CommonResponse<Page<MentorSearchResponse>> searchMentors(
         @ModelAttribute MentorSearchCondition condition,
         @PageableDefault(size = 10) Pageable pageable) {
 
         Page<MentorSearchResponse> result = mentorSearchService.searchMentors(condition, pageable);
+        return CommonResponse.success(SuccessCode.SUCCESS, result);
+    }
+
+    @Operation(summary = "인기 멘토 조회", description = "추천 수가 가장 많은 10명의 멘토를 조회")
+    @MentorSearchSwaggerDocs.PopularMentors
+    @GetMapping("/mentors/popular")
+    public CommonResponse<List<MentorSearchResponse>> findPopularMentors() {
+        List<MentorSearchResponse> result = mentorSearchService.findPopularMentors();
         return CommonResponse.success(SuccessCode.SUCCESS, result);
     }
 }

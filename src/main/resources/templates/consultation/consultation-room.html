@@ -338,19 +338,14 @@
 
       if (mentorExitBtn) {
         mentorExitBtn.addEventListener('click', async () => {
-          // 1. 종료 요청 시도
           const result = await requestCloseRoom();
-
-          // 2. 기존 '종료 확인' 모달 닫기 (무조건 닫음)
           exitModal.hide();
 
           if (result === true) {
-            // 3. 성공 시: 약간의 딜레이 후 '성공' 모달 표시
             setTimeout(() => {
               successModal.show();
             }, 200);
           } else {
-            // 4. 실패 시: 실패 사유 alert (필요하다면 다른 모달로 대체 가능)
             setTimeout(() => {
               alert(result);
             }, 200);
@@ -385,17 +380,15 @@
 
           if (response.ok) {
             handleRoomClosed();
-            return true; // 성공
+            return true;
           }
 
           const result = await response.json();
-          // 이미 종료된 상태(409)도 성공으로 간주
           if (response.status === 409 || result.code === 'RESOURCE_CONFLICT' || (result.message && result.message.includes('이미 종료'))) {
             handleRoomClosed();
-            return true; // 성공
+            return true;
           }
 
-          // 실패 시 메시지 반환 (alert 대신)
           return result.message || "상담 종료 처리에 실패했습니다.";
 
         } catch (error) {
@@ -472,31 +465,64 @@
         }
       }
 
+      // [수정] 텍스트 전송 로직 (messageType 추가)
       function sendMessage() {
         const content = textarea.value.trim();
         if (content && stompClient && stompClient.connected) {
           stompClient.send("/app/chat/send", {}, JSON.stringify({
             'roomId': roomId,
             'senderId': currentMemberId,
-            'content': content
+            'content': content,
+            'messageType': 'TEXT' // 타입 명시
           }));
           textarea.value = '';
         }
       }
 
+      // [수정] 파일 업로드 로직 (HTTP 업로드 -> 웹소켓 전송으로 변경)
       async function uploadFile() {
         const file = fileInput.files[0];
         if (!file) return;
+
+        // UI에 임시 로딩 표시
         const tempId = 'up-' + Date.now();
         const loadingHtml = `<div id="${tempId}" class="d-flex flex-column mb-2 align-items-end upload-loading"><div class="message sent d-flex align-items-center"><div class="spinner-border spinner-border-sm me-2"></div><span style="font-size: 0.85rem;">파일 업로드 중... (${file.name})</span></div></div>`;
         chatMessages.insertAdjacentHTML('beforeend', loadingHtml);
         chatMessages.scrollTop = chatMessages.scrollHeight;
+
         const formData = new FormData();
         formData.append("file", file);
+
         try {
-          const response = await fetch(`/api/consultations/room/${roomId}/file`, {method: 'POST', body: formData});
+          // 1. HTTP API로 파일만 업로드
+          const response = await fetch(`/api/consultations/room/${roomId}/file/upload`, {
+            method: 'POST',
+            body: formData
+          });
+
           if (!response.ok) throw new Error();
+
+          const result = await response.json();
+          const fileData = result.data; // 서버에서 받은 파일 메타데이터
+
+          // 2. 업로드 성공 시 웹소켓으로 메시지 전송
+          if (stompClient && stompClient.connected) {
+            const isImage = fileData.contentType.startsWith('image');
+
+            stompClient.send("/app/chat/send", {}, JSON.stringify({
+              'roomId': roomId,
+              'senderId': currentMemberId,
+              'content': fileData.fileUrl,       // URL을 content로 사용
+              'messageType': isImage ? 'IMAGE' : 'FILE',
+              'fileName': fileData.originFileName,
+              'fileSize': fileData.fileSize,
+              'contentType': fileData.contentType
+            }));
+          }
+
+          // 로딩바 제거 (실제 메시지는 웹소켓으로 수신되어 appendMessage에서 그려짐)
           document.getElementById(tempId)?.remove();
+
         } catch (error) {
           const tempEl = document.getElementById(tempId);
           if (tempEl) tempEl.innerHTML = `<div class="message sent bg-danger text-white">업로드 실패</div>`;

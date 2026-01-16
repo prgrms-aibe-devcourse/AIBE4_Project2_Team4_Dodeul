@@ -19,6 +19,11 @@
 </head>
 
 <body>
+
+<div layout:fragment="sidebar">
+  <div th:replace="~{common/fragments/sidebar :: sidebar('profile')}"></div>
+</div>
+
 <div layout:fragment="page">
   <div class="dashboard-header">
     <h2 class="fw-bold" style="margin-bottom:8px;">프로필</h2>

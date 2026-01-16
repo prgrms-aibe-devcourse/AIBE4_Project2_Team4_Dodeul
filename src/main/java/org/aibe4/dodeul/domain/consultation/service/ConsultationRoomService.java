@@ -44,8 +44,13 @@ public class ConsultationRoomService {
 
     private Long createAndSaveRoom(Matching matching) {
         ConsultationRoom newRoom = ConsultationRoom.createRoom(matching);
+        ConsultationRoom savedRoom = consultationRoomRepository.save(newRoom);
 
-        return consultationRoomRepository.save(newRoom).getId();
+        Long mentorId = matching.getMentor().getId();
+
+        chatService.sendSystemMessage(savedRoom.getId(), mentorId, "\"\uD83D\uDCE2 멘토링 시작! 궁금한 점을 자유롭게 질문하고 답변해 주세요.\"️");
+
+        return savedRoom.getId();
     }
 
     @Transactional
@@ -58,6 +63,6 @@ public class ConsultationRoomService {
 
         mentorProfileService.increaseCompletedMatchingCount(room.getMatching().getMentor().getId());
 
-        chatService.sendSystemMessage(roomId, currentMemberId, "상담이 종료되었습니다.");
+        chatService.sendSystemMessage(roomId, currentMemberId, "\"\uD83C\uDFC1 상담이 종료되었습니다. 두 분 모두 고생 많으셨습니다! 유익한 시간 되셨기를 바랍니다.\"");
     }
 }
